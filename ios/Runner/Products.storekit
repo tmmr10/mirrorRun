@@ -1,0 +1,39 @@
+{
+  "identifier" : "F3A7B2C1-1234-5678-9ABC-DEF012345678",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "1",
+      "localizations" : [
+        {
+          "description" : "Alle Werbung dauerhaft entfernen",
+          "displayName" : "Werbefrei",
+          "locale" : "de"
+        },
+        {
+          "description" : "Remove all ads permanently",
+          "displayName" : "Remove Ads",
+          "locale" : "en"
+        }
+      ],
+      "productID" : "remove_ads",
+      "referenceName" : "Remove Ads",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "1",
+    "_developerTeamID" : "345MYP3SF5"
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
