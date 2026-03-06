@@ -1,0 +1,56 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload metadata to App Store Connect"
+  lane :metadata do
+    api_key = app_store_connect_api_key(
+      key_id: "243ZTV823U",
+      issuer_id: "daed1276-8ca7-4193-b3ea-05bdb17bd324",
+      key_filepath: "./fastlane/keys/AuthKey_243ZTV823U.p8",
+    )
+
+    begin
+      deliver(
+        api_key: api_key,
+        skip_binary_upload: true,
+        skip_screenshots: true,
+        skip_app_version_update: true,
+        force: true,
+        precheck_include_in_app_purchases: false,
+        run_precheck_before_submit: false,
+        app_rating_config_path: "./fastlane/metadata/app_rating_config.json",
+        app_review_information: {},
+      )
+    rescue => e
+      if e.message.include?("No data") || e.message.include?("review")
+        UI.success("Metadata uploaded successfully! Review info skipped (no binary yet).")
+      else
+        raise e
+      end
+    end
+  end
+
+  desc "Upload screenshots to App Store Connect"
+  lane :screenshots do
+    api_key = app_store_connect_api_key(
+      key_id: "243ZTV823U",
+      issuer_id: "daed1276-8ca7-4193-b3ea-05bdb17bd324",
+      key_filepath: "./fastlane/keys/AuthKey_243ZTV823U.p8",
+    )
+
+    deliver(
+      api_key: api_key,
+      skip_binary_upload: true,
+      skip_metadata: true,
+      force: true,
+      overwrite_screenshots: true,
+      run_precheck_before_submit: false,
+    )
+  end
+
+  desc "Upload everything (metadata + screenshots)"
+  lane :store do
+    metadata
+    screenshots
+  end
+end

@@ -9,6 +9,8 @@ import 'ui/biome_banner.dart';
 import 'ui/countdown_overlay.dart';
 import 'ui/death_screen.dart';
 import 'ui/settings_screen.dart';
+import 'ui/stats_screen.dart';
+import 'ui/skin_selector.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,19 @@ void main() {
           game: game,
           child: GameWidget(
             game: game,
+            backgroundBuilder: (context) => Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF0a0a0f),
+                    Color(0xFF080812),
+                    Color(0xFF0f0a14),
+                  ],
+                ),
+              ),
+            ),
             overlayBuilderMap: {
               'MenuScreen': (context, game) =>
                   MenuScreen(game: game as MirrorRunGame),
@@ -45,6 +60,10 @@ void main() {
                   DeathScreen(game: game as MirrorRunGame),
               'SettingsScreen': (context, game) =>
                   SettingsScreen(game: game as MirrorRunGame),
+              'StatsScreen': (context, game) =>
+                  StatsScreen(game: game as MirrorRunGame),
+              'SkinSelector': (context, game) =>
+                  SkinSelector(game: game as MirrorRunGame),
             },
           ),
         ),

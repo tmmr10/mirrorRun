@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
+import '../game/world/biome.dart';
 
 class DeathScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -132,7 +134,7 @@ class _DeathScreenState extends State<DeathScreen> {
                       color: const Color(0xFFFFCC44).withValues(alpha: 0.06),
                     ),
                     child: const Text(
-                      'NEUER REKORD',
+                      'NEW RECORD',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -223,13 +225,101 @@ class _DeathScreenState extends State<DeathScreen> {
                   .animate()
                   .fadeIn(duration: 400.ms, delay: 1800.ms),
 
+              const SizedBox(height: 12),
+
+              // Leaderboard button
+              GestureDetector(
+                onTap: () {
+                  if (_canInteract) widget.game.leaderboardService.showLeaderboard();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFFB48CFF).withValues(alpha: 0.2),
+                      width: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.leaderboard_rounded,
+                        size: 14,
+                        color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'LEADERBOARD',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 1900.ms),
+
+              const SizedBox(height: 12),
+
+              // Share button
+              GestureDetector(
+                onTap: () {
+                  if (!_canInteract) return;
+                  try {
+                    final score = widget.game.scoreNotifier.value;
+                    final biomeIdx = BiomeManager.getBiomeIndex(score);
+                    final biomeName = BiomeManager.biomes[biomeIdx].name;
+                    Share.share('I ran ${score}m through $biomeName in Mirror Runners!');
+                  } catch (_) {}
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFFff6b35).withValues(alpha: 0.3),
+                      width: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.share_rounded,
+                        size: 14,
+                        color: const Color(0xFFff6b35).withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SHARE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFFff6b35).withValues(alpha: 0.6),
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 2000.ms),
+
               // Ad-free hint (shown after an ad was displayed)
               if (_adWasShown && !widget.game.adService.isAdFree) ...[
                 const SizedBox(height: 24),
                 GestureDetector(
                   onTap: () => widget.game.adService.purchaseAdFree(),
                   child: Text(
-                    'Keine Werbung mehr? 1,99\u20AC',
+                    'No more ads? Go ad free!',
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.white.withValues(alpha: 0.25),

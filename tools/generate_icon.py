@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Mirror Run app icon — matching in-game style."""
+"""Generate Mirror Runners app icon — matching in-game style."""
 
 from PIL import Image, ImageDraw, ImageFilter
 import math

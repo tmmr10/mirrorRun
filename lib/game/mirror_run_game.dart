@@ -14,9 +14,13 @@ import 'components/particle_system.dart';
 import 'components/player.dart';
 import 'world/biome.dart';
 import '../services/ad_service.dart';
+import '../services/achievement_service.dart';
 import '../services/audio_service.dart';
 import '../services/highscore_service.dart';
+import '../services/leaderboard_service.dart';
 import '../services/settings_service.dart';
+import '../services/skin_service.dart';
+import '../services/stats_service.dart';
 
 class MirrorRunGame extends FlameGame
     with HasCollisionDetection, KeyboardEvents {
@@ -26,8 +30,8 @@ class MirrorRunGame extends FlameGame
   static const List<double> mirrorLanesR = [255, 320, 385];
 
   /// Free-movement bounds for the left player.
-  static const double leftMinX = 35;
-  static const double leftMaxX = 205;
+  static const double leftMinX = 55;
+  static const double leftMaxX = 185;
   /// Fixed step for keyboard input.
   static const double _keyStep = 65;
 
@@ -35,6 +39,10 @@ class MirrorRunGame extends FlameGame
   late AdService adService;
   late SettingsService settingsService;
   late AudioService audioService;
+  late LeaderboardService leaderboardService;
+  late StatsService statsService;
+  late AchievementService achievementService;
+  late SkinService skinService;
 
   PlayState playState = PlayState.menu;
 
@@ -100,6 +108,18 @@ class MirrorRunGame extends FlameGame
       debugPrint('>>> ad FAILED: $e');
     }
 
+    leaderboardService = LeaderboardService();
+    try { await leaderboardService.init(); } catch (_) {}
+
+    statsService = StatsService();
+    await statsService.init();
+
+    achievementService = AchievementService();
+    achievementService.setSignedIn(leaderboardService.isSignedIn);
+
+    skinService = SkinService();
+    await skinService.init();
+
     debugPrint('>>> services done, setting up camera');
     camera.viewfinder.anchor = Anchor.topLeft;
 
@@ -146,16 +166,17 @@ class MirrorRunGame extends FlameGame
     eventSystem.reset();
 
     final startX = mirrorLanesL[1]; // center lane
+    final skin = skinService.currentSkin;
     playerLeft = Player(
       side: 'left',
-      color: const Color(0xFFff6b35),
-      glowColor: const Color(0xFFff6b35),
+      color: skin.leftColor,
+      glowColor: skin.leftGlow,
       targetX: startX,
     );
     playerRight = Player(
       side: 'right',
-      color: const Color(0xFF9966ff),
-      glowColor: const Color(0xFF9966ff),
+      color: skin.rightColor,
+      glowColor: skin.rightGlow,
       targetX: vw - startX,
     );
     world.add(playerLeft!);
@@ -198,11 +219,28 @@ class MirrorRunGame extends FlameGame
       bestNotifier.value = score;
     }
 
+    leaderboardService.submitScore(score);
     adService.onDeath();
+
+    _recordRunAsync();
 
     overlays.remove('HudOverlay');
     overlays.remove('Countdown');
     overlays.add('DeathScreen');
+  }
+
+  Future<void> _recordRunAsync() async {
+    await statsService.recordRun(
+      distance: score,
+      biomeIndex: _lastBiomeIdx,
+      durationSeconds: lastRunDuration,
+    );
+    achievementService.checkAfterRun(
+      runDistance: score,
+      totalGames: statsService.totalGamesPlayed,
+      currentBiome: _lastBiomeIdx,
+    );
+    skinService.checkUnlocks(statsService.furthestBiomeIndex);
   }
 
   double get lastRunDuration =>
@@ -226,6 +264,8 @@ class MirrorRunGame extends FlameGame
     overlays.remove('BiomeBanner');
     overlays.remove('Countdown');
     overlays.remove('SettingsScreen');
+    overlays.remove('StatsScreen');
+    overlays.remove('SkinSelector');
     overlays.add('MenuScreen');
   }
 
@@ -287,7 +327,7 @@ class MirrorRunGame extends FlameGame
           playerLeft!.dead = true;
           particleSystem.burst(
             Vector2(playerLeft!.position.x, playerLeft!.position.y - Player.ph / 2),
-            const Color(0xFFff6b35),
+            skinService.currentSkin.leftColor,
           );
           die();
           return;
@@ -298,7 +338,7 @@ class MirrorRunGame extends FlameGame
           playerRight!.dead = true;
           particleSystem.burst(
             Vector2(playerRight!.position.x, playerRight!.position.y - Player.ph / 2),
-            const Color(0xFF9966ff),
+            skinService.currentSkin.rightColor,
           );
           die();
           return;

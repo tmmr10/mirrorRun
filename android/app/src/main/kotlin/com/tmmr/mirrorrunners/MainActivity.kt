@@ -1,4 +1,4 @@
-package com.tmmr.mirrorrun
+package com.tmmr.mirrorrunners
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/components/event_system.dart';
 import '../game/mirror_run_game.dart';
+import '../game/world/biome.dart';
 
 class HudOverlay extends StatefulWidget {
   final MirrorRunGame game;
@@ -250,30 +251,38 @@ class _HudOverlayState extends State<HudOverlay> {
                 // Score
                 ValueListenableBuilder<int>(
                   valueListenable: widget.game.scoreNotifier,
-                  builder: (context, score, child) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$score',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w200,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                          height: 1,
+                  builder: (context, score, child) {
+                    final biome = BiomeManager.getBiome(score);
+                    final glowColor = biome.lineL;
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$score',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 2,
+                            height: 1,
+                            shadows: [
+                              Shadow(color: glowColor.withValues(alpha: 0.9), blurRadius: 20),
+                              Shadow(color: glowColor.withValues(alpha: 0.5), blurRadius: 40),
+                            ],
+                          ),
                         ),
-                      ),
-                      Text(
-                        'm',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.3),
-                          letterSpacing: 2,
+                        Text(
+                          'm',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: glowColor.withValues(alpha: 0.7),
+                            letterSpacing: 3,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
 
                 const Spacer(),
@@ -346,7 +355,7 @@ class _HudOverlayState extends State<HudOverlay> {
                               ),
                             ),
                             child: Text(
-                              'WEITER',
+                              'RESUME',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -375,7 +384,7 @@ class _HudOverlayState extends State<HudOverlay> {
                               ),
                             ),
                             child: const Text(
-                              'AUFGEBEN',
+                              'QUIT',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
