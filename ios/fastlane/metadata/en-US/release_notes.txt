@@ -1,0 +1,11 @@
+NEW: Custom Skin Creator
+- Design your own runners with any color combination
+- Choose from 10 head and 7 face decorations
+- Save up to 5 custom skins
+
+Improvements:
+- Cleaner gameplay visuals
+- New motivational messages on the death screen
+- Refined countdown animation
+- Updated glass shatter sound effect
+- Redesigned skin selector with better overview

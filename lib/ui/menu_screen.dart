@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../models/player_skin.dart';
+import 'tap_scale.dart';
 
 class MenuScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -14,7 +16,12 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
+  static bool _firstOpen = true;
   late AnimationController _shimmerController;
+  bool _isPurchasing = false;
+
+  /// Scale animation delays: full on first open, fast on return.
+  Duration _d(int ms) => Duration(milliseconds: _firstOpen ? ms : ms ~/ 4);
 
   @override
   void initState() {
@@ -23,10 +30,18 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 3000),
     )..repeat();
+    // Mark first open as done after build
+    if (_firstOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _firstOpen = false);
+    }
+    widget.game.adService.onAdFreeChanged = () {
+      if (mounted) setState(() {});
+    };
   }
 
   @override
   void dispose() {
+    widget.game.adService.onAdFreeChanged = null;
     _shimmerController.dispose();
     super.dispose();
   }
@@ -93,7 +108,22 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      GestureDetector(
+                      if (kDebugMode)
+                        TapScale(
+                          onTap: () {
+                            widget.game.overlays.remove('MenuScreen');
+                            widget.game.overlays.add('DebugOverlay');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.bug_report,
+                              color: const Color(0xFFFF4444).withValues(alpha: 0.5),
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      TapScale(
                         onTap: () {
                           widget.game.overlays.remove('MenuScreen');
                           widget.game.overlays.add('SettingsScreen');
@@ -126,12 +156,12 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _buildTitle(accentColor),
-                          const SizedBox(height: 16),
-                          _buildSkinIndicator(accentColor),
                           const SizedBox(height: 40),
                           _buildStartPrompt(accentColor),
                           const SizedBox(height: 48),
                           _buildBiomeRoadmap(),
+                          const SizedBox(height: 24),
+                          _buildSkinIndicator(accentColor),
                         ],
                       ),
                     ),
@@ -142,41 +172,46 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                 if (!widget.game.adService.isAdFree)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 24),
-                    child: GestureDetector(
-                      onTap: () => widget.game.adService.purchaseAdFree(),
+                    child: TapScale(
+                      onTap: _isPurchasing ? null : () async {
+                        setState(() => _isPurchasing = true);
+                        await widget.game.adService.purchaseAdFree();
+                        if (mounted) setState(() => _isPurchasing = false);
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: accentColor.withValues(alpha: 0.5),
+                            color: accentColor.withValues(alpha: 0.25),
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: accentColor.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                            ),
-                          ],
                         ),
-                        child: Text(
-                          'AD FREE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 3,
-                            shadows: [
-                              Shadow(color: accentColor.withValues(alpha: 0.8), blurRadius: 20),
-                              Shadow(color: accentColor.withValues(alpha: 0.4), blurRadius: 40),
-                            ],
-                          ),
-                        ),
+                        child: _isPurchasing
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: accentColor.withValues(alpha: 0.5),
+                                ),
+                              )
+                            : Text(
+                                'AD FREE',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  letterSpacing: 3,
+                                  shadows: [
+                                    Shadow(color: accentColor.withValues(alpha: 0.3), blurRadius: 12),
+                                  ],
+                                ),
+                              ),
                       ),
                     )
                         .animate()
-                        .fadeIn(duration: 400.ms, delay: 1600.ms),
+                        .fadeIn(duration: 400.ms, delay: _d(1600)),
                   ),
               ],
             ),
@@ -201,7 +236,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
           ),
         )
             .animate()
-            .fadeIn(duration: 800.ms, delay: 200.ms)
+            .fadeIn(duration: 800.ms, delay: _d(200))
             .slideY(begin: -0.3, end: 0, duration: 600.ms, curve: Curves.easeOutCubic),
 
         Transform(
@@ -211,7 +246,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
             shaderCallback: (bounds) => LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [accent.withValues(alpha: 0.5), Colors.transparent],
+              colors: [accent.withValues(alpha: 0.8), Colors.transparent],
             ).createShader(bounds),
             child: Text(
               'MIRROR',
@@ -226,7 +261,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
           ),
         )
             .animate()
-            .fadeIn(duration: 800.ms, delay: 400.ms),
+            .fadeIn(duration: 800.ms, delay: _d(400)),
 
         const SizedBox(height: 8),
 
@@ -245,8 +280,8 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
           ),
         )
             .animate()
-            .fadeIn(duration: 600.ms, delay: 600.ms)
-            .scaleX(begin: 0, end: 1, duration: 500.ms, delay: 600.ms, curve: Curves.easeOutCubic),
+            .fadeIn(duration: 600.ms, delay: _d(600))
+            .scaleX(begin: 0, end: 1, duration: 500.ms, delay: _d(600), curve: Curves.easeOutCubic),
 
         const SizedBox(height: 12),
 
@@ -266,7 +301,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
           ),
         )
             .animate()
-            .fadeIn(duration: 600.ms, delay: 500.ms)
+            .fadeIn(duration: 600.ms, delay: _d(500))
             .slideY(begin: 0.3, end: 0, duration: 500.ms, curve: Curves.easeOutCubic),
       ],
     );
@@ -274,38 +309,98 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
 
   Widget _buildSkinIndicator(Color accent) {
     final skin = widget.game.skinService.currentSkin;
-    return GestureDetector(
+    return TapScale(
       onTap: () {
         widget.game.overlays.remove('MenuScreen');
         widget.game.overlays.add('SkinSelector');
       },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: _shimmerController,
-            builder: (context, _) {
-              return CustomPaint(
-                size: const Size(70, 50),
-                painter: _MiniSkinPainter(
-                  leftColor: skin.leftColor,
-                  rightColor: skin.rightColor,
-                  glowT: _shimmerController.value,
-                  decoration: skin.decoration,
+      child: AnimatedBuilder(
+        animation: _shimmerController,
+        builder: (context, _) {
+          final glowT = _shimmerController.value;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Color.lerp(skin.leftColor, skin.rightColor, glowT)!
+                    .withValues(alpha: 0.25 + glowT * 0.1),
+                width: 0.8,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  skin.leftColor.withValues(alpha: 0.06),
+                  Colors.transparent,
+                  skin.rightColor.withValues(alpha: 0.06),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: skin.leftColor.withValues(alpha: 0.08 + glowT * 0.06),
+                  blurRadius: 16,
+                  spreadRadius: 2,
                 ),
-              );
-            },
-          ),
-          Icon(
-            Icons.chevron_right,
-            color: accent.withValues(alpha: 0.4),
-            size: 16,
-          ),
-        ],
+                BoxShadow(
+                  color: skin.rightColor.withValues(alpha: 0.06 + glowT * 0.04),
+                  blurRadius: 20,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CustomPaint(
+                  size: const Size(70, 50),
+                  painter: _MiniSkinPainter(
+                    leftColor: skin.leftColor,
+                    rightColor: skin.rightColor,
+                    glowT: glowT,
+                    headDecoration: skin.headDecoration,
+                    faceDecoration: skin.faceDecoration,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      skin.name,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'CHANGE SKIN',
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: accent.withValues(alpha: 0.45),
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.chevron_right,
+                  color: accent.withValues(alpha: 0.35),
+                  size: 16,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     )
         .animate()
-        .fadeIn(duration: 400.ms, delay: 800.ms);
+        .fadeIn(duration: 400.ms, delay: _d(800));
   }
 
   Widget _buildStartPrompt(Color accent) {
@@ -336,7 +431,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
       ],
     )
         .animate()
-        .fadeIn(duration: 400.ms, delay: 1200.ms);
+        .fadeIn(duration: 400.ms, delay: _d(1200));
   }
 
   Widget _buildBiomeRoadmap() {
@@ -369,7 +464,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
       ],
     )
         .animate()
-        .fadeIn(duration: 500.ms, delay: 1400.ms);
+        .fadeIn(duration: 500.ms, delay: _d(1400));
   }
 
   Widget _biomeChip(String label, Color color) {
@@ -410,13 +505,15 @@ class _MiniSkinPainter extends CustomPainter {
   final Color leftColor;
   final Color rightColor;
   final double glowT;
-  final SkinDecoration decoration;
+  final HeadDecoration headDecoration;
+  final FaceDecoration faceDecoration;
 
   _MiniSkinPainter({
     required this.leftColor,
     required this.rightColor,
     required this.glowT,
-    required this.decoration,
+    this.headDecoration = HeadDecoration.none,
+    this.faceDecoration = FaceDecoration.none,
   });
 
   @override
@@ -474,8 +571,8 @@ class _MiniSkinPainter extends CustomPainter {
     // Body
     canvas.drawRRect(bodyRect, Paint()..color = color);
 
-    // Decoration
-    _drawDecoration(canvas, x, bodyTop, bodyW, color);
+    // Head decoration
+    _drawHeadDecoration(canvas, x, bodyTop, bodyW, color);
 
     // Eyes
     final eyeY = bodyTop + 6;
@@ -483,17 +580,34 @@ class _MiniSkinPainter extends CustomPainter {
     canvas.drawCircle(Offset(x - 2.5, eyeY), 1.5, eyePaint);
     canvas.drawCircle(Offset(x + 2.5, eyeY), 1.5, eyePaint);
 
-    // Goggles over eyes
-    if (decoration == SkinDecoration.goggles) {
-      _drawGoggles(canvas, x, eyeY, bodyW);
+    // Face decoration
+    _drawFaceDecoration(canvas, x, eyeY, bodyW, color);
+  }
+
+  void _drawFaceDecoration(Canvas canvas, double x, double eyeY, double bodyW, Color color) {
+    switch (faceDecoration) {
+      case FaceDecoration.none:
+        break;
+      case FaceDecoration.goggles:
+        _drawGoggles(canvas, x, eyeY, bodyW);
+      case FaceDecoration.visor:
+        _drawVisor(canvas, x, eyeY, bodyW, color);
+      case FaceDecoration.mask:
+        _drawMask(canvas, x, eyeY, bodyW);
+      case FaceDecoration.monocle:
+        _drawMonocle(canvas, x, eyeY);
+      case FaceDecoration.scar:
+        _drawScar(canvas, x, eyeY);
+      case FaceDecoration.shades:
+        _drawShades(canvas, x, eyeY, bodyW);
     }
   }
 
-  void _drawDecoration(Canvas canvas, double x, double bodyTop, double bodyW, Color color) {
-    switch (decoration) {
-      case SkinDecoration.none:
+  void _drawHeadDecoration(Canvas canvas, double x, double bodyTop, double bodyW, Color color) {
+    switch (headDecoration) {
+      case HeadDecoration.none:
         break;
-      case SkinDecoration.iceCrown:
+      case HeadDecoration.iceCrown:
         final paint = Paint()..color = const Color(0xCCAAEEFF);
         final glow = Paint()
           ..color = const Color(0x4400CCFF)
@@ -508,7 +622,7 @@ class _MiniSkinPainter extends CustomPainter {
           canvas.drawPath(path, glow);
           canvas.drawPath(path, paint);
         }
-      case SkinDecoration.flames:
+      case HeadDecoration.flames:
         final t = glowT * pi * 4;
         final colors = [const Color(0xDDFF6600), const Color(0xBBFFAA00), const Color(0x99FF3300)];
         for (int i = 0; i < 3; i++) {
@@ -526,7 +640,7 @@ class _MiniSkinPainter extends CustomPainter {
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
           canvas.drawPath(path, Paint()..color = colors[i]);
         }
-      case SkinDecoration.crown:
+      case HeadDecoration.crown:
         final paint = Paint()..color = const Color(0xFFFFD700);
         final glow = Paint()
           ..color = const Color(0x60FFD700)
@@ -543,9 +657,7 @@ class _MiniSkinPainter extends CustomPainter {
         canvas.drawPath(path, glow);
         canvas.drawPath(path, paint);
         canvas.drawCircle(Offset(x, bodyTop - 2.5), 0.8, Paint()..color = const Color(0xFFFF4444));
-      case SkinDecoration.goggles:
-        break; // drawn after eyes
-      case SkinDecoration.antenna:
+      case HeadDecoration.antenna:
         final bobY = sin(glowT * pi * 2) * 1.2;
         canvas.drawLine(
           Offset(x, bodyTop + 1),
@@ -560,7 +672,7 @@ class _MiniSkinPainter extends CustomPainter {
           ..color = color.withValues(alpha: 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
         canvas.drawCircle(Offset(x, tipY), 1.3, Paint()..color = color);
-      case SkinDecoration.halo:
+      case HeadDecoration.halo:
         final bobY = sin(glowT * pi * 2) * 1.0;
         final haloY = bodyTop - 4 + bobY;
         canvas.drawOval(
@@ -576,7 +688,96 @@ class _MiniSkinPainter extends CustomPainter {
             ..strokeWidth = 1
             ..style = ui.PaintingStyle.stroke,
         );
+      case HeadDecoration.horns:
+        final paint = Paint()..color = const Color(0xDDCC2222);
+        final glow = Paint()
+          ..color = const Color(0x40FF0000)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        for (final side in [-1.0, 1.0]) {
+          final path = Path()
+            ..moveTo(x + side * 3, bodyTop + 1)
+            ..quadraticBezierTo(x + side * 6, bodyTop - 1, x + side * 5.5, bodyTop - 5)
+            ..lineTo(x + side * 4, bodyTop - 0.5)
+            ..close();
+          canvas.drawPath(path, glow);
+          canvas.drawPath(path, paint);
+        }
+      case HeadDecoration.wings:
+        final flapY = sin(glowT * pi * 3) * 1.2;
+        final paint = Paint()..color = color.withValues(alpha: 0.6);
+        final glow = Paint()
+          ..color = color.withValues(alpha: 0.2)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+        for (final side in [-1.0, 1.0]) {
+          final wingX = x + side * 8;
+          final path = Path()
+            ..moveTo(x + side * 5, bodyTop + 5)
+            ..quadraticBezierTo(wingX + side * 3, bodyTop + 1 + flapY, wingX + side * 1.5, bodyTop - 1 + flapY)
+            ..quadraticBezierTo(wingX, bodyTop + 4 + flapY, x + side * 5, bodyTop + 12)
+            ..close();
+          canvas.drawPath(path, glow);
+          canvas.drawPath(path, paint);
+        }
+      case HeadDecoration.mohawk:
+        final paint = Paint()..color = color;
+        final glow = Paint()
+          ..color = color.withValues(alpha: 0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        for (int i = 0; i < 5; i++) {
+          final dx = (i - 2) * 2.0;
+          final h = i == 2 ? -7.0 : (i == 1 || i == 3 ? -5.0 : -3.0);
+          final path = Path()
+            ..moveTo(x + dx - 1, bodyTop + 1)
+            ..lineTo(x + dx, bodyTop + h)
+            ..lineTo(x + dx + 1, bodyTop + 1)
+            ..close();
+          canvas.drawPath(path, glow);
+          canvas.drawPath(path, paint);
+        }
+      case HeadDecoration.star:
+        final bobY = sin(glowT * pi * 2) * 1.2;
+        final starY = bodyTop - 7 + bobY;
+        final starPaint = Paint()..color = const Color(0xFFFFDD44);
+        final starGlow = Paint()
+          ..color = const Color(0x60FFDD44)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        final path = Path();
+        for (int i = 0; i < 5; i++) {
+          final outerAngle = -pi / 2 + i * 2 * pi / 5;
+          final innerAngle = outerAngle + pi / 5;
+          final ox = x + cos(outerAngle) * 3.5;
+          final oy = starY + sin(outerAngle) * 3.5;
+          final ix = x + cos(innerAngle) * 1.4;
+          final iy = starY + sin(innerAngle) * 1.4;
+          if (i == 0) {
+            path.moveTo(ox, oy);
+          } else {
+            path.lineTo(ox, oy);
+          }
+          path.lineTo(ix, iy);
+        }
+        path.close();
+        canvas.drawPath(path, starGlow);
+        canvas.drawPath(path, starPaint);
     }
+  }
+
+  void _drawVisor(Canvas canvas, double x, double eyeY, double bodyW, Color color) {
+    final visorRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(x, eyeY), width: bodyW - 1, height: 3.5),
+      const Radius.circular(1.8),
+    );
+    canvas.drawRRect(visorRect, Paint()
+      ..color = color.withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+    canvas.drawRRect(visorRect, Paint()..color = color.withValues(alpha: 0.7));
+    canvas.drawLine(
+      Offset(x - bodyW / 2 + 2, eyeY - 0.7),
+      Offset(x + bodyW / 2 - 2, eyeY - 0.7),
+      Paint()
+        ..color = const Color(0x55FFFFFF)
+        ..strokeWidth = 0.6,
+    );
   }
 
   void _drawGoggles(Canvas canvas, double x, double eyeY, double bodyW) {
@@ -603,7 +804,68 @@ class _MiniSkinPainter extends CustomPainter {
     }
   }
 
+  void _drawMask(Canvas canvas, double x, double eyeY, double bodyW) {
+    final maskRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(x, eyeY), width: bodyW + 1, height: 4.5),
+      const Radius.circular(2.2),
+    );
+    canvas.drawRRect(maskRect, Paint()..color = const Color(0xDD111111));
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(x - 2.5, eyeY), width: 4, height: 3),
+      Paint()..color = const Color(0xFF222222),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(x + 2.5, eyeY), width: 4, height: 3),
+      Paint()..color = const Color(0xFF222222),
+    );
+  }
+
+  void _drawMonocle(Canvas canvas, double x, double eyeY) {
+    canvas.drawLine(
+      Offset(x + 2.5, eyeY + 2), Offset(x + 4, eyeY + 7),
+      Paint()..color = const Color(0x99FFD700)..strokeWidth = 0.5,
+    );
+    canvas.drawCircle(Offset(x + 2.5, eyeY), 3, Paint()
+      ..color = const Color(0xCCFFD700)
+      ..strokeWidth = 0.8
+      ..style = ui.PaintingStyle.stroke);
+    canvas.drawCircle(Offset(x + 1.8, eyeY - 0.8), 0.7, Paint()..color = const Color(0x44FFFFFF));
+  }
+
+  void _drawScar(Canvas canvas, double x, double eyeY) {
+    canvas.drawLine(
+      Offset(x - 4, eyeY - 3.5), Offset(x - 0.5, eyeY + 3.5),
+      Paint()..color = const Color(0xCCCC4444)..strokeWidth = 1.2..strokeCap = ui.StrokeCap.round,
+    );
+    for (final dy in [-1.5, 0.8, 3.0]) {
+      final cx = x - 2.2 + dy * 0.35;
+      canvas.drawLine(
+        Offset(cx - 0.8, eyeY + dy - 0.3),
+        Offset(cx + 0.8, eyeY + dy + 0.3),
+        Paint()..color = const Color(0x88CC4444)..strokeWidth = 0.6,
+      );
+    }
+  }
+
+  void _drawShades(Canvas canvas, double x, double eyeY, double bodyW) {
+    canvas.drawLine(
+      Offset(x - 2, eyeY - 0.7), Offset(x + 2, eyeY - 0.7),
+      Paint()..color = const Color(0xCC111111)..strokeWidth = 0.8,
+    );
+    for (final dx in [-2.8, 2.8]) {
+      final lr = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(x + dx, eyeY), width: 6, height: 4),
+        const Radius.circular(1.2),
+      );
+      canvas.drawRRect(lr, Paint()..color = const Color(0xEE111111));
+      canvas.drawRRect(lr, Paint()
+        ..color = const Color(0x33FFFFFF)
+        ..strokeWidth = 0.4
+        ..style = ui.PaintingStyle.stroke);
+    }
+  }
+
   @override
   bool shouldRepaint(covariant _MiniSkinPainter old) =>
-      old.glowT != glowT || old.leftColor != leftColor || old.rightColor != rightColor || old.decoration != decoration;
+      old.glowT != glowT || old.leftColor != leftColor || old.rightColor != rightColor || old.headDecoration != headDecoration || old.faceDecoration != faceDecoration;
 }

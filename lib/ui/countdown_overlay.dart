@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../game/game_state.dart';
 import '../game/mirror_run_game.dart';
-import '../game/world/biome.dart';
 
 class CountdownOverlay extends StatefulWidget {
   final MirrorRunGame game;
@@ -11,14 +10,26 @@ class CountdownOverlay extends StatefulWidget {
   State<CountdownOverlay> createState() => _CountdownOverlayState();
 }
 
-class _CountdownOverlayState extends State<CountdownOverlay> {
-  int _count = 3;
+class _CountdownOverlayState extends State<CountdownOverlay>
+    with TickerProviderStateMixin {
   bool _cancelled = false;
+
+  /// 3 pulses + final expand = 4 phases
+  late AnimationController _pulseAnim;
+  late AnimationController _expandAnim;
+  int _pulseIndex = 0;
+  bool _finalExpand = false;
+
+  static const _pulseDuration = Duration(milliseconds: 650);
+  static const _pauseBetween = 200; // ms gap between pulses
+  static const _expandDuration = Duration(milliseconds: 500);
 
   @override
   void initState() {
     super.initState();
-    _tick();
+    _pulseAnim = AnimationController(vsync: this, duration: _pulseDuration);
+    _expandAnim = AnimationController(vsync: this, duration: _expandDuration);
+    _runCountdown();
   }
 
   bool get _alive =>
@@ -26,16 +37,13 @@ class _CountdownOverlayState extends State<CountdownOverlay> {
       !_cancelled &&
       widget.game.playState == PlayState.countdown;
 
-  /// Delay that freezes while the engine is paused.
   Future<bool> _pauseAwareDelay(int ms) async {
     final sw = Stopwatch()..start();
     while (sw.elapsedMilliseconds < ms) {
       if (!_alive) return false;
-      await Future.delayed(const Duration(milliseconds: 30));
-      // While paused, don't count elapsed time
+      await Future.delayed(const Duration(milliseconds: 16));
       if (widget.game.paused) {
         sw.stop();
-        // Wait until unpaused or cancelled
         while (widget.game.paused && _alive) {
           await Future.delayed(const Duration(milliseconds: 30));
         }
@@ -46,55 +54,178 @@ class _CountdownOverlayState extends State<CountdownOverlay> {
     return _alive;
   }
 
-  void _tick() async {
-    for (int i = 3; i >= 1; i--) {
+  void _runCountdown() async {
+    // 3 heartbeat pulses
+    for (int i = 0; i < 3; i++) {
       if (!_alive) return;
-      if (mounted) setState(() => _count = i);
-      if (!await _pauseAwareDelay(700)) return;
+      setState(() => _pulseIndex = i);
+      _pulseAnim.forward(from: 0);
+      if (!await _pauseAwareDelay(_pulseDuration.inMilliseconds + _pauseBetween)) return;
     }
+
+    // Final expand
     if (!_alive) return;
-    if (mounted) setState(() => _count = 0); // "GO"
-    if (!await _pauseAwareDelay(500)) return;
+    setState(() => _finalExpand = true);
+    _expandAnim.forward(from: 0);
+    if (!await _pauseAwareDelay(_expandDuration.inMilliseconds)) return;
+
     widget.game.endCountdown();
   }
 
   @override
   void dispose() {
     _cancelled = true;
+    _pulseAnim.dispose();
+    _expandAnim.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final label = _count > 0 ? '$_count' : 'GO';
-    final isGo = _count == 0;
-    final biome = BiomeManager.getBiome(widget.game.score);
-    final glowColor = isGo ? const Color(0xFF44FF44) : biome.lineL;
+    final skin = widget.game.skinService.currentSkin;
+    final leftColor = skin.leftColor;
+    final rightColor = skin.rightColor;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final centerX = screenWidth / 2;
 
-    return Center(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        transitionBuilder: (child, animation) => ScaleTransition(
-          scale: animation,
-          child: FadeTransition(opacity: animation, child: child),
-        ),
-        child: Text(
-          label,
-          key: ValueKey(_count),
-          style: TextStyle(
-            fontSize: isGo ? 56 : 72,
-            fontWeight: FontWeight.w900,
-            color: Colors.white,
-            letterSpacing: isGo ? 14 : 6,
-            height: 1,
-            shadows: [
-              Shadow(color: glowColor.withValues(alpha: 0.9), blurRadius: 24),
-              Shadow(color: glowColor.withValues(alpha: 0.6), blurRadius: 48),
-              Shadow(color: glowColor.withValues(alpha: 0.3), blurRadius: 80),
-            ],
+    return AnimatedBuilder(
+      animation: _finalExpand ? _expandAnim : _pulseAnim,
+      builder: (context, _) {
+        if (_finalExpand) {
+          return _buildFinalExpand(_expandAnim.value, centerX, screenWidth, screenHeight, leftColor, rightColor);
+        }
+
+        return _buildPulse(_pulseAnim.value, centerX, screenHeight, leftColor, rightColor);
+      },
+    );
+  }
+
+  Widget _buildPulse(double t, double centerX, double screenHeight, Color leftColor, Color rightColor) {
+    // Heartbeat: quick expand then contract
+    // Sharp attack, soft release
+    final curve = t < 0.3
+        ? Curves.easeOut.transform(t / 0.3) // fast expand
+        : Curves.easeInCubic.transform((1.0 - t) / 0.7); // slow contract
+    final intensity = curve;
+
+    // Each pulse gets stronger
+    final pulseStrength = 0.4 + _pulseIndex * 0.3; // 0.4, 0.7, 1.0
+    final width = 1.0 + intensity * 8 * pulseStrength;
+    final alpha = intensity * 0.5 * pulseStrength;
+    final glowRadius = 4.0 + intensity * 20 * pulseStrength;
+
+    return Stack(
+      children: [
+        // Glow behind the line
+        Positioned(
+          left: centerX - glowRadius,
+          top: 0,
+          bottom: 0,
+          width: glowRadius * 2,
+          child: Opacity(
+            opacity: alpha * 0.4,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Colors.transparent,
+                    Color.lerp(leftColor, rightColor, 0.5)!.withValues(alpha: 0.6),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+
+        // Main mirror line
+        Positioned(
+          left: centerX - width / 2,
+          top: 0,
+          bottom: 0,
+          child: Container(
+            width: width,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  leftColor.withValues(alpha: alpha * 0.6),
+                  Color.lerp(leftColor, rightColor, 0.5)!.withValues(alpha: alpha),
+                  rightColor.withValues(alpha: alpha * 0.6),
+                  Colors.transparent,
+                ],
+                stops: const [0.0, 0.2, 0.5, 0.8, 1.0],
+              ),
+            ),
+          ),
+        ),
+
+        // Bright center core
+        Positioned(
+          left: centerX - width * 0.3,
+          top: screenHeight * 0.3,
+          bottom: screenHeight * 0.3,
+          child: Container(
+            width: width * 0.6,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.white.withValues(alpha: alpha * 0.4),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFinalExpand(double t, double centerX, double screenWidth, double screenHeight, Color leftColor, Color rightColor) {
+    final expandT = Curves.easeOutCubic.transform(t);
+    final fadeT = Curves.easeIn.transform(t);
+
+    // Line expands from thin to full screen width
+    final width = 2.0 + expandT * screenWidth;
+    final alpha = (1.0 - fadeT) * 0.35;
+
+    return Stack(
+      children: [
+        // Expanding flash
+        Positioned(
+          left: centerX - width / 2,
+          top: 0,
+          bottom: 0,
+          child: Opacity(
+            opacity: alpha,
+            child: Container(
+              width: width,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    leftColor.withValues(alpha: 0.0),
+                    leftColor,
+                    Colors.white,
+                    rightColor,
+                    rightColor.withValues(alpha: 0.0),
+                  ],
+                  stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

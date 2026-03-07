@@ -103,38 +103,59 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         : color;
     canvas.drawRRect(bodyRect, Paint()..color = bodyColor);
 
-    // Decoration
-    final decoration = game.skinService.currentSkin.decoration;
-    _drawDecoration(canvas, decoration, bodyColor);
+    // Head decoration
+    _drawHeadDecoration(canvas, skin.headDecoration, bodyColor);
 
     // Eyes
     final eyePaint = Paint()..color = const Color(0x80000000);
-    final eyeY = decoration == SkinDecoration.goggles ? 10.0 : 10.0;
-    canvas.drawCircle(Offset(pw / 2 - 4, eyeY), 2.5, eyePaint);
-    canvas.drawCircle(Offset(pw / 2 + 4, eyeY), 2.5, eyePaint);
+    canvas.drawCircle(Offset(pw / 2 - 4, 10), 2.5, eyePaint);
+    canvas.drawCircle(Offset(pw / 2 + 4, 10), 2.5, eyePaint);
 
-    // Goggles drawn over eyes
-    if (decoration == SkinDecoration.goggles) {
-      _drawGoggles(canvas, bodyColor);
+    // Face decoration (over eyes)
+    _drawFaceDecoration(canvas, skin.faceDecoration, bodyColor);
+  }
+
+  void _drawHeadDecoration(Canvas canvas, HeadDecoration deco, Color bodyColor) {
+    switch (deco) {
+      case HeadDecoration.none:
+        break;
+      case HeadDecoration.iceCrown:
+        _drawIceCrown(canvas, bodyColor);
+      case HeadDecoration.flames:
+        _drawFlames(canvas, bodyColor);
+      case HeadDecoration.crown:
+        _drawCrown(canvas);
+      case HeadDecoration.antenna:
+        _drawAntenna(canvas, bodyColor);
+      case HeadDecoration.halo:
+        _drawHalo(canvas, bodyColor);
+      case HeadDecoration.horns:
+        _drawHorns(canvas, bodyColor);
+      case HeadDecoration.wings:
+        _drawWings(canvas, bodyColor);
+      case HeadDecoration.mohawk:
+        _drawMohawk(canvas, bodyColor);
+      case HeadDecoration.star:
+        _drawStar(canvas, bodyColor);
     }
   }
 
-  void _drawDecoration(Canvas canvas, SkinDecoration decoration, Color bodyColor) {
-    switch (decoration) {
-      case SkinDecoration.none:
+  void _drawFaceDecoration(Canvas canvas, FaceDecoration deco, Color bodyColor) {
+    switch (deco) {
+      case FaceDecoration.none:
         break;
-      case SkinDecoration.iceCrown:
-        _drawIceCrown(canvas, bodyColor);
-      case SkinDecoration.flames:
-        _drawFlames(canvas, bodyColor);
-      case SkinDecoration.crown:
-        _drawCrown(canvas);
-      case SkinDecoration.goggles:
-        break; // drawn after eyes
-      case SkinDecoration.antenna:
-        _drawAntenna(canvas, bodyColor);
-      case SkinDecoration.halo:
-        _drawHalo(canvas, bodyColor);
+      case FaceDecoration.goggles:
+        _drawGoggles(canvas, bodyColor);
+      case FaceDecoration.visor:
+        _drawVisor(canvas, bodyColor);
+      case FaceDecoration.mask:
+        _drawMask(canvas, bodyColor);
+      case FaceDecoration.monocle:
+        _drawMonocle(canvas, bodyColor);
+      case FaceDecoration.scar:
+        _drawScar(canvas, bodyColor);
+      case FaceDecoration.shades:
+        _drawShades(canvas, bodyColor);
     }
   }
 
@@ -144,7 +165,6 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
       ..color = const Color(0x4400CCFF)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
-    // Three ice crystal spikes
     for (final dx in [-5.0, 0.0, 5.0]) {
       final h = dx == 0 ? -8.0 : -5.5;
       final path = Path()
@@ -203,7 +223,6 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     canvas.drawPath(path, glowPaint);
     canvas.drawPath(path, paint);
 
-    // Jewels
     final jewelPaint = Paint()..color = const Color(0xFFFF4444);
     canvas.drawCircle(Offset(pw / 2, -4), 1.2, jewelPaint);
   }
@@ -220,10 +239,8 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
-    // Strap
     canvas.drawLine(Offset(0, 10), Offset(pw, 10), strapPaint);
 
-    // Left lens
     final ll = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2 - 4, 10), width: 7, height: 6),
       const Radius.circular(2),
@@ -232,7 +249,6 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     canvas.drawRRect(ll, framePaint);
     canvas.drawCircle(Offset(pw / 2 - 5.5, 8.5), 1, lensGlare);
 
-    // Right lens
     final rl = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2 + 4, 10), width: 7, height: 6),
       const Radius.circular(2),
@@ -246,14 +262,12 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     final t = _totalTime * 3;
     final bobY = sin(t) * 2;
 
-    // Antenna stick
     final stickPaint = Paint()
       ..color = const Color(0x99FFFFFF)
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(pw / 2, 2), Offset(pw / 2, -8 + bobY), stickPaint);
 
-    // Glowing tip
     final tipY = -9.0 + bobY;
     canvas.drawCircle(
       Offset(pw / 2, tipY),
@@ -274,7 +288,6 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     final bobY = sin(t) * 1.5;
     final haloY = -6.0 + bobY;
 
-    // Halo glow
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pw / 2, haloY), width: 20, height: 6),
       Paint()
@@ -282,13 +295,195 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
 
-    // Halo ring
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pw / 2, haloY), width: 18, height: 5),
       Paint()
         ..color = const Color(0xCCFFFFFF)
         ..strokeWidth = 1.5
         ..style = PaintingStyle.stroke,
+    );
+  }
+
+  void _drawHorns(Canvas canvas, Color bodyColor) {
+    final paint = Paint()..color = const Color(0xDDCC2222);
+    final glow = Paint()
+      ..color = const Color(0x40FF0000)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    for (final side in [-1.0, 1.0]) {
+      final path = Path()
+        ..moveTo(pw / 2 + side * 4, 2)
+        ..quadraticBezierTo(pw / 2 + side * 9, -2, pw / 2 + side * 8, -8)
+        ..lineTo(pw / 2 + side * 6, -1)
+        ..close();
+      canvas.drawPath(path, glow);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawWings(Canvas canvas, Color bodyColor) {
+    final flapY = sin(_totalTime * 6) * 2;
+    final paint = Paint()..color = bodyColor.withValues(alpha: 0.6);
+    final glow = Paint()
+      ..color = bodyColor.withValues(alpha: 0.2)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    for (final side in [-1.0, 1.0]) {
+      final wingX = pw / 2 + side * 14;
+      final path = Path()
+        ..moveTo(pw / 2 + side * 10, 8)
+        ..quadraticBezierTo(wingX + side * 4, 2 + flapY, wingX + side * 2, -2 + flapY)
+        ..quadraticBezierTo(wingX, 6 + flapY, pw / 2 + side * 10, 18)
+        ..close();
+      canvas.drawPath(path, glow);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawMohawk(Canvas canvas, Color bodyColor) {
+    final paint = Paint()..color = bodyColor;
+    final glow = Paint()
+      ..color = bodyColor.withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    for (int i = 0; i < 5; i++) {
+      final dx = (i - 2) * 3.0;
+      final h = i == 2 ? -10.0 : (i == 1 || i == 3 ? -7.0 : -4.0);
+      final path = Path()
+        ..moveTo(pw / 2 + dx - 1.5, 1)
+        ..lineTo(pw / 2 + dx, h)
+        ..lineTo(pw / 2 + dx + 1.5, 1)
+        ..close();
+      canvas.drawPath(path, glow);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawStar(Canvas canvas, Color bodyColor) {
+    final bobY = sin(_totalTime * 4) * 2;
+    final starY = -10.0 + bobY;
+    final cx = pw / 2;
+    final starPaint = Paint()..color = const Color(0xFFFFDD44);
+    final starGlow = Paint()
+      ..color = const Color(0x60FFDD44)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    final path = Path();
+    for (int i = 0; i < 5; i++) {
+      final outerAngle = -pi / 2 + i * 2 * pi / 5;
+      final innerAngle = outerAngle + pi / 5;
+      final ox = cx + cos(outerAngle) * 5;
+      final oy = starY + sin(outerAngle) * 5;
+      final ix = cx + cos(innerAngle) * 2;
+      final iy = starY + sin(innerAngle) * 2;
+      if (i == 0) {
+        path.moveTo(ox, oy);
+      } else {
+        path.lineTo(ox, oy);
+      }
+      path.lineTo(ix, iy);
+    }
+    path.close();
+    canvas.drawPath(path, starGlow);
+    canvas.drawPath(path, starPaint);
+  }
+
+  void _drawVisor(Canvas canvas, Color bodyColor) {
+    final visorRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(pw / 2, 10), width: pw - 2, height: 5),
+      const Radius.circular(2.5),
+    );
+    canvas.drawRRect(visorRect, Paint()
+      ..color = bodyColor.withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+    canvas.drawRRect(visorRect, Paint()..color = bodyColor.withValues(alpha: 0.7));
+    canvas.drawLine(
+      Offset(3, 9),
+      Offset(pw - 3, 9),
+      Paint()
+        ..color = const Color(0x55FFFFFF)
+        ..strokeWidth = 0.8,
+    );
+  }
+  void _drawMask(Canvas canvas, Color bodyColor) {
+    final maskRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(pw / 2, 10), width: pw + 2, height: 7),
+      const Radius.circular(3.5),
+    );
+    canvas.drawRRect(maskRect, Paint()..color = const Color(0xDD111111));
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(pw / 2 - 4, 10), width: 6, height: 5),
+      Paint()..color = const Color(0xFF222222),
+    );
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(pw / 2 + 4, 10), width: 6, height: 5),
+      Paint()..color = const Color(0xFF222222),
+    );
+  }
+
+  void _drawMonocle(Canvas canvas, Color bodyColor) {
+    canvas.drawLine(
+      Offset(pw / 2 + 4, 13),
+      Offset(pw / 2 + 7, 22),
+      Paint()
+        ..color = const Color(0x99FFD700)
+        ..strokeWidth = 0.7,
+    );
+    canvas.drawCircle(
+      Offset(pw / 2 + 4, 10),
+      4.5,
+      Paint()
+        ..color = const Color(0xCCFFD700)
+        ..strokeWidth = 1.2
+        ..style = PaintingStyle.stroke,
+    );
+    canvas.drawCircle(
+      Offset(pw / 2 + 3, 8.5),
+      1.2,
+      Paint()..color = const Color(0x44FFFFFF),
+    );
+  }
+
+  void _drawScar(Canvas canvas, Color bodyColor) {
+    final scarPaint = Paint()
+      ..color = const Color(0xCCCC4444)
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(pw / 2 - 7, 5), Offset(pw / 2 - 1, 15), scarPaint);
+    for (final dy in [-2.0, 1.0, 4.0]) {
+      final cx = pw / 2 - 4 + dy * 0.5;
+      canvas.drawLine(
+        Offset(cx - 1.5, 10 + dy - 0.5),
+        Offset(cx + 1.5, 10 + dy + 0.5),
+        Paint()
+          ..color = const Color(0x88CC4444)
+          ..strokeWidth = 0.9,
+      );
+    }
+  }
+
+  void _drawShades(Canvas canvas, Color bodyColor) {
+    canvas.drawLine(
+      Offset(pw / 2 - 3.5, 9), Offset(pw / 2 + 3.5, 9),
+      Paint()..color = const Color(0xCC111111)..strokeWidth = 1.2,
+    );
+    final ll = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(pw / 2 - 4.5, 10), width: 9, height: 6),
+      const Radius.circular(1.8),
+    );
+    canvas.drawRRect(ll, Paint()..color = const Color(0xEE111111));
+    canvas.drawRRect(ll, Paint()
+      ..color = const Color(0x33FFFFFF)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke);
+    final rl = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset(pw / 2 + 4.5, 10), width: 9, height: 6),
+      const Radius.circular(1.8),
+    );
+    canvas.drawRRect(rl, Paint()..color = const Color(0xEE111111));
+    canvas.drawRRect(rl, Paint()
+      ..color = const Color(0x33FFFFFF)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke);
+    canvas.drawLine(
+      Offset(pw / 2 - 7, 8.5), Offset(pw / 2 - 2, 8.5),
+      Paint()..color = const Color(0x33FFFFFF)..strokeWidth = 0.8,
     );
   }
 }

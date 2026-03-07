@@ -1,4 +1,5 @@
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game/mirror_run_game.dart';
@@ -11,6 +12,8 @@ import 'ui/death_screen.dart';
 import 'ui/settings_screen.dart';
 import 'ui/stats_screen.dart';
 import 'ui/skin_selector.dart';
+import 'ui/skin_builder.dart';
+import 'ui/debug_overlay.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,11 +28,7 @@ void main() {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0a0a0f),
-      ),
       home: Scaffold(
-        backgroundColor: const Color(0xFF0a0a0f),
         body: SwipeController(
           game: game,
           child: GameWidget(
@@ -50,12 +49,12 @@ void main() {
             overlayBuilderMap: {
               'MenuScreen': (context, game) =>
                   MenuScreen(game: game as MirrorRunGame),
-              'HudOverlay': (context, game) =>
-                  HudOverlay(game: game as MirrorRunGame),
-              'BiomeBanner': (context, game) =>
-                  BiomeBanner(game: game as MirrorRunGame),
               'Countdown': (context, game) =>
                   CountdownOverlay(game: game as MirrorRunGame),
+              'BiomeBanner': (context, game) =>
+                  BiomeBanner(game: game as MirrorRunGame),
+              'HudOverlay': (context, game) =>
+                  HudOverlay(game: game as MirrorRunGame),
               'DeathScreen': (context, game) =>
                   DeathScreen(game: game as MirrorRunGame),
               'SettingsScreen': (context, game) =>
@@ -64,6 +63,11 @@ void main() {
                   StatsScreen(game: game as MirrorRunGame),
               'SkinSelector': (context, game) =>
                   SkinSelector(game: game as MirrorRunGame),
+              'SkinBuilder': (context, game) =>
+                  SkinBuilder(game: game as MirrorRunGame),
+              if (kDebugMode)
+                'DebugOverlay': (context, game) =>
+                    DebugOverlay(game: game as MirrorRunGame),
             },
           ),
         ),

@@ -8,7 +8,7 @@ Obstacles fly at you from above — walls, spikes, double barriers, and shifters
 YOUR BRAIN VS. THE MIRROR
 Just when you think you've got the rhythm, the game throws curveballs:
 - Mirror Swap — controls flip completely. Left is right. Right is left. Good luck.
-- Phantom Mode — your runners fade out. Navigate blind for a heart-stopping moment.
+- Phantom Mode — obstacles turn invisible. Memorize their positions before they vanish!
 
 11 BIOMES. 11 WORLDS.
 Push further to unlock stunning new environments:
@@ -24,6 +24,9 @@ Earn new looks as you explore further:
 - Ocean — deep-sea diver vibes
 - Neon — maximum cyberpunk energy
 - Void — ethereal halo for the elite
+
+CUSTOM SKIN CREATOR
+Design your own runners from scratch. Pick any color for each side, choose head and face decorations, name your creation, and save up to 5 custom skins. Make your runners truly yours.
 
 COMPETE & CLIMB
 - Global leaderboard — see how you rank worldwide

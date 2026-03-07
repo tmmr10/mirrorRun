@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import 'tap_scale.dart';
 
 class DeathScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -15,6 +16,7 @@ class DeathScreen extends StatefulWidget {
 class _DeathScreenState extends State<DeathScreen> {
   bool _canInteract = false;
   bool _adWasShown = false;
+  bool _isPurchasing = false;
 
   @override
   void initState() {
@@ -22,21 +24,40 @@ class _DeathScreenState extends State<DeathScreen> {
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) setState(() => _canInteract = true);
     });
+    widget.game.adService.onAdFreeChanged = () {
+      if (mounted) setState(() {});
+    };
+    // Show ad immediately after death if applicable
+    final adService = widget.game.adService;
+    if (adService.shouldShowAd(widget.game.lastRunDuration)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        adService.showAd(() {
+          if (mounted) setState(() => _adWasShown = true);
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.game.adService.onAdFreeChanged = null;
+    super.dispose();
   }
 
   void _retry() {
     if (!_canInteract) return;
-    final adService = widget.game.adService;
-    if (adService.shouldShowAd(widget.game.lastRunDuration)) {
-      adService.showAd(() {
-        if (mounted) {
-          setState(() => _adWasShown = true);
-          widget.game.startGame();
-        }
-      });
-    } else {
-      widget.game.startGame();
-    }
+    widget.game.startGame();
+  }
+
+  String _getMotivationalText(int score) {
+    if (score < 30) return 'KEEP GOING';
+    if (score < 100) return 'NOT BAD';
+    if (score < 250) return 'NICE RUN';
+    if (score < 500) return 'IMPRESSIVE';
+    if (score < 1000) return 'INCREDIBLE';
+    if (score < 2000) return 'UNSTOPPABLE';
+    return 'LEGENDARY';
   }
 
   void _menu() {
@@ -82,38 +103,104 @@ class _DeathScreenState extends State<DeathScreen> {
 
               const SizedBox(height: 24),
 
+              // Motivational text
+              ValueListenableBuilder<int>(
+                valueListenable: widget.game.scoreNotifier,
+                builder: (context, score, child) {
+                  final text = _getMotivationalText(score);
+                  return Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.45),
+                      letterSpacing: 5,
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: 500.ms);
+                },
+              ),
+
+              const SizedBox(height: 16),
+
               // Score
               ValueListenableBuilder<int>(
                 valueListenable: widget.game.scoreNotifier,
-                builder: (context, score, child) => Column(
-                  children: [
-                    Text(
-                      '$score',
-                      style: const TextStyle(
-                        fontSize: 64,
-                        fontWeight: FontWeight.w100,
-                        color: Colors.white,
-                        letterSpacing: 4,
-                        height: 1,
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 300.ms, delay: 800.ms)
-                        .scale(begin: const Offset(1.5, 1.5), end: const Offset(1, 1), duration: 400.ms, delay: 800.ms, curve: Curves.easeOutCubic),
-                    const SizedBox(height: 4),
-                    Text(
-                      'METER',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withValues(alpha: 0.3),
-                        letterSpacing: 6,
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 400.ms, delay: 1000.ms),
-                  ],
-                ),
+                builder: (context, score, child) {
+                  final skin = widget.game.skinService.currentSkin;
+                  final leftColor = skin.leftColor;
+                  final rightColor = skin.rightColor;
+                  return Column(
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [leftColor, Colors.white, rightColor],
+                          stops: const [0.0, 0.5, 1.0],
+                        ).createShader(bounds),
+                        child: Text(
+                          '$score',
+                          style: const TextStyle(
+                            fontSize: 72,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 4,
+                            height: 1,
+                            shadows: [
+                              Shadow(color: Colors.white24, blurRadius: 20),
+                            ],
+                          ),
+                        ),
+                      )
+                          .animate()
+                          .fadeIn(duration: 300.ms, delay: 800.ms)
+                          .scale(begin: const Offset(1.5, 1.5), end: const Offset(1, 1), duration: 400.ms, delay: 800.ms, curve: Curves.easeOutCubic),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 0.5,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  leftColor.withValues(alpha: 0.4),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'METER',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white.withValues(alpha: 0.5),
+                              letterSpacing: 8,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            width: 24,
+                            height: 0.5,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  rightColor.withValues(alpha: 0.4),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                          .animate()
+                          .fadeIn(duration: 400.ms, delay: 1000.ms),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 16),
@@ -200,7 +287,7 @@ class _DeathScreenState extends State<DeathScreen> {
               const SizedBox(height: 20),
 
               // Menu button
-              GestureDetector(
+              TapScale(
                 onTap: _menu,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -228,7 +315,7 @@ class _DeathScreenState extends State<DeathScreen> {
               const SizedBox(height: 12),
 
               // Leaderboard button
-              GestureDetector(
+              TapScale(
                 onTap: () {
                   if (_canInteract) widget.game.leaderboardService.showLeaderboard();
                 },
@@ -269,7 +356,7 @@ class _DeathScreenState extends State<DeathScreen> {
               const SizedBox(height: 12),
 
               // Share button
-              GestureDetector(
+              TapScale(
                 onTap: () {
                   if (!_canInteract) return;
                   try {
@@ -316,19 +403,44 @@ class _DeathScreenState extends State<DeathScreen> {
               // Ad-free hint (shown after an ad was displayed)
               if (_adWasShown && !widget.game.adService.isAdFree) ...[
                 const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: () => widget.game.adService.purchaseAdFree(),
-                  child: Text(
-                    'No more ads? Go ad free!',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.25),
-                      letterSpacing: 1,
+                TapScale(
+                  onTap: _isPurchasing ? null : () async {
+                    setState(() => _isPurchasing = true);
+                    await widget.game.adService.purchaseAdFree();
+                    if (mounted) setState(() => _isPurchasing = false);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFFB48CFF).withValues(alpha: 0.3),
+                        width: 0.5,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                      color: const Color(0xFFB48CFF).withValues(alpha: 0.06),
                     ),
+                    child: _isPurchasing
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
+                            ),
+                          )
+                        : Text(
+                            'REMOVE ADS',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFB48CFF).withValues(alpha: 0.7),
+                              letterSpacing: 3,
+                            ),
+                          ),
                   ),
                 )
                     .animate()
-                    .fadeIn(duration: 400.ms, delay: 2000.ms),
+                    .fadeIn(duration: 400.ms),
               ],
             ],
           ),

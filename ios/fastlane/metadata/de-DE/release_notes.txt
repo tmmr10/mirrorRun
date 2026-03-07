@@ -1,0 +1,11 @@
+NEU: Custom Skin Creator
+- Gestalte deine eigenen Runner mit beliebigen Farbkombinationen
+- Wähle aus 10 Kopf- und 7 Gesichtsdekorationen
+- Speichere bis zu 5 eigene Skins
+
+Verbesserungen:
+- Aufgeräumtere Gameplay-Optik
+- Neue Motivationstexte auf dem Tod-Bildschirm
+- Verfeinerte Countdown-Animation
+- Neuer Glas-Splitter Soundeffekt
+- Neugestalteter Skin-Selector mit besserer Übersicht

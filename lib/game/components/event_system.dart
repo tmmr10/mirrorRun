@@ -35,6 +35,23 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
   /// Min score before events can trigger.
   static const int _minScore = 40;
 
+  /// Force-activate an event (for screenshots/debug).
+  void forceEvent(GameEvent event) {
+    activeEvent = event;
+    _eventCooldown = 999;
+    switch (event) {
+      case GameEvent.phantom:
+        _eventTimer = _phantomDuration;
+        phantomFade = 0.3;
+      case GameEvent.mirrorSwap:
+        _eventTimer = _swapDuration;
+        mirrorSwapped = true;
+        swapFlash = 0.4;
+    }
+    game.eventWarningNotifier.value = null;
+    game.eventNotifier.value = event;
+  }
+
   bool get isWarning => _pendingEvent != null && _warningTimer > 0;
   String get warningLabel => _pendingEvent == GameEvent.phantom ? 'PHANTOM' : 'SWAP';
 

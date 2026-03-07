@@ -1,1 +1,1 @@
-endless runner,mirror,dodge,neon,cyberpunk,reflex,split screen,obstacle,arcade,fast
+endless runner,mirror,dodge,neon,cyberpunk,reflex,split screen,custom skin,arcade,fast

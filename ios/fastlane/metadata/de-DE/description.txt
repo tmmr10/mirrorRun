@@ -8,7 +8,7 @@ Hindernisse rasen von oben auf dich zu — Wände, Spikes, Doppelbarrieren und S
 DEIN HIRN VS. DER SPIEGEL
 Gerade wenn du den Rhythmus gefunden hast, wird alles auf den Kopf gestellt:
 - Mirror Swap — die Steuerung dreht sich komplett um. Links ist rechts. Rechts ist links.
-- Phantom-Modus — deine Runner werden unsichtbar. Navigiere blind durch den Moment.
+- Phantom-Modus — Hindernisse werden unsichtbar. Merk dir ihre Positionen, bevor sie verschwinden!
 
 11 BIOME. 11 WELTEN.
 Lauf weiter und schalte atemberaubende neue Umgebungen frei:
@@ -24,6 +24,9 @@ Verdiene dir neue Looks auf deiner Reise:
 - Ocean — Tiefseetaucher-Vibes
 - Neon — maximale Cyberpunk-Energie
 - Void — ätherischer Heiligenschein für die Elite
+
+CUSTOM SKIN CREATOR
+Gestalte deine eigenen Runner von Grund auf. Wähle jede beliebige Farbe für jede Seite, kombiniere Kopf- und Gesichtsdekorationen, gib deiner Kreation einen Namen und speichere bis zu 5 eigene Skins. Mach deine Runner einzigartig.
 
 WETTBEWERB
 - Globale Bestenliste — sieh wo du weltweit stehst

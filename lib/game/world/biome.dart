@@ -78,9 +78,9 @@ class BiomeManager {
       ],
     ),
 
-    // 2. City (100m)
+    // 2. City (75m)
     BiomeData(
-      startM: 100,
+      startM: 75,
       name: 'CITY',
       type: BiomeType.city,
       skyL: [Color(0xFF1a1a2a), Color(0xFF0a0a15)],
@@ -94,14 +94,14 @@ class BiomeManager {
       obsGlowL: Color(0xCC465a82),
       obsGlowR: Color(0xCC823737),
       phases: [
-        BiomePhase(maxM: 150, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter, ObstacleType.doubleWall], minInterval: 100),
+        BiomePhase(maxM: 125, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter, ObstacleType.doubleWall], minInterval: 100),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 80),
       ],
     ),
 
-    // 3. Crystal (200m)
+    // 3. Crystal (175m)
     BiomeData(
-      startM: 200,
+      startM: 175,
       name: 'CRYSTAL',
       type: BiomeType.crystal,
       skyL: [Color(0xFF0a1a2a), Color(0xFF050d18)],
@@ -115,15 +115,15 @@ class BiomeManager {
       obsGlowL: Color(0xCC40CCEE),
       obsGlowR: Color(0xCC30BBDD),
       phases: [
-        BiomePhase(maxM: 260, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 90),
-        BiomePhase(maxM: 320, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 80),
+        BiomePhase(maxM: 230, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 90),
+        BiomePhase(maxM: 275, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 80),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 72),
       ],
     ),
 
-    // 4. Volcano (350m)
+    // 4. Volcano (300m)
     BiomeData(
-      startM: 350,
+      startM: 300,
       name: 'VOLCANO',
       type: BiomeType.volcano,
       skyL: [Color(0xFF2a0800), Color(0xFF120400)],
@@ -137,14 +137,14 @@ class BiomeManager {
       obsGlowL: Color(0xCCff6600),
       obsGlowR: Color(0xCCdd4400),
       phases: [
-        BiomePhase(maxM: 450, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 85),
+        BiomePhase(maxM: 400, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 85),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 65),
       ],
     ),
 
-    // 5. Desert (600m)
+    // 5. Desert (500m)
     BiomeData(
-      startM: 600,
+      startM: 500,
       name: 'DESERT',
       type: BiomeType.desert,
       skyL: [Color(0xFF2a1a08), Color(0xFF180e04)],
@@ -158,15 +158,15 @@ class BiomeManager {
       obsGlowL: Color(0xCCCC9933),
       obsGlowR: Color(0xCCBB8822),
       phases: [
-        BiomePhase(maxM: 750, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 78),
-        BiomePhase(maxM: 900, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 66),
+        BiomePhase(maxM: 600, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 78),
+        BiomePhase(maxM: 700, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 66),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 58),
       ],
     ),
 
-    // 6. Ocean (1000m)
+    // 6. Ocean (750m)
     BiomeData(
-      startM: 1000,
+      startM: 750,
       name: 'OCEAN',
       type: BiomeType.ocean,
       skyL: [Color(0xFF041828), Color(0xFF020c18)],
@@ -180,14 +180,14 @@ class BiomeManager {
       obsGlowL: Color(0xCC20a0dd),
       obsGlowR: Color(0xCC0080cc),
       phases: [
-        BiomePhase(maxM: 1200, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 70),
+        BiomePhase(maxM: 900, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 70),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 52),
       ],
     ),
 
-    // 7. Ruins (1500m)
+    // 7. Ruins (1000m)
     BiomeData(
-      startM: 1500,
+      startM: 1000,
       name: 'RUINS',
       type: BiomeType.ruins,
       skyL: [Color(0xFF0a1a0a), Color(0xFF050d05)],
@@ -201,15 +201,15 @@ class BiomeManager {
       obsGlowL: Color(0xCC5A8A5A),
       obsGlowR: Color(0xCC6A7A5A),
       phases: [
-        BiomePhase(maxM: 1750, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 62),
-        BiomePhase(maxM: 2000, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 52),
+        BiomePhase(maxM: 1200, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 62),
+        BiomePhase(maxM: 1350, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 52),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 46),
       ],
     ),
 
-    // 8. Space (2100m)
+    // 8. Space (1400m)
     BiomeData(
-      startM: 2100,
+      startM: 1400,
       name: 'SPACE',
       type: BiomeType.space,
       skyL: [Color(0xFF050510), Color(0xFF000008)],
@@ -223,14 +223,14 @@ class BiomeManager {
       obsGlowL: Color(0xCC143c78),
       obsGlowR: Color(0xCC500f28),
       phases: [
-        BiomePhase(maxM: 2400, types: [ObstacleType.wall, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 55),
+        BiomePhase(maxM: 1650, types: [ObstacleType.wall, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 55),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 42),
       ],
     ),
 
-    // 9. Storm (2800m)
+    // 9. Storm (1900m)
     BiomeData(
-      startM: 2800,
+      startM: 1900,
       name: 'STORM',
       type: BiomeType.storm,
       skyL: [Color(0xFF0a0418), Color(0xFF05020c)],
@@ -244,15 +244,15 @@ class BiomeManager {
       obsGlowL: Color(0xCC7744BB),
       obsGlowR: Color(0xCC9944AA),
       phases: [
-        BiomePhase(maxM: 3100, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 48),
-        BiomePhase(maxM: 3400, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 42),
+        BiomePhase(maxM: 2100, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall], minInterval: 48),
+        BiomePhase(maxM: 2350, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 42),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 38),
       ],
     ),
 
-    // 10. Neon (3600m)
+    // 10. Neon (2500m)
     BiomeData(
-      startM: 3600,
+      startM: 2500,
       name: 'NEON',
       type: BiomeType.neon,
       skyL: [Color(0xFF0a0020), Color(0xFF060014)],
@@ -266,14 +266,14 @@ class BiomeManager {
       obsGlowL: Color(0xCC8800ff),
       obsGlowR: Color(0xCCff0088),
       phases: [
-        BiomePhase(maxM: 4000, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 42),
+        BiomePhase(maxM: 2800, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 42),
         BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 34),
       ],
     ),
 
-    // 11. Void (4500m)
+    // 11. Void (3200m)
     BiomeData(
-      startM: 4500,
+      startM: 3200,
       name: 'VOID',
       type: BiomeType.void_,
       skyL: [Color(0xFF020202), Color(0xFF000000)],

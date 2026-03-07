@@ -23,6 +23,26 @@
       "productID" : "remove_ads",
       "referenceName" : "Remove Ads",
       "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "2",
+      "localizations" : [
+        {
+          "description" : "Erstelle deinen eigenen individuellen Skin",
+          "displayName" : "Custom Skin Creator",
+          "locale" : "de"
+        },
+        {
+          "description" : "Create your own custom skin",
+          "displayName" : "Custom Skin Creator",
+          "locale" : "en"
+        }
+      ],
+      "productID" : "custom_skin_creator",
+      "referenceName" : "Custom Skin Creator",
+      "type" : "NonConsumable"
     }
   ],
   "settings" : {

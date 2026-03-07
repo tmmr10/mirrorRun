@@ -41,6 +41,7 @@ class Background extends PositionComponent with HasGameReference<MirrorRunGame> 
   }
 
   void spawnInitialDecos() {
+    _decos.clear();
     for (int i = 0; i < 6; i++) {
       _spawnDeco(atX: vw + i * 120 - vw);
     }
@@ -76,7 +77,7 @@ class Background extends PositionComponent with HasGameReference<MirrorRunGame> 
     _drawSky(canvas, biome);
     _drawDecos(canvas, biome);
     _drawGround(canvas, biome);
-    _drawLaneGuides(canvas);
+    // _drawLaneGuides(canvas);
   }
 
   void _drawSky(Canvas canvas, BiomeData biome) {

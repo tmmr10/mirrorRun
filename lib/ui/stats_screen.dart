@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import 'tap_scale.dart';
 
 class StatsScreen extends StatelessWidget {
   final MirrorRunGame game;
@@ -30,14 +31,32 @@ class StatsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'STATISTICS',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: _accent,
-                  letterSpacing: 6,
-                ),
+              Row(
+                children: [
+                  TapScale(
+                    onTap: () {
+                      game.overlays.remove('StatsScreen');
+                      game.overlays.add('SettingsScreen');
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Icon(
+                        Icons.arrow_back_ios_rounded,
+                        color: _accent.withValues(alpha: 0.5),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'STATISTICS',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: _accent,
+                      letterSpacing: 6,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 40),
               _statRow('TOTAL DISTANCE', '${stats.totalDistance}m'),
@@ -46,31 +65,6 @@ class StatsScreen extends StatelessWidget {
               _statRow('FURTHEST BIOME', furthestBiomeName),
               _statRow('BEST SCORE', '${best}m'),
               const Spacer(),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    game.overlays.remove('StatsScreen');
-                    game.overlays.add('SettingsScreen');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: _accent.withValues(alpha: 0.3), width: 0.5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'BACK',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _accent.withValues(alpha: 0.7),
-                        letterSpacing: 4,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),

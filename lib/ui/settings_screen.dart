@@ -1,6 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
+import '../game/world/biome.dart';
+import 'tap_scale.dart';
 
 class SettingsScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -11,8 +12,10 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const _accent = Color(0xFFB48CFF);
   bool _helpExpanded = false;
+  bool _biomesExpanded = false;
+
+  static const _accent = Color(0xFFB48CFF);
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +36,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
             slivers: [
               SliverList(
                 delegate: SliverChildListDelegate([
-              // Title
-              Text(
-                'SETTINGS',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: _accent,
-                  letterSpacing: 6,
-                ),
+              // Top bar with back button and title
+              Row(
+                children: [
+                  TapScale(
+                    onTap: () {
+                      widget.game.overlays.remove('SettingsScreen');
+                      widget.game.overlays.add('MenuScreen');
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Icon(
+                        Icons.arrow_back_ios_rounded,
+                        color: _accent.withValues(alpha: 0.5),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'SETTINGS',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: _accent,
+                      letterSpacing: 6,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 40),
 
@@ -70,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Help section
               _buildDivider(),
               const SizedBox(height: 16),
-              GestureDetector(
+              TapScale(
                 onTap: () => setState(() => _helpExpanded = !_helpExpanded),
                 child: Row(
                   children: [
@@ -117,12 +138,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               const SizedBox(height: 24),
 
-              const SizedBox(height: 8),
+              // Biomes overview
+              _buildDivider(),
+              const SizedBox(height: 16),
+              TapScale(
+                onTap: () => setState(() => _biomesExpanded = !_biomesExpanded),
+                child: Row(
+                  children: [
+                    Text(
+                      'BIOMES',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      _biomesExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.white.withValues(alpha: 0.4),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+              if (_biomesExpanded) ...[
+                const SizedBox(height: 16),
+                ...BiomeManager.biomes.map((b) {
+                  final isLast = b == BiomeManager.biomes.last;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: b.lineL,
+                            boxShadow: [
+                              BoxShadow(
+                                color: b.lineL.withValues(alpha: 0.5),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          b.name,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: b.lineL.withValues(alpha: 0.9),
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          isLast ? '${b.startM}m +' : '${b.startM}m',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.35),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+              const SizedBox(height: 24),
 
               // Leaderboard
               _buildDivider(),
               const SizedBox(height: 16),
-              GestureDetector(
+              TapScale(
                 onTap: () => widget.game.leaderboardService.showLeaderboard(),
                 child: Text(
                   'LEADERBOARD',
@@ -139,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Achievements
               _buildDivider(),
               const SizedBox(height: 16),
-              GestureDetector(
+              TapScale(
                 onTap: () => widget.game.leaderboardService.showAchievements(),
                 child: Text(
                   'ACHIEVEMENTS',
@@ -156,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Statistics
               _buildDivider(),
               const SizedBox(height: 16),
-              GestureDetector(
+              TapScale(
                 onTap: () {
                   widget.game.overlays.remove('SettingsScreen');
                   widget.game.overlays.add('StatsScreen');
@@ -177,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!widget.game.adService.isAdFree) ...[
                 _buildDivider(),
                 const SizedBox(height: 16),
-                GestureDetector(
+                TapScale(
                   onTap: () => widget.game.adService.restorePurchases(),
                   child: Text(
                     'RESTORE PURCHASES',
@@ -197,7 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Credits
               Center(
                 child: Text(
-                  'MIRROR RUN\nby tmmr',
+                  'MIRROR RUNNERS\nby tmmr',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 10,
@@ -211,7 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Licenses
               Center(
-                child: GestureDetector(
+                child: TapScale(
                   onTap: () {
                     showLicensePage(
                       context: context,
@@ -230,32 +322,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Back button
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    widget.game.overlays.remove('SettingsScreen');
-                    widget.game.overlays.add('MenuScreen');
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: _accent.withValues(alpha: 0.3), width: 0.5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'BACK',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _accent.withValues(alpha: 0.7),
-                        letterSpacing: 4,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ]),
               ),
             ],
@@ -266,7 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return GestureDetector(
+    return TapScale(
       onTap: () => onChanged(!value),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

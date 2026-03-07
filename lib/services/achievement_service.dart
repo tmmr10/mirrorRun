@@ -15,7 +15,7 @@ class AchievementService {
     if (!_signedIn) return;
 
     // Distance achievements
-    const distanceThresholds = [100, 500, 1000, 2000, 3000, 5000];
+    const distanceThresholds = [75, 100, 300, 750, 1400, 2500, 3200];
     for (final t in distanceThresholds) {
       if (runDistance >= t) {
         await _unlock('achievement_distance_$t');

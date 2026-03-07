@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/widgets.dart' show WidgetsBindingObserver, AppLifecycleState, WidgetsBinding;
 import '../game/components/event_system.dart';
+import '../game/game_state.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import 'tap_scale.dart';
 
 class HudOverlay extends StatefulWidget {
   final MirrorRunGame game;
@@ -12,8 +15,32 @@ class HudOverlay extends StatefulWidget {
   State<HudOverlay> createState() => _HudOverlayState();
 }
 
-class _HudOverlayState extends State<HudOverlay> {
+class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
   bool _showQuitConfirm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Show pause screen when app goes to background during gameplay
+    if ((state == AppLifecycleState.paused ||
+         state == AppLifecycleState.inactive) &&
+        widget.game.playState == PlayState.playing &&
+        !_showQuitConfirm) {
+      widget.game.pauseEngine();
+      setState(() => _showQuitConfirm = true);
+    }
+  }
 
   void _toggleQuit() {
     if (_showQuitConfirm) {
@@ -196,7 +223,7 @@ class _HudOverlayState extends State<HudOverlay> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Back button
-                GestureDetector(
+                TapScale(
                   onTap: _toggleQuit,
                   child: Container(
                     padding: const EdgeInsets.all(6),
@@ -254,10 +281,7 @@ class _HudOverlayState extends State<HudOverlay> {
                   builder: (context, score, child) {
                     final biome = BiomeManager.getBiome(score);
                     final glowColor = biome.lineL;
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
+                    return Text(
                           '$score',
                           style: TextStyle(
                             fontSize: 28,
@@ -270,17 +294,6 @@ class _HudOverlayState extends State<HudOverlay> {
                               Shadow(color: glowColor.withValues(alpha: 0.5), blurRadius: 40),
                             ],
                           ),
-                        ),
-                        Text(
-                          'm',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: glowColor.withValues(alpha: 0.7),
-                            letterSpacing: 3,
-                          ),
-                        ),
-                      ],
                     );
                   },
                 ),
@@ -342,7 +355,7 @@ class _HudOverlayState extends State<HudOverlay> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Continue button
-                        GestureDetector(
+                        TapScale(
                           onTap: _toggleQuit,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -371,7 +384,7 @@ class _HudOverlayState extends State<HudOverlay> {
                         const SizedBox(width: 16),
 
                         // Quit button
-                        GestureDetector(
+                        TapScale(
                           onTap: _quit,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

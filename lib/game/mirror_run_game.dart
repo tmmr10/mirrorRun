@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game_state.dart';
@@ -44,7 +45,15 @@ class MirrorRunGame extends FlameGame
   late AchievementService achievementService;
   late SkinService skinService;
 
+  /// Used by SkinSelector to pass edit index to SkinBuilder overlay.
+  int? skinBuilderEditIndex;
+
+  /// Optional preset values for SkinBuilder (used by screenshot tour).
+  Map<String, dynamic>? skinBuilderPreset;
+
   PlayState playState = PlayState.menu;
+
+  int debugStartScore = 0;
 
   int score = 0;
   double speed = 1.4;
@@ -100,9 +109,12 @@ class MirrorRunGame extends FlameGame
       debugPrint('>>> audio FAILED: $e');
     }
 
+    skinService = SkinService();
+    await skinService.init();
+
     adService = AdService();
     try {
-      await adService.init();
+      await adService.init(skinService: skinService);
       debugPrint('>>> ad OK, isAdFree=${adService.isAdFree}');
     } catch (e) {
       debugPrint('>>> ad FAILED: $e');
@@ -116,9 +128,6 @@ class MirrorRunGame extends FlameGame
 
     achievementService = AchievementService();
     achievementService.setSignedIn(leaderboardService.isSignedIn);
-
-    skinService = SkinService();
-    await skinService.init();
 
     debugPrint('>>> services done, setting up camera');
     camera.viewfinder.anchor = Anchor.topLeft;
@@ -139,14 +148,15 @@ class MirrorRunGame extends FlameGame
   void startGame() {
     playState = PlayState.countdown;
     _runStartTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
-    score = 0;
+    final startScore = kDebugMode ? debugStartScore : 0;
+    score = startScore;
     _frame = 0;
     _frameAccumulator = 0;
     speed = 1.8;
-    _lastBiomeIdx = 0;
+    _lastBiomeIdx = BiomeManager.getBiomeIndex(startScore);
 
-    scoreNotifier.value = 0;
-    biomeNotifier.value = 'FOREST';
+    scoreNotifier.value = startScore;
+    biomeNotifier.value = BiomeManager.getBiome(startScore).name;
     bestNotifier.value = highscoreService.getBest();
     newRecordNotifier.value = false;
     eventNotifier.value = null;
@@ -271,7 +281,7 @@ class MirrorRunGame extends FlameGame
 
   /// Called by SwipeController with the screen-space drag delta.
   void onDrag(double screenDx, double screenWidth) {
-    if (playState != PlayState.playing) return;
+    if (playState != PlayState.playing && playState != PlayState.countdown) return;
 
     final gameDx = screenDx * (vw / screenWidth);
     _movePlayer(gameDx);
@@ -302,7 +312,8 @@ class MirrorRunGame extends FlameGame
       _frameAccumulator -= 1.0 / 60.0;
       _frame++;
     }
-    score = (_frame * speed / 60).floor();
+    final base = kDebugMode ? debugStartScore : 0;
+    score = base + (_frame * speed / 60).floor();
     speed = min(6.0, 1.8 + score * 0.003);
     scoreNotifier.value = score;
 
@@ -369,8 +380,6 @@ class MirrorRunGame extends FlameGame
       }
       return KeyEventResult.ignored;
     }
-
-    if (playState == PlayState.countdown) return KeyEventResult.handled;
 
     if (playState == PlayState.dead) {
       if (canRetry) startGame();
