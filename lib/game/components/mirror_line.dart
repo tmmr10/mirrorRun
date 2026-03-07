@@ -6,12 +6,12 @@ import '../mirror_run_game.dart';
 
 class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> {
   static const double mid = 220;
-  static const double vh = 640;
+  double get vh => MirrorRunGame.vh;
   int _frame = 0;
 
   MirrorLine() : super(
     position: Vector2(mid - 3, 0),
-    size: Vector2(6, vh),
+    size: Vector2(6, 960),
     priority: 50,
   );
 

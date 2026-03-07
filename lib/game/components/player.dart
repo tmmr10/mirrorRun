@@ -14,7 +14,7 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
 
   static const double pw = 24;
   static const double ph = 34;
-  static const double groundY = 540;
+  static double get groundY => MirrorRunGame.groundY;
   static const double moveLerp = 0.25;
   static const double _fixedDt = 1.0 / 60.0;
 

@@ -20,7 +20,7 @@ class Obstacle extends PositionComponent with HasGameReference<MirrorRunGame> {
   final double secondLaneCenterX;
   final int secondLane;
 
-  static const double groundY = 540;
+  static double get groundY => MirrorRunGame.groundY;
   static const double playerH = 34;
 
   Obstacle({
@@ -40,7 +40,7 @@ class Obstacle extends PositionComponent with HasGameReference<MirrorRunGame> {
     super.update(dt);
     scrollPos += game.speed * 60 * dt;
     _updatePosition();
-    if (scrollPos > 700) removeFromParent();
+    if (scrollPos > MirrorRunGame.vh + 60) removeFromParent();
   }
 
   /// For shifter: interpolation factor 0..1 based on scroll progress.

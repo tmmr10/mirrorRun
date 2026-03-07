@@ -8,6 +8,7 @@ import '../models/player_skin.dart';
 /// An external script watches for these markers and takes screenshots.
 Future<void> runScreenshotTour(MirrorRunGame game) async {
   debugPrint('>>> SCREENSHOT_TOUR_START');
+  game.screenshotMode = true;
 
   // 1. Menu — Default skin
   await game.skinService.selectSkin(SkinId.default_);
@@ -92,5 +93,6 @@ Future<void> runScreenshotTour(MirrorRunGame game) async {
   game.overlays.remove('SkinBuilder');
   game.overlays.add('MenuScreen');
 
+  game.screenshotMode = false;
   debugPrint('>>> SCREENSHOT_TOUR_DONE');
 }

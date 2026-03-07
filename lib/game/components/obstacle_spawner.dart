@@ -6,8 +6,8 @@ import '../world/biome.dart';
 import 'obstacle.dart';
 
 class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
-  static const List<double> mirrorLanesL = [55, 120, 185];
-  static const List<double> mirrorLanesR = [255, 320, 385];
+  static const List<double> mirrorLanesL = [25, 110, 195];
+  static const List<double> mirrorLanesR = [245, 330, 415];
 
   /// The 3 valid lane states in mirror mode (left lane, right lane).
   static const List<(int, int)> validStates = [(0, 2), (1, 1), (2, 0)];

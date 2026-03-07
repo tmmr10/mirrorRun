@@ -7,19 +7,19 @@ import '../world/biome.dart';
 
 class Background extends PositionComponent with HasGameReference<MirrorRunGame> {
   static const double vw = 440;
-  static const double vh = 640;
+  double get vh => MirrorRunGame.vh;
   static const double mid = 220;
-  static const double groundY = 540;
+  double get groundY => MirrorRunGame.groundY;
 
-  static const List<double> mirrorLanesL = [55, 120, 185];
-  static const List<double> mirrorLanesR = [255, 320, 385];
+  static const List<double> mirrorLanesL = [25, 110, 195];
+  static const List<double> mirrorLanesR = [245, 330, 415];
 
   final List<_Deco> _decos = [];
   final _rng = Random();
   double _decoTimer = 0;
   int _frame = 0;
 
-  Background() : super(size: Vector2(vw, vh), priority: -100);
+  Background() : super(priority: -100);
 
   @override
   void update(double dt) {

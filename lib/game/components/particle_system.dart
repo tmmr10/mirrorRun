@@ -31,7 +31,7 @@ class ParticleSystem extends PositionComponent with HasGameReference<MirrorRunGa
     for (int i = 0; i < 25; i++) {
       _shards.add(_Shard(
         x: center.x + (_rng.nextDouble() - 0.5) * 40,
-        y: _rng.nextDouble() * 640,
+        y: _rng.nextDouble() * MirrorRunGame.vh,
         vx: (_rng.nextDouble() - 0.5) * 9 * 60,
         vy: (-2 - _rng.nextDouble() * 5) * 60,
         rot: _rng.nextDouble() * pi,

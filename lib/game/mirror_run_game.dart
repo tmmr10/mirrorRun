@@ -26,13 +26,14 @@ import '../services/stats_service.dart';
 class MirrorRunGame extends FlameGame
     with HasCollisionDetection, KeyboardEvents {
   static const double vw = 440;
-  static const double vh = 640;
-  static const List<double> mirrorLanesL = [55, 120, 185];
-  static const List<double> mirrorLanesR = [255, 320, 385];
+  static double vh = 956; // dynamic, updated in onGameResize
+  static double get groundY => vh - 160;
+  static const List<double> mirrorLanesL = [25, 110, 195];
+  static const List<double> mirrorLanesR = [245, 330, 415];
 
   /// Free-movement bounds for the left player.
-  static const double leftMinX = 55;
-  static const double leftMaxX = 185;
+  static const double leftMinX = 25;
+  static const double leftMaxX = 195;
   /// Fixed step for keyboard input.
   static const double _keyStep = 65;
 
@@ -54,6 +55,7 @@ class MirrorRunGame extends FlameGame
   PlayState playState = PlayState.menu;
 
   int debugStartScore = 0;
+  bool screenshotMode = false;
 
   int score = 0;
   double speed = 1.4;
@@ -81,13 +83,15 @@ class MirrorRunGame extends FlameGame
   late EventSystem eventSystem;
   int _lastBiomeIdx = -1;
 
-  MirrorRunGame()
-      : super(
-          camera: CameraComponent.withFixedResolution(
-            width: vw,
-            height: vh,
-          ),
-        );
+  MirrorRunGame() : super();
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    final zoom = size.x / vw;
+    camera.viewfinder.zoom = zoom;
+    vh = size.y / zoom;
+  }
 
   @override
   Future<void> onLoad() async {
@@ -219,7 +223,7 @@ class MirrorRunGame extends FlameGame
       HapticFeedback.heavyImpact();
     }
 
-    particleSystem.spawnShards(Vector2(220, 320));
+    particleSystem.spawnShards(Vector2(220, groundY));
 
     // Check highscore
     final best = highscoreService.getBest();

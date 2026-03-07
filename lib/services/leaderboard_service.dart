@@ -18,7 +18,14 @@ class LeaderboardService {
   }
 
   Future<void> submitScore(int score) async {
-    if (!_signedIn) return;
+    if (!_signedIn) {
+      try {
+        await GameAuth.signIn();
+        _signedIn = true;
+      } catch (_) {
+        return;
+      }
+    }
     try {
       await Leaderboards.submitScore(
         score: Score(
