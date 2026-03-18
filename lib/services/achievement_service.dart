@@ -1,21 +1,37 @@
 import 'package:flutter/foundation.dart';
 import 'package:games_services/games_services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AchievementService {
+  static const _prefsKey = 'unlocked_achievements';
+
   bool _signedIn = false;
   final Set<String> _unlocked = {};
 
   void setSignedIn(bool value) => _signedIn = value;
+
+  bool isUnlocked(String id) => _unlocked.contains(id);
+  int get unlockedCount => _unlocked.length;
+
+  /// Achievements unlocked during the current run (cleared on each check).
+  final List<String> newlyUnlocked = [];
+
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList(_prefsKey);
+    if (stored != null) {
+      _unlocked.addAll(stored);
+    }
+  }
 
   Future<void> checkAfterRun({
     required int runDistance,
     required int totalGames,
     required int currentBiome,
   }) async {
-    if (!_signedIn) return;
-
+    newlyUnlocked.clear();
     // Distance achievements
-    const distanceThresholds = [75, 100, 300, 750, 1400, 2500, 3200];
+    const distanceThresholds = [75, 100, 300, 500, 750, 1000, 1400, 2000, 2500, 3000, 3200, 5000];
     for (final t in distanceThresholds) {
       if (runDistance >= t) {
         await _unlock('achievement_distance_$t');
@@ -54,6 +70,10 @@ class AchievementService {
   Future<void> _unlock(String id) async {
     if (_unlocked.contains(id)) return;
     _unlocked.add(id);
+    newlyUnlocked.add(id);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_prefsKey, _unlocked.toList());
+    if (!_signedIn) return;
     try {
       await Achievements.unlock(
         achievement: Achievement(

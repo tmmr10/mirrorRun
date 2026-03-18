@@ -215,7 +215,38 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
         // Event indicator (centered)
         _buildEventIndicator(),
 
-        // HUD bar
+        // Score — centered horizontally, top
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ValueListenableBuilder<int>(
+                valueListenable: widget.game.scoreNotifier,
+                builder: (context, score, child) {
+                  final biome = BiomeManager.getBiome(score);
+                  final glowColor = biome.lineL;
+                  return Text(
+                    '$score',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                      height: 1,
+                      shadows: [
+                        Shadow(color: glowColor.withValues(alpha: 0.9), blurRadius: 20),
+                        Shadow(color: glowColor.withValues(alpha: 0.5), blurRadius: 40),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+
+        // Left/right HUD elements
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -226,7 +257,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 TapScale(
                   onTap: _toggleQuit,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: _showQuitConfirm
                           ? Colors.white.withValues(alpha: 0.08)
@@ -271,31 +302,6 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                       ),
                     ),
                   ),
-                ),
-
-                const Spacer(),
-
-                // Score
-                ValueListenableBuilder<int>(
-                  valueListenable: widget.game.scoreNotifier,
-                  builder: (context, score, child) {
-                    final biome = BiomeManager.getBiome(score);
-                    final glowColor = biome.lineL;
-                    return Text(
-                          '$score',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 2,
-                            height: 1,
-                            shadows: [
-                              Shadow(color: glowColor.withValues(alpha: 0.9), blurRadius: 20),
-                              Shadow(color: glowColor.withValues(alpha: 0.5), blurRadius: 40),
-                            ],
-                          ),
-                    );
-                  },
                 ),
 
                 const Spacer(),

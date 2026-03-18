@@ -18,7 +18,6 @@ class MenuScreen extends StatefulWidget {
 class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
   static bool _firstOpen = true;
   late AnimationController _shimmerController;
-  bool _isPurchasing = false;
 
   /// Scale animation delays: full on first open, fast on return.
   Duration _d(int ms) => Duration(milliseconds: _firstOpen ? ms : ms ~/ 4);
@@ -34,14 +33,14 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
     if (_firstOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _firstOpen = false);
     }
-    widget.game.adService.onAdFreeChanged = () {
+    widget.game.adService.onProStatusChanged = () {
       if (mounted) setState(() {});
     };
   }
 
   @override
   void dispose() {
-    widget.game.adService.onAdFreeChanged = null;
+    widget.game.adService.onProStatusChanged = null;
     _shimmerController.dispose();
     super.dispose();
   }
@@ -111,8 +110,23 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                     vertical: 8,
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      if (!widget.game.screenshotMode)
+                        TapScale(
+                          onTap: () {
+                            widget.game.overlays.remove('MenuScreen');
+                            widget.game.overlays.add('AchievementsScreen');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.emoji_events_outlined,
+                              color: accentColor.withValues(alpha: 0.5),
+                              size: 24,
+                            ),
+                          ),
+                        ).animate().fadeIn(duration: 400.ms, delay: _d(800)),
+                      const Spacer(),
                       if (kDebugMode && !widget.game.screenshotMode)
                         TapScale(
                           onTap: () {
@@ -130,20 +144,21 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                      TapScale(
-                        onTap: () {
-                          widget.game.overlays.remove('MenuScreen');
-                          widget.game.overlays.add('SettingsScreen');
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Icons.settings,
-                            color: accentColor.withValues(alpha: 0.5),
-                            size: 24,
+                      if (!widget.game.screenshotMode)
+                        TapScale(
+                          onTap: () {
+                            widget.game.overlays.remove('MenuScreen');
+                            widget.game.overlays.add('SettingsScreen');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.settings,
+                              color: accentColor.withValues(alpha: 0.5),
+                              size: 24,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -165,7 +180,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                         const SizedBox(height: 40),
                         _buildStartPrompt(accentColor),
                         const SizedBox(height: 48),
-                        _buildBiomeRoadmap(),
+                        if (!widget.game.screenshotMode) _buildBiomeRoadmap(),
                         const Spacer(),
                         _buildSkinIndicator(accentColor),
                         SizedBox(height: MediaQuery.of(context).size.height * 0.17),
@@ -174,20 +189,15 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                   ),
                 ),
 
-                // Bottom: ad free button
-                if (!widget.game.adService.isAdFree &&
+                // Bottom: GO PRO button
+                if (!widget.game.adService.isPro &&
                     !widget.game.screenshotMode)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 24),
                     child: TapScale(
-                      onTap: _isPurchasing
-                          ? null
-                          : () async {
-                              setState(() => _isPurchasing = true);
-                              await widget.game.adService.purchaseAdFree();
-                              if (mounted)
-                                setState(() => _isPurchasing = false);
-                            },
+                      onTap: () {
+                        widget.game.overlays.add('ProScreen');
+                      },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -195,35 +205,37 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                         ),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: accentColor.withValues(alpha: 0.25),
+                            color: const Color(0xFFFFD700).withValues(alpha: 0.3),
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: _isPurchasing
-                            ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                  color: accentColor.withValues(alpha: 0.5),
-                                ),
-                              )
-                            : Text(
-                                'AD FREE',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  letterSpacing: 3,
-                                  shadows: [
-                                    Shadow(
-                                      color: accentColor.withValues(alpha: 0.3),
-                                      blurRadius: 12,
-                                    ),
-                                  ],
-                                ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.workspace_premium_rounded,
+                              color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'GO PRO',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                                letterSpacing: 3,
+                                shadows: [
+                                  Shadow(
+                                    color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                  ),
+                                ],
                               ),
+                            ),
+                          ],
+                        ),
                       ),
                     ).animate().fadeIn(duration: 400.ms, delay: _d(1600)),
                   ),

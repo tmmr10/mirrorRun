@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import 'tap_scale.dart';
@@ -39,7 +40,7 @@ class StatsScreen extends StatelessWidget {
                       game.overlays.add('SettingsScreen');
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
+                      padding: const EdgeInsets.all(16),
                       child: Icon(
                         Icons.arrow_back_ios_rounded,
                         color: _accent.withValues(alpha: 0.5),
@@ -64,6 +65,49 @@ class StatsScreen extends StatelessWidget {
               _statRow('PLAYTIME', _formatPlaytime(stats.totalPlaytimeSeconds)),
               _statRow('FURTHEST BIOME', furthestBiomeName),
               _statRow('BEST SCORE', '${best}m'),
+              const SizedBox(height: 20),
+              Builder(
+                builder: (ctx) => TapScale(
+                  onTap: () {
+                    final box = ctx.findRenderObject() as RenderBox?;
+                    final origin = box != null
+                        ? box.localToGlobal(Offset.zero) & box.size
+                        : null;
+                    final playtime = _formatPlaytime(stats.totalPlaytimeSeconds);
+                    Share.share(
+                      'Mirror Runners Stats:\n'
+                      '${best}m best · ${stats.totalGamesPlayed} games · $playtime played · $furthestBiomeName reached',
+                      sharePositionOrigin: origin,
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _accent.withValues(alpha: 0.2),
+                        width: 0.5,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.share_rounded, size: 13, color: _accent.withValues(alpha: 0.5)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'SHARE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: _accent.withValues(alpha: 0.5),
+                            letterSpacing: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               const Spacer(),
             ],
           ),

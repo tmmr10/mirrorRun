@@ -26,7 +26,6 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   HeadDecoration _headDeco = HeadDecoration.none;
   FaceDecoration _faceDeco = FaceDecoration.none;
   int? _editIndex;
-  bool _isPurchasing = false;
 
   bool get _isEditing => _editIndex != null;
   SkinService get _skinService => widget.game.skinService;
@@ -65,14 +64,14 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
       if (preset['name'] != null) _nameController.text = preset['name'];
       widget.game.skinBuilderPreset = null;
     }
-    widget.game.adService.onCustomSkinUnlockChanged = () {
+    widget.game.adService.onProStatusChanged = () {
       if (mounted) setState(() {});
     };
   }
 
   @override
   void dispose() {
-    widget.game.adService.onCustomSkinUnlockChanged = null;
+    widget.game.adService.onProStatusChanged = null;
     _glowController.dispose();
     _nameController.dispose();
     super.dispose();
@@ -118,7 +117,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           TapScale(
             onTap: _goBack,
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.all(16),
               child: Icon(
                 Icons.arrow_back_ios_rounded,
                 color: _accent.withValues(alpha: 0.5),
@@ -130,7 +129,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
             TapScale(
               onTap: _confirmDelete,
               child: Padding(
-                padding: const EdgeInsets.only(left: 16),
+                padding: const EdgeInsets.all(16),
                 child: Icon(
                   Icons.delete_outline_rounded,
                   color: const Color(0xFFFF4444).withValues(alpha: 0.5),
@@ -144,6 +143,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   }
 
   Widget _buildLockedState() {
+    const gold = Color(0xFFFFD700);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -177,48 +177,40 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
         ),
         const SizedBox(height: 32),
         TapScale(
-          onTap: _isPurchasing ? null : _purchaseSkinCreator,
+          onTap: () {
+            widget.game.overlays.add('ProScreen');
+          },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
               gradient: LinearGradient(
                 colors: [
-                  _accent.withValues(alpha: 0.4),
-                  _accent.withValues(alpha: 0.2),
+                  gold.withValues(alpha: 0.5),
+                  gold.withValues(alpha: 0.3),
                 ],
               ),
-              border: Border.all(color: _accent.withValues(alpha: 0.5), width: 0.5),
+              border: Border.all(color: gold.withValues(alpha: 0.6), width: 0.5),
             ),
-            child: _isPurchasing
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  )
-                : const Text(
-                    'UNLOCK — \$1.99',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: 3,
-                    ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.workspace_premium_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'GO PRO — INCLUDED',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 3,
                   ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TapScale(
-          onTap: () => widget.game.adService.restorePurchases(),
-          child: Text(
-            'RESTORE PURCHASES',
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.25),
-              letterSpacing: 2,
+                ),
+              ],
             ),
           ),
         ),
@@ -713,11 +705,6 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     widget.game.overlays.add('SkinSelector');
   }
 
-  Future<void> _purchaseSkinCreator() async {
-    setState(() => _isPurchasing = true);
-    await widget.game.adService.purchaseCustomSkinCreator();
-    if (mounted) setState(() => _isPurchasing = false);
-  }
 }
 
 class _CircleThumbShape extends SliderComponentShape {

@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import '../models/player_skin.dart';
 import 'tap_scale.dart';
 
 class DeathScreen extends StatefulWidget {
@@ -16,7 +18,6 @@ class DeathScreen extends StatefulWidget {
 class _DeathScreenState extends State<DeathScreen> {
   bool _canInteract = false;
   bool _adWasShown = false;
-  bool _isPurchasing = false;
 
   @override
   void initState() {
@@ -24,7 +25,7 @@ class _DeathScreenState extends State<DeathScreen> {
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) setState(() => _canInteract = true);
     });
-    widget.game.adService.onAdFreeChanged = () {
+    widget.game.adService.onProStatusChanged = () {
       if (mounted) setState(() {});
     };
     final adService = widget.game.adService;
@@ -40,7 +41,7 @@ class _DeathScreenState extends State<DeathScreen> {
 
   @override
   void dispose() {
-    widget.game.adService.onAdFreeChanged = null;
+    widget.game.adService.onProStatusChanged = null;
     super.dispose();
   }
 
@@ -248,10 +249,131 @@ class _DeathScreenState extends State<DeathScreen> {
                     .shimmer(duration: 1500.ms, delay: 1400.ms, color: const Color(0x40FFCC44));
               },
             ),
+
+            // Skin unlock banner
+            ValueListenableBuilder<List<SkinId>>(
+              valueListenable: widget.game.newSkinsNotifier,
+              builder: (context, newSkins, child) {
+                if (newSkins.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    for (final skinId in newSkins)
+                      _buildSkinUnlockBanner(skinId),
+                  ],
+                );
+              },
+            ),
+
+            // Achievement unlock banner
+            ValueListenableBuilder<List<String>>(
+              valueListenable: widget.game.newAchievementsNotifier,
+              builder: (context, newAchievements, child) {
+                if (newAchievements.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    for (final id in newAchievements)
+                      _buildAchievementUnlockBanner(id),
+                  ],
+                );
+              },
+            ),
           ],
         );
       },
     );
+  }
+
+  Widget _buildSkinUnlockBanner(SkinId skinId) {
+    final skin = PlayerSkin.getById(skinId);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: skin.leftColor.withValues(alpha: 0.5),
+          width: 0.5,
+        ),
+        borderRadius: BorderRadius.circular(2),
+        gradient: LinearGradient(
+          colors: [
+            skin.leftColor.withValues(alpha: 0.08),
+            skin.rightColor.withValues(alpha: 0.08),
+          ],
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [skin.leftColor, skin.rightColor],
+              ),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'NEW SKIN: ${skin.name}',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.85),
+              letterSpacing: 3,
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: 1500.ms)
+        .slideY(begin: 0.3, end: 0, duration: 400.ms, delay: 1500.ms, curve: Curves.easeOutCubic)
+        .shimmer(duration: 1500.ms, delay: 1800.ms, color: skin.leftColor.withValues(alpha: 0.3));
+  }
+
+  String _achievementLabel(String id) {
+    if (id.startsWith('achievement_distance_')) return id.replaceFirst('achievement_distance_', '') + 'm';
+    if (id.startsWith('achievement_biome_')) return id.replaceFirst('achievement_biome_', '').toUpperCase();
+    if (id.startsWith('achievement_games_')) return id.replaceFirst('achievement_games_', '') + ' GAMES';
+    if (id == 'achievement_first_game') return '1ST RUN';
+    return id.toUpperCase();
+  }
+
+  Widget _buildAchievementUnlockBanner(String id) {
+    const color = Color(0xFFFFD700);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 0.5),
+        borderRadius: BorderRadius.circular(2),
+        color: color.withValues(alpha: 0.06),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.emoji_events_rounded, color: color.withValues(alpha: 0.8), size: 14),
+          const SizedBox(width: 10),
+          Text(
+            _achievementLabel(id),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color.withValues(alpha: 0.9),
+              letterSpacing: 3,
+            ),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: 1600.ms)
+        .slideY(begin: 0.3, end: 0, duration: 400.ms, delay: 1600.ms, curve: Curves.easeOutCubic)
+        .shimmer(duration: 1500.ms, delay: 1900.ms, color: color.withValues(alpha: 0.3));
   }
 
   Widget _buildActions() {
@@ -300,26 +422,36 @@ class _DeathScreenState extends State<DeathScreen> {
               borderColor: Colors.white.withValues(alpha: 0.1),
               delay: 1800,
             ),
+            if (!Platform.isAndroid) ...[
+              const SizedBox(width: 10),
+              _buildActionButton(
+                onTap: () {
+                  if (_canInteract) widget.game.leaderboardService.showLeaderboard();
+                },
+                label: 'RANKS',
+                icon: Icons.leaderboard_rounded,
+                color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
+                borderColor: const Color(0xFFB48CFF).withValues(alpha: 0.2),
+                delay: 1900,
+              ),
+            ],
             const SizedBox(width: 10),
-            _buildActionButton(
-              onTap: () {
-                if (_canInteract) widget.game.leaderboardService.showLeaderboard();
-              },
-              label: 'RANKS',
-              icon: Icons.leaderboard_rounded,
-              color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
-              borderColor: const Color(0xFFB48CFF).withValues(alpha: 0.2),
-              delay: 1900,
-            ),
-            const SizedBox(width: 10),
-            _buildActionButton(
+            Builder(
+              builder: (ctx) => _buildActionButton(
               onTap: () {
                 if (!_canInteract) return;
                 try {
                   final score = widget.game.scoreNotifier.value;
                   final biomeIdx = BiomeManager.getBiomeIndex(score);
                   final biomeName = BiomeManager.biomes[biomeIdx].name;
-                  Share.share('I ran ${score}m through $biomeName in Mirror Runners!');
+                  final box = ctx.findRenderObject() as RenderBox?;
+                  final origin = box != null
+                      ? box.localToGlobal(Offset.zero) & box.size
+                      : null;
+                  Share.share(
+                    'I ran ${score}m through $biomeName in Mirror Runners!',
+                    sharePositionOrigin: origin,
+                  );
                 } catch (_) {}
               },
               label: 'SHARE',
@@ -328,46 +460,47 @@ class _DeathScreenState extends State<DeathScreen> {
               borderColor: const Color(0xFFff6b35).withValues(alpha: 0.3),
               delay: 2000,
             ),
+            ),
           ],
         ),
 
-        // Ad-free hint
-        if (_adWasShown && !widget.game.adService.isAdFree) ...[
+        // GO PRO hint
+        if (_adWasShown && !widget.game.adService.isPro) ...[
           const SizedBox(height: 20),
           TapScale(
-            onTap: _isPurchasing ? null : () async {
-              setState(() => _isPurchasing = true);
-              await widget.game.adService.purchaseAdFree();
-              if (mounted) setState(() => _isPurchasing = false);
+            onTap: () {
+              widget.game.overlays.add('ProScreen');
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: const Color(0xFFB48CFF).withValues(alpha: 0.3),
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.3),
                   width: 0.5,
                 ),
                 borderRadius: BorderRadius.circular(4),
-                color: const Color(0xFFB48CFF).withValues(alpha: 0.06),
+                color: const Color(0xFFFFD700).withValues(alpha: 0.06),
               ),
-              child: _isPurchasing
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
-                      ),
-                    )
-                  : Text(
-                      'REMOVE ADS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFFB48CFF).withValues(alpha: 0.7),
-                        letterSpacing: 3,
-                      ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.workspace_premium_rounded,
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'GO PRO',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                      letterSpacing: 3,
                     ),
+                  ),
+                ],
+              ),
             ),
           )
               .animate()

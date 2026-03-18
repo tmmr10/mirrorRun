@@ -14,6 +14,7 @@ import 'components/event_system.dart';
 import 'components/particle_system.dart';
 import 'components/player.dart';
 import 'world/biome.dart';
+import '../models/player_skin.dart';
 import '../services/ad_service.dart';
 import '../services/achievement_service.dart';
 import '../services/audio_service.dart';
@@ -73,6 +74,8 @@ class MirrorRunGame extends FlameGame
   final ValueNotifier<String?> eventWarningNotifier = ValueNotifier(null);
   /// Incremented when an event ends, to trigger "NORMAL" flash.
   final ValueNotifier<int> eventEndNotifier = ValueNotifier(0);
+  final ValueNotifier<List<SkinId>> newSkinsNotifier = ValueNotifier([]);
+  final ValueNotifier<List<String>> newAchievementsNotifier = ValueNotifier([]);
 
   Player? playerLeft;
   Player? playerRight;
@@ -119,7 +122,7 @@ class MirrorRunGame extends FlameGame
     adService = AdService();
     try {
       await adService.init(skinService: skinService);
-      debugPrint('>>> ad OK, isAdFree=${adService.isAdFree}');
+      debugPrint('>>> ad OK, isPro=${adService.isPro}');
     } catch (e) {
       debugPrint('>>> ad FAILED: $e');
     }
@@ -131,6 +134,7 @@ class MirrorRunGame extends FlameGame
     await statsService.init();
 
     achievementService = AchievementService();
+    await achievementService.init();
     achievementService.setSignedIn(leaderboardService.isSignedIn);
 
     debugPrint('>>> services done, setting up camera');
@@ -163,6 +167,8 @@ class MirrorRunGame extends FlameGame
     biomeNotifier.value = BiomeManager.getBiome(startScore).name;
     bestNotifier.value = highscoreService.getBest();
     newRecordNotifier.value = false;
+    newSkinsNotifier.value = [];
+    newAchievementsNotifier.value = [];
     eventNotifier.value = null;
     eventWarningNotifier.value = null;
 
@@ -231,9 +237,8 @@ class MirrorRunGame extends FlameGame
       highscoreService.saveBest(score);
       newRecordNotifier.value = true;
       bestNotifier.value = score;
+      leaderboardService.submitScore(score);
     }
-
-    leaderboardService.submitScore(score);
     adService.onDeath();
 
     _recordRunAsync();
@@ -244,17 +249,27 @@ class MirrorRunGame extends FlameGame
   }
 
   Future<void> _recordRunAsync() async {
-    await statsService.recordRun(
-      distance: score,
-      biomeIndex: _lastBiomeIdx,
-      durationSeconds: lastRunDuration,
-    );
-    achievementService.checkAfterRun(
-      runDistance: score,
-      totalGames: statsService.totalGamesPlayed,
-      currentBiome: _lastBiomeIdx,
-    );
-    skinService.checkUnlocks(statsService.furthestBiomeIndex);
+    try {
+      await statsService.recordRun(
+        distance: score,
+        biomeIndex: _lastBiomeIdx,
+        durationSeconds: lastRunDuration,
+      );
+      await achievementService.checkAfterRun(
+        runDistance: score,
+        totalGames: statsService.totalGamesPlayed,
+        currentBiome: _lastBiomeIdx,
+      );
+      if (achievementService.newlyUnlocked.isNotEmpty) {
+        newAchievementsNotifier.value = List.of(achievementService.newlyUnlocked);
+      }
+      final newSkins = await skinService.checkUnlocks(statsService.furthestBiomeIndex);
+      if (newSkins.isNotEmpty) {
+        newSkinsNotifier.value = newSkins;
+      }
+    } catch (e, st) {
+      debugPrint('_recordRunAsync error: $e\n$st');
+    }
   }
 
   double get lastRunDuration =>
@@ -280,6 +295,8 @@ class MirrorRunGame extends FlameGame
     overlays.remove('SettingsScreen');
     overlays.remove('StatsScreen');
     overlays.remove('SkinSelector');
+    overlays.remove('ProScreen');
+    overlays.remove('MenuScreen');
     overlays.add('MenuScreen');
   }
 
@@ -293,12 +310,15 @@ class MirrorRunGame extends FlameGame
 
   /// Move player by a game-coordinate delta (keyboard or drag).
   void _movePlayer(double dx) {
+    final pl = playerLeft;
+    final pr = playerRight;
+    if (pl == null || pr == null) return;
+
     // Mirror swap inverts controls
     final d = eventSystem.mirrorSwapped ? -dx : dx;
 
-    final pl = playerLeft!;
     pl.targetX = (pl.targetX + d).clamp(leftMinX, leftMaxX);
-    playerRight!.targetX = vw - pl.targetX;
+    pr.targetX = vw - pl.targetX;
   }
 
   bool get canRetry => playState == PlayState.dead && _deathTimer >= _deathDelay;

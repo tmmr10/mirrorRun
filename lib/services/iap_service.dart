@@ -5,11 +5,13 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 class IapService {
   static const String removeAdsId = 'remove_ads';
   static const String customSkinCreatorId = 'custom_skin_creator';
+  static const String mirrorRunnersProId = 'mirror_runners_pro';
 
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   ProductDetails? _removeAdsProduct;
   ProductDetails? _customSkinCreatorProduct;
+  ProductDetails? _proProduct;
   void Function(String productId, bool success)? onPurchaseResult;
 
   Future<void> init() async {
@@ -19,7 +21,9 @@ class IapService {
 
     _subscription = _iap.purchaseStream.listen(_handlePurchaseUpdate);
 
-    final response = await _iap.queryProductDetails({removeAdsId, customSkinCreatorId});
+    final response = await _iap.queryProductDetails(
+      {removeAdsId, customSkinCreatorId, mirrorRunnersProId},
+    );
     debugPrint('>>> IAP products found: ${response.productDetails.length}');
     debugPrint('>>> IAP not found IDs: ${response.notFoundIDs}');
     for (final product in response.productDetails) {
@@ -28,21 +32,16 @@ class IapService {
         _removeAdsProduct = product;
       } else if (product.id == customSkinCreatorId) {
         _customSkinCreatorProduct = product;
+      } else if (product.id == mirrorRunnersProId) {
+        _proProduct = product;
       }
     }
   }
 
-  Future<bool> buyRemoveAds() async {
-    debugPrint('>>> IAP buyRemoveAds called, product=${_removeAdsProduct?.id}');
-    if (_removeAdsProduct == null) return false;
-    final param = PurchaseParam(productDetails: _removeAdsProduct!);
-    return _iap.buyNonConsumable(purchaseParam: param);
-  }
-
-  Future<bool> buyCustomSkinCreator() async {
-    debugPrint('>>> IAP buyCustomSkinCreator called, product=${_customSkinCreatorProduct?.id}');
-    if (_customSkinCreatorProduct == null) return false;
-    final param = PurchaseParam(productDetails: _customSkinCreatorProduct!);
+  Future<bool> buyPro() async {
+    debugPrint('>>> IAP buyPro called, product=${_proProduct?.id}');
+    if (_proProduct == null) return false;
+    final param = PurchaseParam(productDetails: _proProduct!);
     return _iap.buyNonConsumable(purchaseParam: param);
   }
 

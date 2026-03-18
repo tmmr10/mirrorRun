@@ -57,7 +57,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                       widget.game.overlays.add('MenuScreen');
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
+                      padding: const EdgeInsets.all(16),
                       child: Icon(
                         Icons.arrow_back_ios_rounded,
                         color: _accent.withValues(alpha: 0.5),
@@ -275,14 +275,25 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'UNLOCK',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: _accent.withValues(alpha: 0.5),
-                        letterSpacing: 3,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.workspace_premium_rounded,
+                          color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'GO PRO',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                            letterSpacing: 3,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -380,11 +391,11 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
               TapScale(
                 onTap: () => _openBuilder(editIndex: index),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Text(
                     'EDIT',
                     style: TextStyle(
-                      fontSize: 8,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: Colors.white.withValues(alpha: 0.3),
                       letterSpacing: 2,
@@ -563,9 +574,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
   }
 
   void _showIapPrompt() {
-    widget.game.overlays.remove('SkinSelector');
-    widget.game.skinBuilderEditIndex = null;
-    widget.game.overlays.add('SkinBuilder');
+    widget.game.overlays.add('ProScreen');
   }
 
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
@@ -45,7 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       widget.game.overlays.add('MenuScreen');
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
+                      padding: const EdgeInsets.all(16),
                       child: Icon(
                         Icons.arrow_back_ios_rounded,
                         color: _accent.withValues(alpha: 0.5),
@@ -211,38 +212,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               const SizedBox(height: 24),
 
-              // Leaderboard
-              _buildDivider(),
-              const SizedBox(height: 16),
-              TapScale(
-                onTap: () => widget.game.leaderboardService.showLeaderboard(),
-                child: Text(
-                  'LEADERBOARD',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    letterSpacing: 3,
+              // Leaderboard (iOS only — Google Play Games not yet configured)
+              if (!Platform.isAndroid) ...[
+                _buildDivider(),
+                const SizedBox(height: 16),
+                TapScale(
+                  onTap: () => widget.game.leaderboardService.showLeaderboard(),
+                  child: Text(
+                    'LEADERBOARD',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.7),
+                      letterSpacing: 3,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
+              ],
 
-              // Achievements
-              _buildDivider(),
-              const SizedBox(height: 16),
-              TapScale(
-                onTap: () => widget.game.leaderboardService.showAchievements(),
-                child: Text(
-                  'ACHIEVEMENTS',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.7),
-                    letterSpacing: 3,
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
 
               // Statistics
@@ -266,7 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
 
               // Restore purchases
-              if (!widget.game.adService.isAdFree) ...[
+              if (!widget.game.adService.isPro) ...[
                 _buildDivider(),
                 const SizedBox(height: 16),
                 TapScale(

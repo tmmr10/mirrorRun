@@ -30,7 +30,7 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
 
   static const double _warningDuration = 1.5;
   static const double _phantomDuration = 1.5;
-  static const double _swapDuration = 4.0;
+  // Swap no longer uses a timer — stays until next swap event.
 
   /// Min score before events can trigger.
   static const int _minScore = 40;
@@ -44,8 +44,8 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
         _eventTimer = _phantomDuration;
         phantomFade = 0.3;
       case GameEvent.mirrorSwap:
-        _eventTimer = _swapDuration;
-        mirrorSwapped = true;
+        mirrorSwapped = !mirrorSwapped;
+        _eventTimer = 0.8;
         swapFlash = 0.4;
     }
     game.eventWarningNotifier.value = null;
@@ -137,19 +137,21 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
         _eventTimer = _phantomDuration;
         phantomFade = 0;
       case GameEvent.mirrorSwap:
-        _eventTimer = _swapDuration;
-        mirrorSwapped = true;
+        // Toggle: if already swapped, swap back; otherwise swap
+        mirrorSwapped = !mirrorSwapped;
         swapFlash = 1.0;
+        // Short timer just for the flash/indicator, then clear active event
+        _eventTimer = 0.8;
     }
   }
 
   void _endEvent() {
-    if (activeEvent == GameEvent.mirrorSwap) {
-      mirrorSwapped = false;
-      swapFlash = 0;
-    }
     if (activeEvent == GameEvent.phantom) {
       phantomFade = 0;
+    }
+    if (activeEvent == GameEvent.mirrorSwap) {
+      // Don't reset mirrorSwapped — it stays until next swap toggles it
+      swapFlash = 0;
     }
 
     activeEvent = null;

@@ -9,7 +9,7 @@ class TapScale extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.behavior = HitTestBehavior.deferToChild,
+    this.behavior = HitTestBehavior.opaque,
   });
 
   @override
@@ -19,6 +19,7 @@ class TapScale extends StatefulWidget {
 class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scale;
+  late final Animation<double> _opacity;
 
   @override
   void initState() {
@@ -28,6 +29,9 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
       duration: const Duration(milliseconds: 100),
     );
     _scale = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _opacity = Tween<double>(begin: 1.0, end: 0.7).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -56,8 +60,15 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      child: ScaleTransition(
-        scale: _scale,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) => Opacity(
+          opacity: _opacity.value,
+          child: ScaleTransition(
+            scale: _scale,
+            child: child,
+          ),
+        ),
         child: widget.child,
       ),
     );

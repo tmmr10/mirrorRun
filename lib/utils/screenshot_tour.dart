@@ -88,9 +88,19 @@ Future<void> runScreenshotTour(MirrorRunGame game) async {
   debugPrint('>>> SCREENSHOT_READY:06_creator');
   await Future.delayed(const Duration(milliseconds: 3000));
 
+  // 7. Pro Screen
+  game.overlays.remove('SkinBuilder');
+  game.overlays.add('MenuScreen');
+  await Future.delayed(const Duration(milliseconds: 500));
+  game.overlays.add('ProScreen');
+  await Future.delayed(const Duration(milliseconds: 1500));
+  debugPrint('>>> SCREENSHOT_READY:07_pro');
+  await Future.delayed(const Duration(milliseconds: 3000));
+
   // Back to menu — restore default
   await game.skinService.selectSkin(SkinId.default_);
-  game.overlays.remove('SkinBuilder');
+  game.overlays.remove('ProScreen');
+  game.overlays.remove('MenuScreen');
   game.overlays.add('MenuScreen');
 
   game.screenshotMode = false;

@@ -1,8 +1,11 @@
+import 'dart:developer' as developer;
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game/mirror_run_game.dart';
+import 'utils/screenshot_tour.dart';
+import 'utils/icon_capture.dart';
 import 'game/input/swipe_controller.dart';
 import 'ui/menu_screen.dart';
 import 'ui/hud_overlay.dart';
@@ -13,7 +16,12 @@ import 'ui/settings_screen.dart';
 import 'ui/stats_screen.dart';
 import 'ui/skin_selector.dart';
 import 'ui/skin_builder.dart';
+import 'ui/pro_screen.dart';
+import 'ui/achievements_screen.dart';
 import 'ui/debug_overlay.dart';
+
+/// Global game reference for debug tooling (screenshot tour via VM service).
+late MirrorRunGame _game;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +32,20 @@ void main() {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   final game = MirrorRunGame();
+  _game = game;
+
+  if (kDebugMode) {
+    developer.registerExtension('ext.mirror_run.screenshotTour',
+        (String method, Map<String, String> params) async {
+      runScreenshotTour(_game);
+      return developer.ServiceExtensionResponse.result('{"ok":true}');
+    });
+    developer.registerExtension('ext.mirror_run.iconCapture',
+        (String method, Map<String, String> params) async {
+      runIconCapture(_game);
+      return developer.ServiceExtensionResponse.result('{"ok":true}');
+    });
+  }
 
   runApp(
     MaterialApp(
@@ -65,6 +87,10 @@ void main() {
                   SkinSelector(game: game as MirrorRunGame),
               'SkinBuilder': (context, game) =>
                   SkinBuilder(game: game as MirrorRunGame),
+              'ProScreen': (context, game) =>
+                  ProScreen(game: game as MirrorRunGame),
+              'AchievementsScreen': (context, game) =>
+                  AchievementsScreen(game: game as MirrorRunGame),
               if (kDebugMode)
                 'DebugOverlay': (context, game) =>
                     DebugOverlay(game: game as MirrorRunGame),

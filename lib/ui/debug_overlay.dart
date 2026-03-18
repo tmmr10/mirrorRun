@@ -47,7 +47,7 @@ class _DebugOverlayState extends State<DebugOverlay> {
                       game.overlays.add('MenuScreen');
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
+                      padding: const EdgeInsets.all(16),
                       child: Icon(
                         Icons.arrow_back_ios_rounded,
                         color: _accent.withValues(alpha: 0.5),

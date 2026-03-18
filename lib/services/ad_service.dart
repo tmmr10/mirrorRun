@@ -12,24 +12,25 @@ class AdService {
 
   int _deathCount = 0;
   bool _isAdFree = false;
+  bool _isPro = false;
   DateTime? _lastAdShown;
   bool _firstDeathEver = true;
   InterstitialAd? _interstitialAd;
 
   bool get isAdFree => _isAdFree;
 
+  /// True if user has Pro (new bundle) OR any legacy purchase.
+  bool get isPro => _isPro || _isAdFree || (_skinService?.customSkinUnlocked ?? false);
+
   /// Debug: force ad after every death
   bool debugAlwaysShowAd = false;
 
-  /// Called when ad-free status changes (after successful purchase/restore).
-  VoidCallback? onAdFreeChanged;
-
-  /// Called when custom skin creator unlock status changes.
-  VoidCallback? onCustomSkinUnlockChanged;
+  /// Called when pro status changes (after successful purchase/restore).
+  VoidCallback? onProStatusChanged;
 
   String get _interstitialAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/1033173712'; // Test ID
+      return 'ca-app-pub-6061884014427414/7321834932';
     } else {
       return 'ca-app-pub-6061884014427414/2229172814';
     }
@@ -38,6 +39,7 @@ class AdService {
   Future<void> init({SkinService? skinService}) async {
     _prefs = await SharedPreferences.getInstance();
     _isAdFree = _prefs.getBool('ad_free') ?? false;
+    _isPro = _prefs.getBool('is_pro') ?? false;
     _firstDeathEver = _prefs.getBool('first_death_ever') ?? true;
     _skinService = skinService;
 
@@ -45,14 +47,14 @@ class AdService {
     await _iapService.init();
     _iapService.onPurchaseResult = _onPurchaseResult;
 
-    if (!_isAdFree) {
+    if (!isPro) {
       await MobileAds.instance.initialize();
       _loadInterstitialAd();
     }
   }
 
   void _loadInterstitialAd() {
-    if (_isAdFree) return;
+    if (isPro) return;
     InterstitialAd.load(
       adUnitId: _interstitialAdUnitId,
       request: const AdRequest(),
@@ -67,7 +69,7 @@ class AdService {
   }
 
   bool shouldShowAd(double runDurationSeconds) {
-    if (_isAdFree) return false;
+    if (isPro) return false;
 
     if (debugAlwaysShowAd) return true;
 
@@ -116,30 +118,39 @@ class AdService {
     _interstitialAd!.show();
   }
 
-  Future<bool> purchaseAdFree() async {
-    return _iapService.buyRemoveAds();
-  }
-
-  Future<bool> purchaseCustomSkinCreator() async {
-    return _iapService.buyCustomSkinCreator();
+  Future<bool> purchasePro() async {
+    return _iapService.buyPro();
   }
 
   Future<void> restorePurchases() async {
     await _iapService.restorePurchases();
   }
 
+  void _activatePro() {
+    _isPro = true;
+    _isAdFree = true;
+    _prefs.setBool('is_pro', true);
+    _prefs.setBool('ad_free', true);
+    _skinService?.setCustomSkinUnlocked(true);
+    _interstitialAd?.dispose();
+    _interstitialAd = null;
+    onProStatusChanged?.call();
+  }
+
   void _onPurchaseResult(String productId, bool success) {
     if (!success) return;
 
-    if (productId == IapService.removeAdsId) {
+    if (productId == IapService.mirrorRunnersProId) {
+      _activatePro();
+    } else if (productId == IapService.removeAdsId) {
       _isAdFree = true;
       _prefs.setBool('ad_free', true);
       _interstitialAd?.dispose();
       _interstitialAd = null;
-      onAdFreeChanged?.call();
+      onProStatusChanged?.call();
     } else if (productId == IapService.customSkinCreatorId) {
       _skinService?.setCustomSkinUnlocked(true);
-      onCustomSkinUnlockChanged?.call();
+      onProStatusChanged?.call();
     }
   }
 
