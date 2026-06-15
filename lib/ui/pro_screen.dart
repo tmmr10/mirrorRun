@@ -222,10 +222,14 @@ class _ProScreenState extends State<ProScreen> {
 
               const SizedBox(height: 20),
 
-              // GO PRO button
-              TapScale(
+              // GO PRO button — full width, matching the benefit cards above.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: TapScale(
                 onTap: _isPurchasing ? null : _purchase,
                 child: Container(
+                  width: double.infinity,
+                  alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
@@ -267,6 +271,7 @@ class _ProScreenState extends State<ProScreen> {
                         ),
                 ),
               ).animate().fadeIn(duration: 400.ms, delay: 1000.ms),
+              ),
 
               const SizedBox(height: 20),
 

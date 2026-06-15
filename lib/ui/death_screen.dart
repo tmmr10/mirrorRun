@@ -600,9 +600,9 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
   }
 
   Widget _buildActions() {
-    // Primary action accent matches the player's current skin (left color),
-    // mirroring the menu PLAY button's prominent accent-gradient style.
-    final accent = widget.game.skinService.currentSkin.leftColor;
+    // Primary action uses the app accent (violet) — identical to the menu PLAY
+    // button — so the screen stays color-harmonious.
+    const accent = MR.accent;
     return Column(
       children: [
         // Primary action — the ONLY touch target that restarts the run.
@@ -664,8 +664,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               onTap: _menu,
               label: 'MENU',
               icon: null,
-              color: Colors.white.withValues(alpha: 0.35),
-              borderColor: Colors.white.withValues(alpha: 0.1),
+              color: Colors.white.withValues(alpha: 0.55),
+              borderColor: Colors.white.withValues(alpha: 0.12),
               delay: 1800,
             ),
             if (defaultTargetPlatform != TargetPlatform.android) ...[
@@ -676,8 +676,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                 },
                 label: 'RANKS',
                 icon: Icons.leaderboard_rounded,
-                color: MR.accent.withValues(alpha: 0.5),
-                borderColor: MR.accent.withValues(alpha: 0.2),
+                color: Colors.white.withValues(alpha: 0.55),
+                borderColor: Colors.white.withValues(alpha: 0.12),
                 delay: 1900,
               ),
             ],
@@ -703,8 +703,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               },
               label: 'SHARE',
               icon: Icons.share_rounded,
-              color: MR.danger.withValues(alpha: 0.6),
-              borderColor: MR.danger.withValues(alpha: 0.3),
+              color: Colors.white.withValues(alpha: 0.55),
+              borderColor: Colors.white.withValues(alpha: 0.12),
               delay: 2000,
             ),
             ),
