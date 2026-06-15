@@ -371,15 +371,21 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
             child: Row(
               children: [
                 SizedBox(
-                  width: 64,
-                  height: 46,
-                  child: CustomPaint(
-                    painter: PlayerScenePainter(
-                      leftColor: skin.leftColor,
-                      rightColor: skin.rightColor,
-                      glowT: 0.6,
-                      headDecoration: skin.headDecoration,
-                      faceDecoration: skin.faceDecoration,
+                  width: 70,
+                  height: 60,
+                  child: ClipRect(
+                    child: AnimatedBuilder(
+                      animation: _shimmerController,
+                      builder: (context, _) => CustomPaint(
+                        painter: PlayerScenePainter(
+                          leftColor: skin.leftColor,
+                          rightColor: skin.rightColor,
+                          glowT: _shimmerController.value,
+                          headDecoration: skin.headDecoration,
+                          faceDecoration: skin.faceDecoration,
+                          showScene: false,
+                        ),
+                      ),
                     ),
                   ),
                 ),

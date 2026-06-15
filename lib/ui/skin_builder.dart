@@ -28,8 +28,27 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   FaceDecoration _faceDeco = FaceDecoration.none;
   int? _editIndex;
 
+  // Snapshot of editable fields captured after initial load, used to detect
+  // unsaved changes when the user attempts to go back.
+  double _initLeftHue = 0;
+  double _initLeftSat = 0;
+  double _initRightHue = 0;
+  double _initRightSat = 0;
+  HeadDecoration _initHeadDeco = HeadDecoration.none;
+  FaceDecoration _initFaceDeco = FaceDecoration.none;
+  String _initName = '';
+
   bool get _isEditing => _editIndex != null;
   SkinService get _skinService => widget.game.skinService;
+
+  bool get _hasUnsavedChanges =>
+      _leftHue != _initLeftHue ||
+      _leftSat != _initLeftSat ||
+      _rightHue != _initRightHue ||
+      _rightSat != _initRightSat ||
+      _headDeco != _initHeadDeco ||
+      _faceDeco != _initFaceDeco ||
+      _nameController.text != _initName;
 
   @override
   void initState() {
@@ -65,6 +84,16 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
       if (preset['name'] != null) _nameController.text = preset['name'];
       widget.game.skinBuilderPreset = null;
     }
+
+    // Capture the initial snapshot so we can detect unsaved changes on back.
+    _initLeftHue = _leftHue;
+    _initLeftSat = _leftSat;
+    _initRightHue = _rightHue;
+    _initRightSat = _rightSat;
+    _initHeadDeco = _headDeco;
+    _initFaceDeco = _faceDeco;
+    _initName = _nameController.text;
+
     widget.game.adService.proStatusNotifier.addListener(_onProStatus);
   }
 
@@ -106,13 +135,14 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   }
 
   Widget _buildTopBackButton() {
+    final unlocked = _skinService.customSkinUnlocked;
     return Padding(
       padding: const EdgeInsets.only(left: 24, right: 24, top: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           TapScale(
-            onTap: _goBack,
+            onTap: _attemptBack,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Icon(
@@ -122,19 +152,49 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
               ),
             ),
           ),
-          if (_isEditing)
-            TapScale(
-              onTap: _confirmDelete,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  color: MR.alert.withValues(alpha: 0.5),
-                  size: 20,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isEditing)
+                TapScale(
+                  onTap: _confirmDelete,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      color: MR.alert.withValues(alpha: 0.5),
+                      size: 20,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              if (unlocked) _buildTopSaveButton(),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTopSaveButton() {
+    return TapScale(
+      minSize: 44,
+      onTap: _onSave,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: _accent.withValues(alpha: 0.12),
+          border: Border.all(color: _accent.withValues(alpha: 0.4), width: 0.5),
+        ),
+        child: Text(
+          _isEditing ? 'UPDATE' : 'SAVE',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: _accent,
+            letterSpacing: 3,
+          ),
+        ),
       ),
     );
   }
@@ -293,14 +353,6 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           _buildLabel('NAME'),
           const SizedBox(height: 8),
           _buildNameField(),
-          const SizedBox(height: 28),
-
-          // Action button
-          _buildActionButton(
-            _isEditing ? 'UPDATE' : 'SAVE',
-            _accent,
-            _onSave,
-          ),
           const SizedBox(height: 32),
         ],
       ),
@@ -519,29 +571,6 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildActionButton(String label, Color color, VoidCallback onTap) {
-    return TapScale(
-      minSize: MR.minTouchTarget,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: color.withValues(alpha: 0.4), width: 0.5),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: color.withValues(alpha: 0.8),
-            letterSpacing: 4,
-          ),
-        ),
-      ),
-    );
-  }
-
   void _confirmDelete() {
     final deleteIndex = _editIndex!;
     if (deleteIndex < 0 || deleteIndex >= _skinService.customSkins.length) return;
@@ -702,6 +731,150 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
       _skinService.saveCustomSkin(skin);
       _goBack();
     }
+  }
+
+  void _attemptBack() {
+    if (_hasUnsavedChanges) {
+      _confirmDiscard();
+    } else {
+      _goBack();
+    }
+  }
+
+  void _confirmDiscard() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'dismiss',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim, _, child) {
+        return FadeTransition(
+          opacity: anim,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+              CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+            ),
+            child: child,
+          ),
+        );
+      },
+      pageBuilder: (ctx, _, _) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 260,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0e0e18),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: _accent.withValues(alpha: 0.08),
+                    blurRadius: 32,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'DISCARD CHANGES?',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.8),
+                      letterSpacing: 4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Your unsaved changes will be lost.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.4),
+                      letterSpacing: 1.5,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TapScale(
+                          minSize: MR.minTouchTarget,
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.white.withValues(alpha: 0.06),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'CANCEL',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TapScale(
+                          minSize: MR.minTouchTarget,
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            _goBack();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: MR.alert.withValues(alpha: 0.16),
+                              border: Border.all(
+                                color: MR.alert.withValues(alpha: 0.5),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'DISCARD',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: MR.alert,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _goBack() {

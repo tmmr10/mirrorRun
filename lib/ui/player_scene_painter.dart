@@ -10,6 +10,8 @@ class PlayerScenePainter extends CustomPainter {
   final double glowT;
   final HeadDecoration headDecoration;
   final FaceDecoration faceDecoration;
+  /// When false, only the figures are drawn (no ground/mirror-line scene).
+  final bool showScene;
 
   PlayerScenePainter({
     required this.leftColor,
@@ -17,6 +19,7 @@ class PlayerScenePainter extends CustomPainter {
     required this.glowT,
     this.headDecoration = HeadDecoration.none,
     this.faceDecoration = FaceDecoration.none,
+    this.showScene = true,
   });
 
   @override
@@ -26,27 +29,29 @@ class PlayerScenePainter extends CustomPainter {
     final mid = w / 2;
     final groundY = h * 0.75;
 
-    // Ground line
-    canvas.drawLine(
-      Offset(w * 0.1, groundY),
-      Offset(w * 0.9, groundY),
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.06)
-        ..strokeWidth = 0.5,
-    );
+    if (showScene) {
+      // Ground line
+      canvas.drawLine(
+        Offset(w * 0.1, groundY),
+        Offset(w * 0.9, groundY),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.06)
+          ..strokeWidth = 0.5,
+      );
 
-    // Mirror line (vertical, glowing)
-    final mirrorPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.transparent,
-          Color.lerp(leftColor, rightColor, 0.5)!.withValues(alpha: 0.15 + glowT * 0.1),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromLTWH(mid, 0, 1, h));
-    canvas.drawLine(Offset(mid, h * 0.15), Offset(mid, groundY + 10), mirrorPaint);
+      // Mirror line (vertical, glowing)
+      final mirrorPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            Color.lerp(leftColor, rightColor, 0.5)!.withValues(alpha: 0.15 + glowT * 0.1),
+            Colors.transparent,
+          ],
+        ).createShader(Rect.fromLTWH(mid, 0, 1, h));
+      canvas.drawLine(Offset(mid, h * 0.15), Offset(mid, groundY + 10), mirrorPaint);
+    }
 
     // Left player
     _drawPlayer(canvas, mid * 0.55, groundY, leftColor);
@@ -434,5 +439,6 @@ class PlayerScenePainter extends CustomPainter {
       old.leftColor != leftColor ||
       old.rightColor != rightColor ||
       old.headDecoration != headDecoration ||
-      old.faceDecoration != faceDecoration;
+      old.faceDecoration != faceDecoration ||
+      old.showScene != showScene;
 }
