@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import '../services/daily_challenge_service.dart';
+import 'player_scene_painter.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -339,16 +340,6 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
 
   /// Compact current-skin chip for the top bar → opens the Skin selector
   /// (which in turn hosts the Skin Creator/Builder).
-  Widget _avatarLarge(Color c) => Container(
-        width: 24,
-        height: 32,
-        decoration: BoxDecoration(
-          color: c,
-          borderRadius: BorderRadius.circular(7),
-          boxShadow: [BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 10)],
-        ),
-      );
-
   /// Bottom skin showcase — entry to the Skin selector + Creator. Doubles as the
   /// Pro pitch (the Creator is a Pro feature), replacing the old GO PRO button.
   Widget _buildSkinShowcase() {
@@ -379,10 +370,20 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
             ),
             child: Row(
               children: [
-                _avatarLarge(skin.leftColor),
-                const SizedBox(width: 6),
-                _avatarLarge(skin.rightColor),
-                const SizedBox(width: 14),
+                SizedBox(
+                  width: 64,
+                  height: 46,
+                  child: CustomPaint(
+                    painter: PlayerScenePainter(
+                      leftColor: skin.leftColor,
+                      rightColor: skin.rightColor,
+                      glowT: 0.6,
+                      headDecoration: skin.headDecoration,
+                      faceDecoration: skin.faceDecoration,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
