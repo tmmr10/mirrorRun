@@ -149,11 +149,6 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ).animate().fadeIn(duration: 400.ms, delay: _d(900)),
-                      const SizedBox(width: 4),
-                      if (!widget.game.screenshotMode)
-                        _buildSkinChip()
-                            .animate()
-                            .fadeIn(duration: 400.ms, delay: _d(950)),
                       const Spacer(),
                       if (kDebugMode && !widget.game.screenshotMode)
                         TapScale(
@@ -210,60 +205,9 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                   ),
                 ),
 
-                // Bottom: GO PRO button (isolated ValueListenable to avoid full menu re-animation on purchase)
-                ValueListenableBuilder<bool>(
-                  valueListenable: widget.game.adService.proStatusNotifier,
-                  builder: (context, isPro, _) {
-                    if (isPro || widget.game.screenshotMode) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: TapScale(
-                        onTap: () {
-                          widget.game.overlays.add('ProScreen');
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: MR.gold.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.workspace_premium_rounded,
-                                color: MR.gold.withValues(alpha: 0.7),
-                                size: 14,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'GO PRO',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: MR.gold.withValues(alpha: 0.7),
-                                  letterSpacing: 3,
-                                  shadows: [
-                                    Shadow(
-                                      color: MR.gold.withValues(alpha: 0.3),
-                                      blurRadius: 12,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ).animate().fadeIn(duration: 400.ms, delay: _d(1600)),
-                    );
-                  },
-                ),
+                // Bottom: skin showcase — entry to skins + Creator (Pro pitch),
+                // replaces the old GO PRO button.
+                if (!widget.game.screenshotMode) _buildSkinShowcase(),
               ],
             ),
           ),
@@ -395,37 +339,107 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
 
   /// Compact current-skin chip for the top bar → opens the Skin selector
   /// (which in turn hosts the Skin Creator/Builder).
-  Widget _buildSkinChip() {
-    final skin = widget.game.skinService.currentSkin;
-    return _topChip(
-      accent: MR.accent,
-      onTap: () {
-        widget.game.overlays.remove('MenuScreen');
-        widget.game.overlays.add('SkinSelector');
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _miniAvatar(skin.leftColor),
-          const SizedBox(width: 3),
-          _miniAvatar(skin.rightColor),
-          const SizedBox(width: 6),
-          Icon(Icons.chevron_right,
-              size: 13, color: Colors.white.withValues(alpha: 0.35)),
-        ],
-      ),
-    );
-  }
-
-  Widget _miniAvatar(Color c) => Container(
-        width: 7,
-        height: 10,
+  Widget _avatarLarge(Color c) => Container(
+        width: 24,
+        height: 32,
         decoration: BoxDecoration(
           color: c,
-          borderRadius: BorderRadius.circular(2),
-          boxShadow: [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 3)],
+          borderRadius: BorderRadius.circular(7),
+          boxShadow: [BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 10)],
         ),
       );
+
+  /// Bottom skin showcase — entry to the Skin selector + Creator. Doubles as the
+  /// Pro pitch (the Creator is a Pro feature), replacing the old GO PRO button.
+  Widget _buildSkinShowcase() {
+    final skin = widget.game.skinService.currentSkin;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 22),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: widget.game.adService.proStatusNotifier,
+        builder: (context, isPro, _) => TapScale(
+          onTap: () {
+            widget.game.overlays.remove('MenuScreen');
+            widget.game.overlays.add('SkinSelector');
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: MR.accent.withValues(alpha: 0.3), width: 0.5),
+              gradient: LinearGradient(
+                colors: [
+                  MR.accent.withValues(alpha: 0.10),
+                  Colors.white.withValues(alpha: 0.02),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(color: MR.accent.withValues(alpha: 0.12), blurRadius: 18, spreadRadius: 1),
+              ],
+            ),
+            child: Row(
+              children: [
+                _avatarLarge(skin.leftColor),
+                const SizedBox(width: 6),
+                _avatarLarge(skin.rightColor),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        skin.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isPro ? 'CHANGE SKIN' : 'CREATE YOUR OWN',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (!isPro)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: MR.gold.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: const Text(
+                      '★ PRO',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: MR.gold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(Icons.chevron_right,
+                      color: MR.accent.withValues(alpha: 0.5), size: 18),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: _d(1200));
+  }
 
   /// Prominent primary action. Tap or swipe up to start.
   Widget _buildPlayButton(Color accent) {

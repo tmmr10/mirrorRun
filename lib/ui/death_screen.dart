@@ -337,46 +337,6 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                 .animate()
                 .fadeIn(duration: 400.ms, delay: 1000.ms),
 
-            // Session coins earned
-            if (widget.game.coinsService.sessionEarned > 0) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                decoration: BoxDecoration(
-                  color: MR.gold.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: MR.gold.withValues(alpha: 0.3),
-                    width: 0.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.circle,
-                      color: MR.gold,
-                      size: 9,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '+${widget.game.coinsService.sessionEarned} COINS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: MR.gold.withValues(alpha: 0.9),
-                        letterSpacing: 3,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: 1100.ms)
-                  .slideY(begin: 0.2, end: 0, duration: 400.ms, delay: 1100.ms)
-                  .shimmer(duration: 1500.ms, delay: 1300.ms, color: MR.gold.withValues(alpha: 0.25)),
-            ],
-
             const SizedBox(height: 16),
 
             // New record badge
@@ -395,7 +355,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                     color: MR.gold.withValues(alpha: 0.06),
                   ),
                   child: Text(
-                    'NEW RECORD',
+                    '★ NEW RECORD',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -409,6 +369,11 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                     .shimmer(duration: 1500.ms, delay: 1400.ms, color: const Color(0x40FFCC44));
               },
             ),
+
+            const SizedBox(height: 18),
+
+            // Stat card: THIS RUN / BEST / COINS
+            _buildStatCard(score, leftColor, rightColor),
 
             // Unlock banners (skins + achievements) — bounded + scrollable so a
             // record run with many simultaneous unlocks can't overflow into the
@@ -451,6 +416,95 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           ],
         );
       },
+    );
+  }
+
+  /// Stat card: one card with three columns separated by thin dividers.
+  /// THIS RUN = final score, BEST = best (live), COINS = coins earned this run.
+  Widget _buildStatCard(int score, Color leftColor, Color rightColor) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 36),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xCC0a0a14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 0.5),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: _buildStatColumn(
+                label: 'THIS RUN',
+                value: '$score',
+                valueColor: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+            _statDivider(),
+            Expanded(
+              child: ValueListenableBuilder<int>(
+                valueListenable: widget.game.bestNotifier,
+                builder: (context, best, child) => _buildStatColumn(
+                  label: 'BEST',
+                  value: '$best',
+                  valueColor: MR.gold,
+                ),
+              ),
+            ),
+            _statDivider(),
+            Expanded(
+              child: _buildStatColumn(
+                label: 'COINS',
+                value: '+${widget.game.coinsService.sessionEarned}',
+                valueColor: MR.gold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: 1100.ms)
+        .slideY(begin: 0.15, end: 0, duration: 400.ms, delay: 1100.ms, curve: Curves.easeOutCubic);
+  }
+
+  Widget _statDivider() {
+    return Container(
+      width: 0.5,
+      color: Colors.white.withValues(alpha: 0.1),
+    );
+  }
+
+  Widget _buildStatColumn({
+    required String label,
+    required String value,
+    required Color valueColor,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.4),
+            letterSpacing: 2,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: valueColor,
+            letterSpacing: 1,
+          ),
+        ),
+      ],
     );
   }
 
@@ -546,42 +600,59 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
   }
 
   Widget _buildActions() {
+    // Primary action accent matches the player's current skin (left color),
+    // mirroring the menu PLAY button's prominent accent-gradient style.
+    final accent = widget.game.skinService.currentSkin.leftColor;
     return Column(
       children: [
-        // Tap to retry prompt — the ONLY touch target that restarts the run.
+        // Primary action — the ONLY touch target that restarts the run.
+        // Retry is gated exactly as before via _retry().
         TapScale(
           onTap: _retry,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
-            child: Column(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(
+                colors: [
+                  accent.withValues(alpha: 0.35),
+                  accent.withValues(alpha: 0.12),
+                ],
+              ),
+              border: Border.all(color: accent.withValues(alpha: 0.6), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.3),
+                  blurRadius: 28,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: Colors.white.withValues(alpha: 0.4),
-                  size: 28,
-                )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .moveY(begin: 0, end: -6, duration: 800.ms, curve: Curves.easeInOut),
-                const SizedBox(height: 4),
-                Text(
-                  'TAP TO RETRY',
+                  Icons.refresh_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'RETRY',
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.5),
-                    letterSpacing: 4,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 6,
+                    color: Colors.white,
                   ),
-                )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .fadeIn(duration: 1200.ms)
-                    .then()
-                    .fadeOut(duration: 1200.ms),
+                ),
               ],
             ),
           ),
         )
             .animate()
-            .fadeIn(duration: 400.ms, delay: 1600.ms),
+            .fadeIn(duration: 500.ms, delay: 1600.ms)
+            .slideY(begin: 0.2, end: 0, duration: 500.ms, delay: 1600.ms, curve: Curves.easeOutCubic),
 
         const SizedBox(height: 28),
 
