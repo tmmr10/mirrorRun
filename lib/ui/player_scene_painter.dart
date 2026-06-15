@@ -69,21 +69,25 @@ class PlayerScenePainter extends CustomPainter {
       const Radius.circular(6),
     );
 
-    // Outer glow
-    canvas.drawRRect(
-      bodyRect.inflate(4 + glowT * 3),
-      Paint()
-        ..color = color.withValues(alpha: 0.08 + glowT * 0.06)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-    );
+    // Glow halos — only in full-scene mode; the compact figures-only variant
+    // (menu showcase) skips them so no soft color bleeds outside the figures.
+    if (showScene) {
+      // Outer glow
+      canvas.drawRRect(
+        bodyRect.inflate(4 + glowT * 3),
+        Paint()
+          ..color = color.withValues(alpha: 0.08 + glowT * 0.06)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+      );
 
-    // Inner glow
-    canvas.drawRRect(
-      bodyRect,
-      Paint()
-        ..color = color.withValues(alpha: 0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
+      // Inner glow
+      canvas.drawRRect(
+        bodyRect,
+        Paint()
+          ..color = color.withValues(alpha: 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+      );
+    }
 
     // Body
     canvas.drawRRect(bodyRect, Paint()..color = color);
