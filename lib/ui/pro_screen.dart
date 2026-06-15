@@ -169,25 +169,26 @@ class _ProScreenState extends State<ProScreen> {
 
             const SizedBox(height: 36),
 
-            // Benefits
+            // Benefits — Skin Creator is the hero (highlighted).
+            _buildBenefit(
+              icon: Icons.brush_rounded,
+              label: 'SKIN CREATOR',
+              description: 'Design your own skins + unlock every skin',
+              delay: 600,
+              highlight: true,
+            ),
+            const SizedBox(height: 14),
             _buildBenefit(
               icon: Icons.block_rounded,
               label: 'NO ADS',
               description: 'Remove all interstitial ads',
-              delay: 600,
-            ),
-            const SizedBox(height: 14),
-            _buildBenefit(
-              icon: Icons.brush_rounded,
-              label: 'CUSTOM SKINS',
-              description: 'Create unlimited custom skins',
               delay: 700,
             ),
             const SizedBox(height: 14),
             _buildBenefit(
-              icon: Icons.auto_awesome_rounded,
-              label: 'FUTURE PERKS',
-              description: 'All upcoming Pro features included',
+              icon: Icons.favorite_rounded,
+              label: 'FREE REVIVES',
+              description: 'Free daily continues — no ads, no coins',
               delay: 800,
             ),
 
@@ -305,42 +306,84 @@ class _ProScreenState extends State<ProScreen> {
     required String label,
     required String description,
     required int delay,
+    bool highlight = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: highlight ? 16 : 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.06),
-            width: 0.5,
+            color: highlight
+                ? _gold.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.06),
+            width: highlight ? 1 : 0.5,
           ),
-          color: Colors.white.withValues(alpha: 0.03),
+          color: highlight
+              ? _gold.withValues(alpha: 0.06)
+              : Colors.white.withValues(alpha: 0.03),
+          boxShadow: highlight
+              ? [
+                  BoxShadow(
+                    color: _gold.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
-            Icon(icon, color: _gold.withValues(alpha: 0.7), size: 22),
+            Icon(icon,
+                color: highlight ? _gold : _gold.withValues(alpha: 0.7),
+                size: highlight ? 26 : 22),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white.withValues(alpha: 0.8),
-                      letterSpacing: 2,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: highlight ? 12 : 11,
+                          fontWeight: FontWeight.w700,
+                          color: highlight
+                              ? _gold
+                              : Colors.white.withValues(alpha: 0.8),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      if (highlight) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _gold.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '★ BEST',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              color: _gold,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
                     description,
                     style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.35),
+                      fontSize: highlight ? 11 : 10,
+                      color: Colors.white.withValues(alpha: highlight ? 0.6 : 0.35),
                     ),
                   ),
                 ],

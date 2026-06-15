@@ -306,7 +306,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     comboNotifier.value = 1.0;
     // Perk: head start — begin mid-combo (level 1/2/3 → x1.2/x1.5/x2.0), with a
     // grace window so the bought combo doesn't decay away in the first seconds.
-    final headStart = upgradeService.startComboNearMisses;
+    // Perks are disabled in Daily Seed Runs so the shared track stays fair.
+    final headStart =
+        seedRunActive ? 0 : upgradeService.startComboNearMisses;
     if (headStart > 0) {
       _comboNearMisses = headStart;
       _timeSinceNearMiss = -3.0;
@@ -317,8 +319,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _syncLockTimer = 0;
     _slowMoTimer = 0;
     _foresightTimer = 0;
-    // Perk: start each run with a shield if owned.
-    shieldActive = upgradeService.startShield;
+    // Perk: start each run with a shield if owned (disabled in seed runs).
+    shieldActive = !seedRunActive && upgradeService.startShield;
     _nextShieldRechargeScore = 0;
     _lastPowerUps = const [];
     powerUpsNotifier.value = const [];
@@ -760,7 +762,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   }
 
   void _activatePowerUp(PowerUpType type) {
-    final mult = upgradeService.powerUpDurationMult; // perk: longer power-ups
+    // Perk: longer power-ups (disabled in seed runs for fairness).
+    final mult = seedRunActive ? 1.0 : upgradeService.powerUpDurationMult;
     switch (type) {
       case PowerUpType.shield:
         shieldActive = true;
@@ -797,8 +800,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (shieldActive) {
       shieldActive = false;
       _invincibilityTimer = 0.8; // short grace so the same wave can't re-hit
-      // Perk: a recharging shield regrows after some distance.
-      if (upgradeService.startShield) {
+      // Perk: a recharging shield regrows after some distance (not in seed runs).
+      if (!seedRunActive && upgradeService.startShield) {
         _nextShieldRechargeScore = score + _shieldRechargeMeters;
       }
       _updatePowerUpNotifier();
@@ -906,8 +909,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       final player = coll.side == 'left' ? playerLeft : playerRight;
       if (player == null || player.dead) continue;
 
-      // Perk: coin magnet widens the pickup range.
-      final pad = upgradeService.coinMagnetPadding;
+      // Perk: coin magnet widens the pickup range (disabled in seed runs).
+      final pad = seedRunActive ? 0.0 : upgradeService.coinMagnetPadding;
       final pRect = pad > 0
           ? player.getPickupRect().inflate(pad)
           : player.getPickupRect();
@@ -915,7 +918,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
         coll.collected = true;
         // Coin value scales with the combo tier (1×/1×/2×/2×/3×) + coin-bonus perk.
         final value = comboMultiplier.round().clamp(1, 3) +
-            upgradeService.coinBonusPerPickup;
+            (seedRunActive ? 0 : upgradeService.coinBonusPerPickup);
         unawaited(coinsService.addCoins(value));
         particleSystem.burstCoin(Vector2(coll.laneCenterX, coll.scrollPos));
         floatingText.spawn(
