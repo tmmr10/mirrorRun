@@ -16,8 +16,8 @@ Future<void> runIconCapture(MirrorRunGame game) async {
   game.endCountdown();
   game.speed = 2.5;
   // Move player to left lane for clear shot
-  game.playerLeft!.targetX = 110;
-  game.playerRight!.targetX = 330;
+  game.playerLeft?.targetX = 110;
+  game.playerRight?.targetX = 330;
   await Future.delayed(const Duration(milliseconds: 2000));
   game.pauseEngine();
   debugPrint('>>> ICON_READY:fire');
@@ -31,8 +31,8 @@ Future<void> runIconCapture(MirrorRunGame game) async {
   game.startGame();
   game.endCountdown();
   game.speed = 2.5;
-  game.playerLeft!.targetX = 110;
-  game.playerRight!.targetX = 330;
+  game.playerLeft?.targetX = 110;
+  game.playerRight?.targetX = 330;
   await Future.delayed(const Duration(milliseconds: 2000));
   game.pauseEngine();
   debugPrint('>>> ICON_READY:ice');
@@ -46,8 +46,8 @@ Future<void> runIconCapture(MirrorRunGame game) async {
   game.startGame();
   game.endCountdown();
   game.speed = 2.0;
-  game.playerLeft!.targetX = 110;
-  game.playerRight!.targetX = 330;
+  game.playerLeft?.targetX = 110;
+  game.playerRight?.targetX = 330;
   await Future.delayed(const Duration(milliseconds: 1500));
   game.pauseEngine();
   debugPrint('>>> ICON_READY:default');

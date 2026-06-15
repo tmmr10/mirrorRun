@@ -5,11 +5,19 @@ class TapScale extends StatefulWidget {
   final VoidCallback? onTap;
   final HitTestBehavior behavior;
 
+  /// When set, guarantees a minimum hit-/touch-area of [minSize]×[minSize]
+  /// logical pixels by wrapping the (centered) child in a [ConstrainedBox].
+  /// The child's own visual size is left untouched — only the tappable area
+  /// is grown if it would otherwise be smaller. Leave null for the original
+  /// behaviour (no extra constraints).
+  final double? minSize;
+
   const TapScale({
     super.key,
     required this.child,
     this.onTap,
     this.behavior = HitTestBehavior.opaque,
+    this.minSize,
   });
 
   @override
@@ -55,6 +63,23 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    Widget content = widget.child;
+    if (widget.minSize != null) {
+      // Grow only the hit-/touch-area; keep the child visually centered and
+      // at its intrinsic size.
+      content = ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: widget.minSize!,
+          minHeight: widget.minSize!,
+        ),
+        child: Center(
+          widthFactor: 1,
+          heightFactor: 1,
+          child: widget.child,
+        ),
+      );
+    }
+
     return GestureDetector(
       behavior: widget.behavior,
       onTapDown: _onTapDown,
@@ -69,7 +94,7 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
             child: child,
           ),
         ),
-        child: widget.child,
+        child: content,
       ),
     );
   }

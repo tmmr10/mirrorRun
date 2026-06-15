@@ -9,6 +9,14 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
   double get vh => MirrorRunGame.vh;
   int _frame = 0;
 
+  // Reusable paints (avoid per-frame allocation in render()).
+  // Shaders are dynamic per frame and reassigned each draw.
+  final Paint _shaderPaint = Paint();
+  final Paint _colorPaint = Paint();
+  final Paint _glowPaint = Paint();
+  final Paint _fadePaint = Paint();
+  static final Paint _layerPaint = Paint();
+
   MirrorLine() : super(
     position: Vector2(mid - 3, 0),
     size: Vector2(6, 960),
@@ -18,7 +26,7 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
   @override
   void update(double dt) {
     super.update(dt);
-    _frame++;
+    _frame = (_frame + 1) % 100000;
   }
 
   @override
@@ -55,19 +63,19 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
 
   /// Fade-out mask: top 15% fades from transparent to opaque.
   void _applyTopFade(Canvas canvas) {
-    canvas.saveLayer(Rect.fromLTWH(-20, 0, 46, vh), Paint());
+    canvas.saveLayer(Rect.fromLTWH(-20, 0, 46, vh), _layerPaint);
   }
 
   void _finishTopFade(Canvas canvas) {
     final fadeHeight = vh * 0.50;
-    final fadePaint = Paint()
+    _fadePaint
       ..blendMode = BlendMode.dstIn
       ..shader = Gradient.linear(
         const Offset(0, 0),
         Offset(0, fadeHeight),
         const [Color(0x00FFFFFF), Color(0xFFFFFFFF)],
       );
-    canvas.drawRect(Rect.fromLTWH(-20, 0, 46, fadeHeight), fadePaint);
+    canvas.drawRect(Rect.fromLTWH(-20, 0, 46, fadeHeight), _fadePaint);
     canvas.restore();
   }
 
@@ -84,13 +92,12 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
       ],
       const [0.0, 0.5, 1.0],
     );
-    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), Paint()..shader = gradient);
+    _shaderPaint.shader = gradient;
+    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), _shaderPaint);
 
     final alpha = (0.07 + 0.05 * sin(_frame * 0.06)) * 255;
-    canvas.drawRect(
-      Rect.fromLTWH(2, 0, 2, vh),
-      Paint()..color = Color.fromARGB(alpha.toInt().clamp(0, 255), 255, 255, 255),
-    );
+    _colorPaint.color = Color.fromARGB(alpha.toInt().clamp(0, 255), 255, 255, 255);
+    canvas.drawRect(Rect.fromLTWH(2, 0, 2, vh), _colorPaint);
 
     _finishTopFade(canvas);
   }
@@ -115,14 +122,13 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
       ],
       const [0.0, 0.5, 1.0],
     );
-    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), Paint()..shader = gradient);
+    _shaderPaint.shader = gradient;
+    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), _shaderPaint);
 
-    canvas.drawRect(
-      Rect.fromLTWH(-12, 0, 30, vh),
-      Paint()
-        ..color = baseColor.withValues(alpha: pulse * 0.15)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
-    );
+    _glowPaint
+      ..color = baseColor.withValues(alpha: pulse * 0.15)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
+    canvas.drawRect(Rect.fromLTWH(-12, 0, 30, vh), _glowPaint);
 
     _finishTopFade(canvas);
   }
@@ -145,14 +151,13 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
       ],
       const [0.0, 0.5, 1.0],
     );
-    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), Paint()..shader = gradient);
+    _shaderPaint.shader = gradient;
+    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), _shaderPaint);
 
-    canvas.drawRect(
-      Rect.fromLTWH(-8, 0, 22, vh),
-      Paint()
-        ..color = color.withValues(alpha: (intensity * 0.12).clamp(0.0, 1.0))
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
-    );
+    _glowPaint
+      ..color = color.withValues(alpha: (intensity * 0.12).clamp(0.0, 1.0))
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
+    canvas.drawRect(Rect.fromLTWH(-8, 0, 22, vh), _glowPaint);
 
     _finishTopFade(canvas);
   }
@@ -175,16 +180,15 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
       ],
       const [0.0, 0.5, 1.0],
     );
-    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), Paint()..shader = gradient);
+    _shaderPaint.shader = gradient;
+    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), _shaderPaint);
 
     if (es.mirrorSwapped) {
       final glowAlpha = (0.08 + 0.04 * sin(_frame * 0.1)).clamp(0.0, 1.0);
-      canvas.drawRect(
-        Rect.fromLTWH(-8, 0, 22, vh),
-        Paint()
-          ..color = color.withValues(alpha: glowAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-      );
+      _glowPaint
+        ..color = color.withValues(alpha: glowAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+      canvas.drawRect(Rect.fromLTWH(-8, 0, 22, vh), _glowPaint);
     }
 
     _finishTopFade(canvas);
@@ -209,15 +213,17 @@ class MirrorLine extends PositionComponent with HasGameReference<MirrorRunGame> 
       ],
       const [0.0, 0.5, 1.0],
     );
-    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), Paint()..shader = gradient);
+    _shaderPaint.shader = gradient;
+    canvas.drawRect(Rect.fromLTWH(0, 0, 6, vh), _shaderPaint);
 
     final glowWidth = 30.0 * flash;
     final glowAlpha = (flash * 0.25).clamp(0.0, 1.0);
+    _glowPaint
+      ..color = flashColor.withValues(alpha: glowAlpha)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12 + flash * 10);
     canvas.drawRect(
       Rect.fromLTWH(-glowWidth / 2, 0, 6 + glowWidth, vh),
-      Paint()
-        ..color = flashColor.withValues(alpha: glowAlpha)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 12 + flash * 10),
+      _glowPaint,
     );
 
     _finishTopFade(canvas);

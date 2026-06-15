@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class ProScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -12,21 +13,23 @@ class ProScreen extends StatefulWidget {
 }
 
 class _ProScreenState extends State<ProScreen> {
-  static const _gold = Color(0xFFFFD700);
-  static const _accent = Color(0xFFB48CFF);
+  static const _gold = MR.gold;
+  static const _accent = MR.accent;
   bool _isPurchasing = false;
 
   @override
   void initState() {
     super.initState();
-    widget.game.adService.onProStatusChanged = () {
-      if (mounted) setState(() {});
-    };
+    widget.game.adService.proStatusNotifier.addListener(_onProStatus);
+  }
+
+  void _onProStatus() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    widget.game.adService.onProStatusChanged = null;
+    widget.game.adService.proStatusNotifier.removeListener(_onProStatus);
     super.dispose();
   }
 
@@ -187,7 +190,7 @@ class _ProScreenState extends State<ProScreen> {
                   color: _gold.withValues(alpha: 0.06),
                 ),
                 child: Text(
-                  '\$2.99 · ONE TIME',
+                  '${widget.game.adService.proPrice ?? '\$2.99'} · ONE TIME',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

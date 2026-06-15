@@ -8,6 +8,12 @@ class ParticleSystem extends PositionComponent with HasGameReference<MirrorRunGa
   final List<_Shard> _shards = [];
   final _rng = Random();
 
+  // Reusable paints (avoid per-element allocation in render()).
+  static final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  static final Paint _shardStrokePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+
   ParticleSystem() : super(priority: 80);
 
   int get shardCount => _shards.length;
@@ -23,6 +29,22 @@ class ParticleSystem extends PositionComponent with HasGameReference<MirrorRunGa
         vy: (sin(a) * spd - 3) * 60,
         r: 2 + _rng.nextDouble() * 4,
         color: col,
+      ));
+    }
+  }
+
+  /// Smaller, gold-colored burst for coin pickups.
+  void burstCoin(Vector2 pos) {
+    for (int i = 0; i < 10; i++) {
+      final a = _rng.nextDouble() * pi * 2;
+      final spd = 1.5 + _rng.nextDouble() * 3;
+      _particles.add(_Particle(
+        x: pos.x,
+        y: pos.y,
+        vx: cos(a) * spd * 60,
+        vy: (sin(a) * spd - 1.5) * 60,
+        r: 1.5 + _rng.nextDouble() * 2,
+        color: const Color(0xFFFFD700),
       ));
     }
   }
@@ -68,12 +90,11 @@ class ParticleSystem extends PositionComponent with HasGameReference<MirrorRunGa
   void render(Canvas canvas) {
     // Particles
     for (final p in _particles) {
-      final paint = Paint()
-        ..color = p.color.withValues(alpha: p.life.clamp(0, 1));
+      _fillPaint.color = p.color.withValues(alpha: p.life.clamp(0, 1));
       canvas.drawCircle(
         Offset(p.x, p.y),
         p.r * p.life.clamp(0, 1),
-        paint,
+        _fillPaint,
       );
     }
 
@@ -86,17 +107,11 @@ class ParticleSystem extends PositionComponent with HasGameReference<MirrorRunGa
       final life = s.life.clamp(0.0, 1.0);
       final rect = Rect.fromCenter(center: Offset.zero, width: s.w, height: s.h);
 
-      canvas.drawRect(
-        rect,
-        Paint()..color = Color.fromARGB((life * 0.4 * 255).toInt(), 200, 180, 255),
-      );
-      canvas.drawRect(
-        rect,
-        Paint()
-          ..color = Color.fromARGB((life * 255).toInt(), 255, 255, 255)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
+      _fillPaint.color = Color.fromARGB((life * 0.4 * 255).toInt(), 200, 180, 255);
+      canvas.drawRect(rect, _fillPaint);
+
+      _shardStrokePaint.color = Color.fromARGB((life * 255).toInt(), 255, 255, 255);
+      canvas.drawRect(rect, _shardStrokePaint);
 
       canvas.restore();
     }
@@ -104,7 +119,8 @@ class ParticleSystem extends PositionComponent with HasGameReference<MirrorRunGa
 }
 
 class _Particle {
-  double x, y, vx, vy, r, life;
+  double x, y, vx, vy, r;
+  double life = 1.0;
   final Color color;
 
   _Particle({
@@ -114,12 +130,12 @@ class _Particle {
     required this.vy,
     required this.r,
     required this.color,
-    this.life = 1.0,
   });
 }
 
 class _Shard {
-  double x, y, vx, vy, rot, rotV, w, h, life;
+  double x, y, vx, vy, rot, rotV, w, h;
+  double life = 1.0;
 
   _Shard({
     required this.x,
@@ -130,6 +146,5 @@ class _Shard {
     required this.rotV,
     required this.w,
     required this.h,
-    this.life = 1.0,
   });
 }

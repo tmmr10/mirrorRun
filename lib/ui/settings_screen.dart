@@ -1,8 +1,9 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -16,7 +17,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _helpExpanded = false;
   bool _biomesExpanded = false;
 
-  static const _accent = Color(0xFFB48CFF);
+  static const _accent = MR.accent;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xF00a0a0f), Color(0xF0080812), Color(0xF00f0a14)],
+          colors: [MR.bgTop, MR.bgMid, MR.bgBottom],
         ),
       ),
       child: SafeArea(
@@ -93,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildDivider(),
               const SizedBox(height: 16),
               TapScale(
+                minSize: MR.minTouchTarget,
                 onTap: () => setState(() => _helpExpanded = !_helpExpanded),
                 child: Row(
                   children: [
@@ -143,6 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildDivider(),
               const SizedBox(height: 16),
               TapScale(
+                minSize: MR.minTouchTarget,
                 onTap: () => setState(() => _biomesExpanded = !_biomesExpanded),
                 child: Row(
                   children: [
@@ -213,10 +216,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 24),
 
               // Leaderboard (iOS only — Google Play Games not yet configured)
-              if (!Platform.isAndroid) ...[
+              if (defaultTargetPlatform != TargetPlatform.android) ...[
                 _buildDivider(),
                 const SizedBox(height: 16),
                 TapScale(
+                  minSize: MR.minTouchTarget,
                   onTap: () => widget.game.leaderboardService.showLeaderboard(),
                   child: Text(
                     'LEADERBOARD',
@@ -237,6 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildDivider(),
               const SizedBox(height: 16),
               TapScale(
+                minSize: MR.minTouchTarget,
                 onTap: () {
                   widget.game.overlays.remove('SettingsScreen');
                   widget.game.overlays.add('StatsScreen');
@@ -258,6 +263,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildDivider(),
                 const SizedBox(height: 16),
                 TapScale(
+                  minSize: MR.minTouchTarget,
                   onTap: () => widget.game.adService.restorePurchases(),
                   child: Text(
                     'RESTORE PURCHASES',
@@ -292,18 +298,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Licenses
               Center(
                 child: TapScale(
-                  onTap: () {
-                    showLicensePage(
-                      context: context,
-                      applicationName: 'Mirror Runners',
-                      applicationVersion: '1.0.0',
-                    );
-                  },
+                  minSize: MR.minTouchTarget,
+                  onTap: () => _showLicenses(context),
                   child: Text(
                     'LICENSES',
                     style: TextStyle(
                       fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: Colors.white.withValues(alpha: 0.55),
                       letterSpacing: 3,
                     ),
                   ),
@@ -319,8 +320,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Opens the licenses page inside a dark theme so it matches the app's
+  /// look instead of breaking out into Material's bright default theme.
+  void _showLicenses(BuildContext context) {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (ctx) => Theme(
+          data: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: MR.accent,
+              brightness: Brightness.dark,
+            ),
+            scaffoldBackgroundColor: MR.bgMid,
+          ),
+          child: const LicensePage(
+            applicationName: 'Mirror Runners',
+            applicationVersion: '1.0.0',
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
     return TapScale(
+      minSize: MR.minTouchTarget,
       onTap: () => onChanged(!value),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -403,7 +429,7 @@ class _HelpSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFFB48CFF).withValues(alpha: 0.7),
+                  color: MR.accent.withValues(alpha: 0.7),
                   letterSpacing: 2,
                 ),
               ),
@@ -456,7 +482,7 @@ class _MirrorPainter extends CustomPainter {
 
     // Left player (orange)
     final lpx = mid * 0.45;
-    _drawPlayer(canvas, lpx, groundY - 4, const Color(0xFFff6b35));
+    _drawPlayer(canvas, lpx, groundY - 4, MR.danger);
 
     // Right player (purple) — mirrored
     final rpx = mid + (mid - lpx);
@@ -610,7 +636,7 @@ class _SwapPainter extends CustomPainter {
     // Left player
     canvas.drawRRect(
       RRect.fromRectAndRadius(Rect.fromLTWH(lpx - 4, groundY - 18, 8, 14), const Radius.circular(2)),
-      Paint()..color = const Color(0xFFff6b35),
+      Paint()..color = MR.danger,
     );
     // Right player
     canvas.drawRRect(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../game/game_state.dart';
 import '../game/mirror_run_game.dart';
 
@@ -24,12 +25,26 @@ class _CountdownOverlayState extends State<CountdownOverlay>
   static const _pauseBetween = 200; // ms gap between pulses
   static const _expandDuration = Duration(milliseconds: 500);
 
+  /// Persisted flag: whether the one-time controls hint has been shown.
+  static const _seenHintKey = 'seen_controls_hint';
+
+  /// Shows a subtle "DRAG TO MOVE" hint on the very first game start only.
+  bool _showControlsHint = false;
+
   @override
   void initState() {
     super.initState();
     _pulseAnim = AnimationController(vsync: this, duration: _pulseDuration);
     _expandAnim = AnimationController(vsync: this, duration: _expandDuration);
+    _maybeShowControlsHint();
     _runCountdown();
+  }
+
+  Future<void> _maybeShowControlsHint() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_seenHintKey) ?? false) return;
+    await prefs.setBool(_seenHintKey, true);
+    if (mounted) setState(() => _showControlsHint = true);
   }
 
   bool get _alive =>
@@ -58,14 +73,14 @@ class _CountdownOverlayState extends State<CountdownOverlay>
     // 3 heartbeat pulses
     for (int i = 0; i < 3; i++) {
       if (!_alive) return;
-      setState(() => _pulseIndex = i);
+      if (mounted) setState(() => _pulseIndex = i);
       _pulseAnim.forward(from: 0);
       if (!await _pauseAwareDelay(_pulseDuration.inMilliseconds + _pauseBetween)) return;
     }
 
     // Final expand
     if (!_alive) return;
-    setState(() => _finalExpand = true);
+    if (mounted) setState(() => _finalExpand = true);
     _expandAnim.forward(from: 0);
     if (!await _pauseAwareDelay(_expandDuration.inMilliseconds)) return;
 
@@ -89,7 +104,7 @@ class _CountdownOverlayState extends State<CountdownOverlay>
     final screenHeight = MediaQuery.of(context).size.height;
     final centerX = screenWidth / 2;
 
-    return AnimatedBuilder(
+    final countdown = AnimatedBuilder(
       animation: _finalExpand ? _expandAnim : _pulseAnim,
       builder: (context, _) {
         if (_finalExpand) {
@@ -98,6 +113,39 @@ class _CountdownOverlayState extends State<CountdownOverlay>
 
         return _buildPulse(_pulseAnim.value, centerX, screenHeight, leftColor, rightColor);
       },
+    );
+
+    if (!_showControlsHint) return countdown;
+
+    return Stack(
+      children: [
+        countdown,
+        // One-time, dezent controls hint — fades out as the countdown ends.
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: screenHeight * 0.18,
+          child: IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: _finalExpand ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              child: Center(
+                child: Text(
+                  'DRAG TO MOVE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    letterSpacing: 5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

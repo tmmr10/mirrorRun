@@ -6,9 +6,6 @@ import '../world/biome.dart';
 import 'obstacle.dart';
 
 class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
-  static const List<double> mirrorLanesL = [25, 110, 195];
-  static const List<double> mirrorLanesR = [245, 330, 415];
-
   /// The 3 valid lane states in mirror mode (left lane, right lane).
   static const List<(int, int)> validStates = [(0, 2), (1, 1), (2, 0)];
 
@@ -19,7 +16,7 @@ class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
   @override
   void update(double dt) {
     super.update(dt);
-    if (game.playState != PlayState.playing && game.playState != PlayState.countdown) return;
+    if (game.playState != PlayState.playing) return;
 
     _spawnTimerLeft -= dt;
     if (_spawnTimerLeft <= 0) {
@@ -37,7 +34,7 @@ class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
     final biome = BiomeManager.getBiome(game.score);
     final phase = biome.getPhase(game.score);
     final base = phase.minInterval + max(0, 15 - game.score * 0.05);
-    return (base + _rng.nextDouble() * 30 - 15) / 60;
+    return max(0.15, (base + _rng.nextDouble() * 30 - 15) / 60);
   }
 
   void _trySpawnSide(String side) {
@@ -45,7 +42,9 @@ class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
     final phase = biome.getPhase(game.score);
     final type = phase.types[_rng.nextInt(phase.types.length)];
 
-    final lanes = side == 'left' ? mirrorLanesL : mirrorLanesR;
+    final lanes = side == 'left'
+        ? MirrorRunGame.mirrorLanesL
+        : MirrorRunGame.mirrorLanesR;
 
     if (type == ObstacleType.doubleWall) {
       _spawnDoubleWall(side, lanes);

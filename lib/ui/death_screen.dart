@@ -1,11 +1,16 @@
-import 'dart:io';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import '../models/player_skin.dart';
+import '../services/analytics_service.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
+
+const Duration _kContinueWindow = Duration(seconds: 5);
 
 class DeathScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -15,21 +20,31 @@ class DeathScreen extends StatefulWidget {
   State<DeathScreen> createState() => _DeathScreenState();
 }
 
-class _DeathScreenState extends State<DeathScreen> {
+class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin {
   bool _canInteract = false;
   bool _adWasShown = false;
+  late final Timer _interactTimer;
+
+  // CONTINUE panel state
+  bool _continueVisible = false;
+  bool _revivingInProgress = false;
+  Timer? _continueTimeoutTimer;
+  AnimationController? _continueProgressController;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    _interactTimer = Timer(const Duration(milliseconds: 2500), () {
       if (mounted) setState(() => _canInteract = true);
     });
-    widget.game.adService.onProStatusChanged = () {
-      if (mounted) setState(() {});
-    };
+    widget.game.adService.proStatusNotifier.addListener(_onProStatus);
+
+    // Offer CONTINUE immediately (don't wait for _canInteract — revive has its own window)
+    _setupContinueOffer();
+
     final adService = widget.game.adService;
-    if (adService.shouldShowAd(widget.game.lastRunDuration)) {
+    // Show interstitial only if revive isn't being offered (avoid stacking ads)
+    if (!_continueVisible && adService.shouldShowAd(widget.game.lastRunDuration)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         adService.showAd(() {
@@ -39,14 +54,100 @@ class _DeathScreenState extends State<DeathScreen> {
     }
   }
 
+  void _setupContinueOffer() {
+    final game = widget.game;
+    if (!game.canRevive) return;
+
+    final adReady = game.adService.isRewardedAdReady;
+    final canProFreeRevive = game.adService.canUseFreeProRevive();
+
+    // Show panel if either Pro-free-revive OR rewarded ad is available
+    if (!adReady && !canProFreeRevive) return;
+
+    _continueVisible = true;
+    _continueProgressController = AnimationController(
+      vsync: this,
+      duration: _kContinueWindow,
+    )..forward();
+    _continueTimeoutTimer = Timer(_kContinueWindow, () {
+      if (mounted && _continueVisible && !_revivingInProgress) {
+        unawaited(AnalyticsService.logReviveDeclined(score: widget.game.scoreNotifier.value));
+        setState(() => _continueVisible = false);
+      }
+    });
+    unawaited(AnalyticsService.logReviveOffered());
+  }
+
+  void _onProStatus() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
-    widget.game.adService.onProStatusChanged = null;
+    _interactTimer.cancel();
+    _continueTimeoutTimer?.cancel();
+    _continueProgressController?.dispose();
+    widget.game.adService.proStatusNotifier.removeListener(_onProStatus);
     super.dispose();
   }
 
+  void _reviveViaAd() {
+    if (_revivingInProgress) return;
+    setState(() => _revivingInProgress = true);
+    _continueTimeoutTimer?.cancel();
+    _continueProgressController?.stop();
+
+    widget.game.adService.showRewardedAd(
+      onEarnedReward: () {
+        if (!mounted) return;
+        widget.game.revivePlayer(viaAd: true);
+      },
+      onDismissed: () {
+        if (!mounted) return;
+        // If revive didn't fire (ad closed without earning reward), hide panel
+        if (widget.game.canRevive) {
+          setState(() {
+            _revivingInProgress = false;
+            _continueVisible = false;
+          });
+        }
+      },
+    );
+  }
+
+  void _reviveFreeForPro() async {
+    if (_revivingInProgress) return;
+    setState(() => _revivingInProgress = true);
+    _continueTimeoutTimer?.cancel();
+    _continueProgressController?.stop();
+    final consumed = await widget.game.adService.consumeFreeProRevive();
+    if (!consumed) {
+      // Cap hit or state changed — fall back to ad if available
+      if (mounted && widget.game.adService.isRewardedAdReady) {
+        setState(() => _revivingInProgress = false);
+        _reviveViaAd();
+      } else if (mounted) {
+        setState(() {
+          _revivingInProgress = false;
+          _continueVisible = false;
+        });
+      }
+      return;
+    }
+    widget.game.revivePlayer(viaAd: false);
+  }
+
+  void _declineContinue() {
+    _continueTimeoutTimer?.cancel();
+    _continueProgressController?.stop();
+    unawaited(AnalyticsService.logReviveDeclined(score: widget.game.scoreNotifier.value));
+    setState(() => _continueVisible = false);
+  }
+
   void _retry() {
-    if (!_canInteract) return;
+    // Never retry from a stray tap while the revive panel is up — that would
+    // throw away the run AND the continue offer at once.
+    if (!_canInteract || _continueVisible) return;
     widget.game.startGame();
   }
 
@@ -67,8 +168,10 @@ class _DeathScreenState extends State<DeathScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Absorb stray taps (so they don't fall through to the game) WITHOUT
+    // triggering retry — retry lives only on the explicit prompt below.
     return GestureDetector(
-      onTap: _retry,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         width: double.infinity,
         height: double.infinity,
@@ -90,7 +193,12 @@ class _DeathScreenState extends State<DeathScreen> {
               // Score section
               _buildScoreSection(),
 
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
+
+              // CONTINUE panel (above action buttons)
+              if (_continueVisible) _buildContinuePanel(),
+
+              const Spacer(),
 
               // Action buttons
               _buildActions(),
@@ -217,6 +325,46 @@ class _DeathScreenState extends State<DeathScreen> {
                 .animate()
                 .fadeIn(duration: 400.ms, delay: 1000.ms),
 
+            // Session coins earned
+            if (widget.game.coinsService.sessionEarned > 0) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                decoration: BoxDecoration(
+                  color: MR.gold.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: MR.gold.withValues(alpha: 0.3),
+                    width: 0.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.circle,
+                      color: MR.gold,
+                      size: 9,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '+${widget.game.coinsService.sessionEarned} COINS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: MR.gold.withValues(alpha: 0.9),
+                        letterSpacing: 3,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 1100.ms)
+                  .slideY(begin: 0.2, end: 0, duration: 400.ms, delay: 1100.ms)
+                  .shimmer(duration: 1500.ms, delay: 1300.ms, color: const Color(0x40FFD700)),
+            ],
+
             const SizedBox(height: 16),
 
             // New record badge
@@ -250,34 +398,43 @@ class _DeathScreenState extends State<DeathScreen> {
               },
             ),
 
-            // Skin unlock banner
-            ValueListenableBuilder<List<SkinId>>(
-              valueListenable: widget.game.newSkinsNotifier,
-              builder: (context, newSkins, child) {
-                if (newSkins.isEmpty) return const SizedBox.shrink();
-                return Column(
+            // Unlock banners (skins + achievements) — bounded + scrollable so a
+            // record run with many simultaneous unlocks can't overflow into the
+            // action buttons on small screens.
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 176),
+              child: SingleChildScrollView(
+                child: Column(
                   children: [
-                    const SizedBox(height: 10),
-                    for (final skinId in newSkins)
-                      _buildSkinUnlockBanner(skinId),
+                    ValueListenableBuilder<List<SkinId>>(
+                      valueListenable: widget.game.newSkinsNotifier,
+                      builder: (context, newSkins, child) {
+                        if (newSkins.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          children: [
+                            const SizedBox(height: 10),
+                            for (final skinId in newSkins)
+                              _buildSkinUnlockBanner(skinId),
+                          ],
+                        );
+                      },
+                    ),
+                    ValueListenableBuilder<List<String>>(
+                      valueListenable: widget.game.newAchievementsNotifier,
+                      builder: (context, newAchievements, child) {
+                        if (newAchievements.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          children: [
+                            const SizedBox(height: 10),
+                            for (final id in newAchievements)
+                              _buildAchievementUnlockBanner(id),
+                          ],
+                        );
+                      },
+                    ),
                   ],
-                );
-              },
-            ),
-
-            // Achievement unlock banner
-            ValueListenableBuilder<List<String>>(
-              valueListenable: widget.game.newAchievementsNotifier,
-              builder: (context, newAchievements, child) {
-                if (newAchievements.isEmpty) return const SizedBox.shrink();
-                return Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    for (final id in newAchievements)
-                      _buildAchievementUnlockBanner(id),
-                  ],
-                );
-              },
+                ),
+              ),
             ),
           ],
         );
@@ -336,15 +493,15 @@ class _DeathScreenState extends State<DeathScreen> {
   }
 
   String _achievementLabel(String id) {
-    if (id.startsWith('achievement_distance_')) return id.replaceFirst('achievement_distance_', '') + 'm';
+    if (id.startsWith('achievement_distance_')) return '${id.replaceFirst('achievement_distance_', '')}m';
     if (id.startsWith('achievement_biome_')) return id.replaceFirst('achievement_biome_', '').toUpperCase();
-    if (id.startsWith('achievement_games_')) return id.replaceFirst('achievement_games_', '') + ' GAMES';
+    if (id.startsWith('achievement_games_')) return '${id.replaceFirst('achievement_games_', '')} GAMES';
     if (id == 'achievement_first_game') return '1ST RUN';
     return id.toUpperCase();
   }
 
   Widget _buildAchievementUnlockBanner(String id) {
-    const color = Color(0xFFFFD700);
+    const color = MR.gold;
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -379,31 +536,38 @@ class _DeathScreenState extends State<DeathScreen> {
   Widget _buildActions() {
     return Column(
       children: [
-        // Tap to retry prompt
-        Column(
-          children: [
-            Icon(
-              Icons.keyboard_arrow_up_rounded,
-              color: Colors.white.withValues(alpha: 0.4),
-              size: 28,
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .moveY(begin: 0, end: -6, duration: 800.ms, curve: Curves.easeInOut),
-            const SizedBox(height: 4),
-            Text(
-              'TAP TO RETRY',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.5),
-                letterSpacing: 4,
-              ),
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .fadeIn(duration: 1200.ms)
-                .then()
-                .fadeOut(duration: 1200.ms),
-          ],
+        // Tap to retry prompt — the ONLY touch target that restarts the run.
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _retry,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  size: 28,
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .moveY(begin: 0, end: -6, duration: 800.ms, curve: Curves.easeInOut),
+                const SizedBox(height: 4),
+                Text(
+                  'TAP TO RETRY',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.5),
+                    letterSpacing: 4,
+                  ),
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .fadeIn(duration: 1200.ms)
+                    .then()
+                    .fadeOut(duration: 1200.ms),
+              ],
+            ),
+          ),
         )
             .animate()
             .fadeIn(duration: 400.ms, delay: 1600.ms),
@@ -422,7 +586,7 @@ class _DeathScreenState extends State<DeathScreen> {
               borderColor: Colors.white.withValues(alpha: 0.1),
               delay: 1800,
             ),
-            if (!Platform.isAndroid) ...[
+            if (defaultTargetPlatform != TargetPlatform.android) ...[
               const SizedBox(width: 10),
               _buildActionButton(
                 onTap: () {
@@ -430,8 +594,8 @@ class _DeathScreenState extends State<DeathScreen> {
                 },
                 label: 'RANKS',
                 icon: Icons.leaderboard_rounded,
-                color: const Color(0xFFB48CFF).withValues(alpha: 0.5),
-                borderColor: const Color(0xFFB48CFF).withValues(alpha: 0.2),
+                color: MR.accent.withValues(alpha: 0.5),
+                borderColor: MR.accent.withValues(alpha: 0.2),
                 delay: 1900,
               ),
             ],
@@ -452,12 +616,13 @@ class _DeathScreenState extends State<DeathScreen> {
                     'I ran ${score}m through $biomeName in Mirror Runners!',
                     sharePositionOrigin: origin,
                   );
+                  unawaited(AnalyticsService.logShareTapped(score: score));
                 } catch (_) {}
               },
               label: 'SHARE',
               icon: Icons.share_rounded,
-              color: const Color(0xFFff6b35).withValues(alpha: 0.6),
-              borderColor: const Color(0xFFff6b35).withValues(alpha: 0.3),
+              color: MR.danger.withValues(alpha: 0.6),
+              borderColor: MR.danger.withValues(alpha: 0.3),
               delay: 2000,
             ),
             ),
@@ -475,18 +640,18 @@ class _DeathScreenState extends State<DeathScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                  color: MR.gold.withValues(alpha: 0.3),
                   width: 0.5,
                 ),
                 borderRadius: BorderRadius.circular(4),
-                color: const Color(0xFFFFD700).withValues(alpha: 0.06),
+                color: MR.gold.withValues(alpha: 0.06),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.workspace_premium_rounded,
-                    color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                    color: MR.gold.withValues(alpha: 0.7),
                     size: 16,
                   ),
                   const SizedBox(width: 6),
@@ -495,7 +660,7 @@ class _DeathScreenState extends State<DeathScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                      color: MR.gold.withValues(alpha: 0.7),
                       letterSpacing: 3,
                     ),
                   ),
@@ -548,5 +713,181 @@ class _DeathScreenState extends State<DeathScreen> {
     )
         .animate()
         .fadeIn(duration: 400.ms, delay: Duration(milliseconds: delay));
+  }
+
+  Widget _buildContinuePanel() {
+    final game = widget.game;
+    final isPro = game.adService.isPro;
+    final adReady = game.adService.isRewardedAdReady;
+    final canProFreeRevive = game.adService.canUseFreeProRevive();
+    final proRemaining = game.adService.getProFreeRevivesRemaining();
+    const gold = MR.gold;
+    const cyan = MR.cyan;
+
+    // Guard: if no actionable button available, hide panel entirely
+    final hasAction = (isPro && canProFreeRevive) || adReady;
+    if (!hasAction) return const SizedBox.shrink();
+
+    final progressCtrl = _continueProgressController;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xCC0a0a14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: gold.withValues(alpha: 0.3), width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: gold.withValues(alpha: 0.15),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, size: 14, color: gold),
+              const SizedBox(width: 8),
+              Text(
+                'CONTINUE?',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: gold,
+                  letterSpacing: 4,
+                ),
+              ),
+              const Spacer(),
+              TapScale(
+                onTap: _declineContinue,
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: Colors.white.withValues(alpha: 0.35),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // Countdown progress bar
+          if (progressCtrl != null)
+            AnimatedBuilder(
+              animation: progressCtrl,
+              builder: (context, _) => Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(1),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: (1.0 - progressCtrl.value).clamp(0.0, 1.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [gold.withValues(alpha: 0.8), gold],
+                      ),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+
+          // Buttons — simplified: Pro-free revive OR watch ad, not both
+          if (isPro && canProFreeRevive) ...[
+            _buildReviveButton(
+              label: 'FREE REVIVE',
+              subtitle: '$proRemaining / 3 TODAY',
+              icon: Icons.workspace_premium_rounded,
+              color: gold,
+              onTap: _reviveFreeForPro,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'RESETS AT MIDNIGHT',
+              style: TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.3),
+                letterSpacing: 2,
+              ),
+            ),
+          ] else if (adReady)
+            _buildReviveButton(
+              label: 'WATCH AD',
+              subtitle: 'CONTINUE',
+              icon: Icons.play_circle_outline,
+              color: cyan,
+              onTap: _reviveViaAd,
+            ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .slideY(begin: 0.2, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
+  }
+
+  Widget _buildReviveButton({
+    required String label,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return TapScale(
+      onTap: _revivingInProgress ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          gradient: LinearGradient(
+            colors: [
+              color.withValues(alpha: 0.25),
+              color.withValues(alpha: 0.1),
+            ],
+          ),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 0.5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+                color: color.withValues(alpha: 0.5),
+                letterSpacing: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

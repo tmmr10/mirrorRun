@@ -4,6 +4,7 @@ import '../game/mirror_run_game.dart';
 import '../models/player_skin.dart';
 import 'player_scene_painter.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class SkinSelector extends StatefulWidget {
   final MirrorRunGame game;
@@ -14,7 +15,7 @@ class SkinSelector extends StatefulWidget {
 }
 
 class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderStateMixin {
-  static const _accent = Color(0xFFB48CFF);
+  static const _accent = MR.accent;
   late final AnimationController _glowController;
 
   List<CustomSkinData> get _customSkins => widget.game.skinService.customSkins;
@@ -26,10 +27,16 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
+    widget.game.adService.proStatusNotifier.addListener(_onProStatusChanged);
+  }
+
+  void _onProStatusChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    widget.game.adService.proStatusNotifier.removeListener(_onProStatusChanged);
     _glowController.dispose();
     super.dispose();
   }
@@ -280,7 +287,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                       children: [
                         Icon(
                           Icons.workspace_premium_rounded,
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                          color: MR.gold.withValues(alpha: 0.7),
                           size: 12,
                         ),
                         const SizedBox(width: 4),
@@ -289,7 +296,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                            color: MR.gold.withValues(alpha: 0.7),
                             letterSpacing: 3,
                           ),
                         ),
@@ -389,6 +396,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
               const SizedBox(height: 6),
               // Edit
               TapScale(
+                minSize: MR.minTouchTarget,
                 onTap: () => _openBuilder(editIndex: index),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -526,42 +534,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     const Spacer(flex: 2),
                   ],
                 )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Spacer(flex: 2),
-                    Icon(
-                      Icons.lock_outline_rounded,
-                      color: Colors.white.withValues(alpha: 0.1),
-                      size: 32,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      skin.name,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white.withValues(alpha: 0.2),
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        skin.unlockDescription,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 8,
-                          color: Colors.white.withValues(alpha: 0.15),
-                          letterSpacing: 1,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                    const Spacer(flex: 2),
-                  ],
-                ),
+              : _buildLockedSkinColumn(skin),
         );
       },
     );
@@ -577,4 +550,309 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
     widget.game.overlays.add('ProScreen');
   }
 
+  Widget _buildLockedSkinColumn(PlayerSkin skin) {
+    final price = skin.coinPrice;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Spacer(flex: 2),
+        Icon(
+          Icons.lock_outline_rounded,
+          color: Colors.white.withValues(alpha: 0.1),
+          size: 32,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          skin.name,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: Colors.white.withValues(alpha: 0.2),
+            letterSpacing: 3,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            skin.unlockDescription,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 8,
+              color: Colors.white.withValues(alpha: 0.15),
+              letterSpacing: 1,
+              height: 1.3,
+            ),
+          ),
+        ),
+        if (price != null) ...[
+          const SizedBox(height: 10),
+          ValueListenableBuilder<int>(
+            valueListenable: widget.game.coinsService.coinsNotifier,
+            builder: (context, coins, _) {
+              final affordable = coins >= price;
+              final color = affordable
+                  ? MR.gold
+                  : Colors.white.withValues(alpha: 0.2);
+              return TapScale(
+                minSize: MR.minTouchTarget,
+                onTap: () => _showPurchaseDialog(skin),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: color.withValues(alpha: 0.5), width: 0.5),
+                    color: affordable
+                        ? MR.gold.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.circle, size: 8, color: color),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$price',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'BUY',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: color.withValues(alpha: 0.75),
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+        const Spacer(flex: 2),
+      ],
+    );
+  }
+
+  Future<void> _showPurchaseDialog(PlayerSkin skin) async {
+    final price = skin.coinPrice;
+    if (price == null) return;
+    final coins = widget.game.coinsService.totalCoins;
+    final affordable = coins >= price;
+
+    await showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'dismiss',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (context, anim, _, child) {
+        return FadeTransition(
+          opacity: anim,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.9, end: 1.0)
+                .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+            child: child,
+          ),
+        );
+      },
+      pageBuilder: (ctx, _, _) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 280,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0e0e18),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: MR.gold.withValues(alpha: 0.3),
+                  width: 0.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: MR.gold.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'UNLOCK ${skin.name}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        letterSpacing: 4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Preview
+                  AnimatedBuilder(
+                    animation: _glowController,
+                    builder: (context, _) => SizedBox(
+                      height: 100,
+                      width: 140,
+                      child: CustomPaint(
+                        painter: PlayerScenePainter(
+                          leftColor: skin.leftColor,
+                          rightColor: skin.rightColor,
+                          glowT: _glowController.value,
+                          headDecoration: skin.headDecoration,
+                          faceDecoration: skin.faceDecoration,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.circle, color: MR.gold, size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$price',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: MR.gold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Balance: $coins → ${affordable ? coins - price : coins}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withValues(alpha: 0.45),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TapScale(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: Colors.white.withValues(alpha: 0.05),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'CANCEL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  letterSpacing: 3,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TapScale(
+                          onTap: affordable ? () => Navigator.pop(ctx, true) : null,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              gradient: affordable
+                                  ? LinearGradient(
+                                      colors: [
+                                        MR.gold.withValues(alpha: 0.5),
+                                        MR.gold.withValues(alpha: 0.25),
+                                      ],
+                                    )
+                                  : null,
+                              color: affordable
+                                  ? null
+                                  : Colors.white.withValues(alpha: 0.03),
+                              border: Border.all(
+                                color: MR.gold
+                                    .withValues(alpha: affordable ? 0.6 : 0.15),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                affordable ? 'BUY' : 'NOT ENOUGH',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: affordable
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.35),
+                                  letterSpacing: 3,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ).then((confirmed) async {
+      if (confirmed != true || !mounted) return;
+      // Re-check balance right before purchase — state may have changed
+      if (widget.game.coinsService.totalCoins < price) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Not enough coins'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+      final success = await widget.game.skinService.purchaseSkin(
+        skin.id,
+        price,
+        widget.game.coinsService,
+      );
+      if (!mounted) return;
+      if (success) {
+        await widget.game.skinService.selectSkin(skin.id);
+        if (mounted) setState(() {});
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchase failed'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    });
+  }
 }

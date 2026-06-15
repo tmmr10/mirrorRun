@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/player_skin.dart';
+import 'theme.dart';
 
 class PlayerScenePainter extends CustomPainter {
   final Color leftColor;
@@ -146,7 +147,7 @@ class PlayerScenePainter extends CustomPainter {
           canvas.drawPath(path, Paint()..color = colors[i]);
         }
       case HeadDecoration.crown:
-        final paint = Paint()..color = const Color(0xFFFFD700);
+        final paint = Paint()..color = MR.gold;
         final glow = Paint()
           ..color = const Color(0x60FFD700)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
@@ -161,7 +162,7 @@ class PlayerScenePainter extends CustomPainter {
           ..close();
         canvas.drawPath(path, glow);
         canvas.drawPath(path, paint);
-        canvas.drawCircle(Offset(x, bodyTop - 4), 1.2, Paint()..color = const Color(0xFFFF4444));
+        canvas.drawCircle(Offset(x, bodyTop - 4), 1.2, Paint()..color = MR.alert);
       case HeadDecoration.antenna:
         final bobY = sin(glowT * pi * 2) * 2;
         canvas.drawLine(

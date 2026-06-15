@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
+import '../game/world/biome.dart';
 import '../models/player_skin.dart';
+import '../services/daily_challenge_service.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class MenuScreen extends StatefulWidget {
   final MirrorRunGame game;
@@ -33,21 +36,23 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
     if (_firstOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _firstOpen = false);
     }
-    widget.game.adService.onProStatusChanged = () {
-      if (mounted) setState(() {});
-    };
+    widget.game.adService.proStatusNotifier.addListener(_onProStatus);
+  }
+
+  void _onProStatus() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    widget.game.adService.onProStatusChanged = null;
+    widget.game.adService.proStatusNotifier.removeListener(_onProStatus);
     _shimmerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    const accentColor = Color(0xFFB48CFF);
+    const accentColor = MR.accent;
 
     return Container(
       decoration: BoxDecoration(
@@ -55,9 +60,9 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xF00a0a0f),
-            const Color(0xF0080812),
-            const Color(0xF00f0a14),
+            MR.bgTop,
+            MR.bgMid,
+            MR.bgBottom,
           ],
         ),
       ),
@@ -126,6 +131,46 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ).animate().fadeIn(duration: 400.ms, delay: _d(800)),
+                      const SizedBox(width: 4),
+                      if (!widget.game.screenshotMode)
+                        ValueListenableBuilder<int>(
+                          valueListenable: widget.game.coinsService.coinsNotifier,
+                          builder: (context, coins, _) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: MR.gold.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: MR.gold.withValues(alpha: 0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.circle,
+                                  color: MR.gold,
+                                  size: 10,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '$coins',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: MR.gold
+                                        .withValues(alpha: 0.9),
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).animate().fadeIn(duration: 400.ms, delay: _d(900)),
                       const Spacer(),
                       if (kDebugMode && !widget.game.screenshotMode)
                         TapScale(
@@ -137,9 +182,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                             padding: const EdgeInsets.all(8),
                             child: Icon(
                               Icons.bug_report,
-                              color: const Color(
-                                0xFFFF4444,
-                              ).withValues(alpha: 0.5),
+                              color: MR.alert.withValues(alpha: 0.5),
                               size: 24,
                             ),
                           ),
@@ -163,82 +206,98 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                   ),
                 ),
 
-                // Center: tappable area with title, prompt, roadmap
+                // Center layout
                 Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => widget.game.startGame(),
-                    onVerticalDragEnd: (details) {
-                      if (details.velocity.pixelsPerSecond.dy < -100) {
-                        widget.game.startGame();
-                      }
-                    },
-                    child: Column(
-                      children: [
-                        const Spacer(flex: 3),
-                        _buildTitle(accentColor),
-                        const SizedBox(height: 40),
-                        _buildStartPrompt(accentColor),
-                        const SizedBox(height: 48),
-                        if (!widget.game.screenshotMode) _buildBiomeRoadmap(),
-                        const Spacer(),
-                        _buildSkinIndicator(accentColor),
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.17),
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 3),
+                      _buildTitle(accentColor),
+                      const SizedBox(height: 40),
+                      // Only the TAP TO START prompt is tappable
+                      TapScale(
+                        onTap: () => widget.game.startGame(),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onVerticalDragEnd: (details) {
+                            if (details.velocity.pixelsPerSecond.dy < -100) {
+                              widget.game.startGame();
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                            child: _buildStartPrompt(accentColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      if (!widget.game.screenshotMode) _buildBiomeRoadmap(),
+                      const Spacer(),
+                      _buildSkinIndicator(accentColor),
+                      const SizedBox(height: 20),
+                      if (!widget.game.screenshotMode) _buildProgressPanel(accentColor),
+                      if (!widget.game.screenshotMode) ...[
+                        const SizedBox(height: 12),
+                        _buildDailyCard(accentColor),
                       ],
-                    ),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                    ],
                   ),
                 ),
 
-                // Bottom: GO PRO button
-                if (!widget.game.adService.isPro &&
-                    !widget.game.screenshotMode)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: TapScale(
-                      onTap: () {
-                        widget.game.overlays.add('ProScreen');
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: const Color(0xFFFFD700).withValues(alpha: 0.3),
-                            width: 1,
+                // Bottom: GO PRO button (isolated ValueListenable to avoid full menu re-animation on purchase)
+                ValueListenableBuilder<bool>(
+                  valueListenable: widget.game.adService.proStatusNotifier,
+                  builder: (context, isPro, _) {
+                    if (isPro || widget.game.screenshotMode) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: TapScale(
+                        onTap: () {
+                          widget.game.overlays.add('ProScreen');
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
                           ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.workspace_premium_rounded,
-                              color: const Color(0xFFFFD700).withValues(alpha: 0.7),
-                              size: 14,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: MR.gold.withValues(alpha: 0.3),
+                              width: 1,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'GO PRO',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFFFD700).withValues(alpha: 0.7),
-                                letterSpacing: 3,
-                                shadows: [
-                                  Shadow(
-                                    color: const Color(0xFFFFD700).withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                  ),
-                                ],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.workspace_premium_rounded,
+                                color: MR.gold.withValues(alpha: 0.7),
+                                size: 14,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                'GO PRO',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: MR.gold.withValues(alpha: 0.7),
+                                  letterSpacing: 3,
+                                  shadows: [
+                                    Shadow(
+                                      color: MR.gold.withValues(alpha: 0.3),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ).animate().fadeIn(duration: 400.ms, delay: _d(1600)),
-                  ),
+                      ).animate().fadeIn(duration: 400.ms, delay: _d(1600)),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -541,6 +600,246 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
+  Widget _buildProgressPanel(Color accent) {
+    final best = widget.game.highscoreService.getBest();
+    final stats = widget.game.statsService;
+
+    // Next biome target
+    final biomes = BiomeManager.biomes;
+    BiomeData? nextBiome;
+    for (final b in biomes) {
+      if (best < b.startM) {
+        nextBiome = b;
+        break;
+      }
+    }
+
+    // Next skin target — sorted by unlockBiomeIndex to ensure earliest-first,
+    // consistent with SkinService.checkUnlocks which uses >= for unlock gating.
+    final skinService = widget.game.skinService;
+    final lockedSkins = PlayerSkin.all
+        .where((s) => s.unlockBiomeIndex != null && !skinService.isUnlocked(s.id))
+        .toList()
+      ..sort((a, b) => a.unlockBiomeIndex!.compareTo(b.unlockBiomeIndex!));
+    final PlayerSkin? nextSkin = lockedSkins.isNotEmpty ? lockedSkins.first : null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (nextBiome != null) _progressRow(
+            label: 'NEXT BIOME',
+            target: nextBiome.name,
+            current: best,
+            max: nextBiome.startM,
+            color: nextBiome.lineL,
+          ),
+          if (nextBiome != null && nextSkin != null) const SizedBox(height: 8),
+          if (nextSkin != null) _progressRow(
+            label: 'NEXT SKIN',
+            target: nextSkin.name,
+            current: stats.furthestBiomeIndex,
+            max: nextSkin.unlockBiomeIndex!,
+            color: nextSkin.leftColor,
+            isSkin: true,
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: _d(1000));
+  }
+
+  Widget _buildDailyCard(Color accent) {
+    const gold = MR.gold;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: ValueListenableBuilder<DailyChallenge>(
+        valueListenable: widget.game.dailyChallengeService.challengeNotifier,
+        builder: (context, daily, _) {
+          final streak = widget.game.dailyChallengeService.streak;
+          final done = daily.completed;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: (done ? gold : accent).withValues(alpha: 0.3),
+                width: 0.5,
+              ),
+              color: Colors.white.withValues(alpha: 0.03),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'DAILY CHALLENGE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (streak > 0) ...[
+                      const Icon(Icons.local_fire_department_rounded,
+                          color: gold, size: 14),
+                      const SizedBox(width: 2),
+                      Text(
+                        '$streak',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: gold,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        daily.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: done ? 0.5 : 0.85),
+                          decoration:
+                              done ? TextDecoration.lineThrough : TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (done)
+                      const Icon(Icons.check_circle_rounded, color: gold, size: 16)
+                    else
+                      Text(
+                        '+${daily.reward}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: gold,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: daily.fraction,
+                    minHeight: 4,
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    valueColor: AlwaysStoppedAnimation(done ? gold : accent),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${daily.progress} / ${daily.target}',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1,
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: _d(1100));
+  }
+
+  Widget _progressRow({
+    required String label,
+    required String target,
+    required int current,
+    required int max,
+    required Color color,
+    bool isSkin = false,
+  }) {
+    final progress = max > 0 ? (current / max).clamp(0.0, 1.0) : 0.0;
+    final displayCurrent = current.clamp(0, max);
+    final displayText = isSkin
+        ? 'Biome ${displayCurrent + 1}/${max + 1}'
+        : '${displayCurrent}m / ${max}m';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.35),
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                target,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: color.withValues(alpha: 0.8),
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const Spacer(),
+            Text(
+              displayText,
+              style: TextStyle(
+                fontSize: 9,
+                color: Colors.white.withValues(alpha: 0.45),
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Container(
+          height: 3,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progress,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.6),
+                    color.withValues(alpha: 1.0),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.4),
+                    blurRadius: 6,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _MiniSkinPainter extends CustomPainter {
@@ -716,7 +1015,7 @@ class _MiniSkinPainter extends CustomPainter {
           canvas.drawPath(path, Paint()..color = colors[i]);
         }
       case HeadDecoration.crown:
-        final paint = Paint()..color = const Color(0xFFFFD700);
+        final paint = Paint()..color = MR.gold;
         final glow = Paint()
           ..color = const Color(0x60FFD700)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
@@ -734,7 +1033,7 @@ class _MiniSkinPainter extends CustomPainter {
         canvas.drawCircle(
           Offset(x, bodyTop - 2.5),
           0.8,
-          Paint()..color = const Color(0xFFFF4444),
+          Paint()..color = MR.alert,
         );
       case HeadDecoration.antenna:
         final bobY = sin(glowT * pi * 2) * 1.2;

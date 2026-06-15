@@ -9,10 +9,13 @@ class IapService {
 
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
-  ProductDetails? _removeAdsProduct;
-  ProductDetails? _customSkinCreatorProduct;
   ProductDetails? _proProduct;
-  void Function(String productId, bool success)? onPurchaseResult;
+  void Function(String productId, bool success, bool wasRestored)? onPurchaseResult;
+
+  /// Localized store price for the Pro product (e.g. "$2.99", "2,99 €"),
+  /// or null if products haven't loaded yet.
+  String? get proPrice => _proProduct?.price;
+  bool get proAvailable => _proProduct != null;
 
   Future<void> init() async {
     final available = await _iap.isAvailable();
@@ -28,11 +31,7 @@ class IapService {
     debugPrint('>>> IAP not found IDs: ${response.notFoundIDs}');
     for (final product in response.productDetails) {
       debugPrint('>>> IAP product loaded: ${product.id} - ${product.price}');
-      if (product.id == removeAdsId) {
-        _removeAdsProduct = product;
-      } else if (product.id == customSkinCreatorId) {
-        _customSkinCreatorProduct = product;
-      } else if (product.id == mirrorRunnersProId) {
+      if (product.id == mirrorRunnersProId) {
         _proProduct = product;
       }
     }
@@ -51,14 +50,23 @@ class IapService {
 
   void _handlePurchaseUpdate(List<PurchaseDetails> purchases) {
     for (final purchase in purchases) {
+      if (purchase.status == PurchaseStatus.pending) {
+        // Still in progress (e.g. awaiting payment) — wait for a terminal state.
+        continue;
+      }
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
-        onPurchaseResult?.call(purchase.productID, true);
-      } else if (purchase.status == PurchaseStatus.error) {
-        onPurchaseResult?.call(purchase.productID, false);
+        final wasRestored = purchase.status == PurchaseStatus.restored;
+        onPurchaseResult?.call(purchase.productID, true, wasRestored);
+      } else if (purchase.status == PurchaseStatus.error ||
+          purchase.status == PurchaseStatus.canceled) {
+        // Both must release any "loading" UI; canceled previously fell through.
+        onPurchaseResult?.call(purchase.productID, false, false);
       }
       if (purchase.pendingCompletePurchase) {
-        _iap.completePurchase(purchase);
+        _iap.completePurchase(purchase).catchError((e) {
+          debugPrint('>>> completePurchase failed: $e');
+        });
       }
     }
   }

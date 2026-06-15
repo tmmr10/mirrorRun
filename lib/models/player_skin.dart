@@ -18,6 +18,7 @@ class PlayerSkin {
   final String unlockDescription;
   final HeadDecoration headDecoration;
   final FaceDecoration faceDecoration;
+  final int? coinPrice; // null = not purchasable, otherwise coins required
 
   const PlayerSkin({
     required this.id,
@@ -30,6 +31,7 @@ class PlayerSkin {
     required this.unlockDescription,
     this.headDecoration = HeadDecoration.none,
     this.faceDecoration = FaceDecoration.none,
+    this.coinPrice,
   });
 
   static const List<PlayerSkin> all = [
@@ -53,6 +55,7 @@ class PlayerSkin {
       unlockBiomeIndex: 2,
       unlockDescription: 'Reach Crystal biome',
       headDecoration: HeadDecoration.iceCrown,
+      coinPrice: 300,
     ),
     PlayerSkin(
       id: SkinId.fire,
@@ -64,6 +67,7 @@ class PlayerSkin {
       unlockBiomeIndex: 4,
       unlockDescription: 'Reach Desert biome',
       headDecoration: HeadDecoration.flames,
+      coinPrice: 750,
     ),
     PlayerSkin(
       id: SkinId.gold,
@@ -75,6 +79,7 @@ class PlayerSkin {
       unlockBiomeIndex: 5,
       unlockDescription: 'Reach Ocean biome',
       headDecoration: HeadDecoration.crown,
+      coinPrice: 1500,
     ),
     PlayerSkin(
       id: SkinId.ocean,
@@ -86,6 +91,7 @@ class PlayerSkin {
       unlockBiomeIndex: 6,
       unlockDescription: 'Reach Ruins biome',
       faceDecoration: FaceDecoration.goggles,
+      coinPrice: 3000,
     ),
     PlayerSkin(
       id: SkinId.neon,
@@ -97,6 +103,7 @@ class PlayerSkin {
       unlockBiomeIndex: 7,
       unlockDescription: 'Reach Space biome',
       headDecoration: HeadDecoration.antenna,
+      coinPrice: 6000,
     ),
     PlayerSkin(
       id: SkinId.void_,
@@ -108,6 +115,7 @@ class PlayerSkin {
       unlockBiomeIndex: 10,
       unlockDescription: 'Reach Void biome',
       headDecoration: HeadDecoration.halo,
+      coinPrice: 12000,
     ),
   ];
 
@@ -173,10 +181,10 @@ class CustomSkinData {
       name: json['name'] as String,
       leftColorValue: json['leftColor'] as int,
       rightColorValue: json['rightColor'] as int,
-      headDecoration: headIdx < HeadDecoration.values.length
+      headDecoration: headIdx >= 0 && headIdx < HeadDecoration.values.length
           ? HeadDecoration.values[headIdx]
           : HeadDecoration.none,
-      faceDecoration: faceIdx < FaceDecoration.values.length
+      faceDecoration: faceIdx >= 0 && faceIdx < FaceDecoration.values.length
           ? FaceDecoration.values[faceIdx]
           : FaceDecoration.none,
     );
@@ -187,6 +195,14 @@ class CustomSkinData {
 
   static List<CustomSkinData> decodeList(String jsonStr) {
     final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => CustomSkinData.fromJson(e as Map<String, dynamic>)).toList();
+    final result = <CustomSkinData>[];
+    for (final e in list) {
+      try {
+        result.add(CustomSkinData.fromJson(e as Map<String, dynamic>));
+      } catch (_) {
+        // Skip corrupt entries instead of failing all skins
+      }
+    }
+    return result;
   }
 }

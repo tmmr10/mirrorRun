@@ -4,6 +4,7 @@ import '../game/world/biome.dart';
 import '../models/player_skin.dart';
 import '../utils/screenshot_tour.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class DebugOverlay extends StatefulWidget {
   final MirrorRunGame game;
@@ -14,8 +15,8 @@ class DebugOverlay extends StatefulWidget {
 }
 
 class _DebugOverlayState extends State<DebugOverlay> {
-  static const _accent = Color(0xFFB48CFF);
-  static const _red = Color(0xFFFF4444);
+  static const _accent = MR.accent;
+  static const _red = MR.alert;
   static const _green = Color(0xFF44FF88);
 
   MirrorRunGame get game => widget.game;
@@ -29,7 +30,7 @@ class _DebugOverlayState extends State<DebugOverlay> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xF00a0a0f), Color(0xF0080812), Color(0xF00f0a14)],
+          colors: [MR.bgTop, MR.bgMid, MR.bgBottom],
         ),
       ),
       child: SafeArea(
@@ -93,7 +94,7 @@ class _DebugOverlayState extends State<DebugOverlay> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFFFF4444),
+                      color: MR.alert,
                       letterSpacing: 3,
                     ),
                   ),
@@ -149,6 +150,73 @@ class _DebugOverlayState extends State<DebugOverlay> {
                         ),
                       );
                     }),
+
+                    // --- Coins section ---
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Coins:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.5),
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        ValueListenableBuilder<int>(
+                          valueListenable: game.coinsService.coinsNotifier,
+                          builder: (context, coins, _) => Row(
+                            children: [
+                              const Icon(Icons.circle, size: 10, color: MR.gold),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$coins',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: MR.gold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildCoinButton('+100', () => game.coinsService.addCoins(100)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildCoinButton('+1000', () => game.coinsService.addCoins(1000)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildCoinButton('+10000', () => game.coinsService.addCoins(10000)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildCoinButton(
+                            'RESET TO 0',
+                            () async {
+                              final current = game.coinsService.totalCoins;
+                              if (current > 0) {
+                                await game.coinsService.spendCoins(current);
+                              }
+                            },
+                            color: _red,
+                          ),
+                        ),
+                      ],
+                    ),
 
                     // --- Ads section ---
                     const SizedBox(height: 24),
@@ -296,6 +364,35 @@ class _DebugOverlayState extends State<DebugOverlay> {
               ),
               const SizedBox(height: 24),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoinButton(String label, Future<void> Function() onTap, {Color? color}) {
+    final btnColor = color ?? MR.gold;
+    return TapScale(
+      onTap: () async {
+        await onTap();
+        if (mounted) setState(() {});
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          border: Border.all(color: btnColor.withValues(alpha: 0.4), width: 0.5),
+          borderRadius: BorderRadius.circular(6),
+          color: btnColor.withValues(alpha: 0.08),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: btnColor,
+              letterSpacing: 2,
+            ),
           ),
         ),
       ),

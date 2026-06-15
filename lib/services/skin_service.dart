@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/player_skin.dart';
+import 'analytics_service.dart';
+import 'coins_service.dart';
 
 class SkinService {
   late SharedPreferences _prefs;
@@ -75,23 +78,29 @@ class SkinService {
   }
 
   Future<void> selectSkin(SkinId id) async {
-    if (!isUnlocked(id)) return; // Bugfix: was !_unlockedIds.contains(id)
+    if (!isUnlocked(id)) return;
     _selectedId = id;
     _selectedCustomIndex = -1;
     await _prefs.setString(_keySelected, id.name);
     await _prefs.setInt(_keyCustomSelected, -1);
+    unawaited(AnalyticsService.logSkinSelected(skinName: id.name, isCustom: false));
   }
 
   Future<void> selectCustomSkin(int index) async {
     if (index < 0 || index >= _customSkins.length) return;
     _selectedCustomIndex = index;
     await _prefs.setInt(_keyCustomSelected, index);
+    unawaited(AnalyticsService.logSkinSelected(
+      skinName: _customSkins[index].name,
+      isCustom: true,
+    ));
   }
 
   Future<bool> saveCustomSkin(CustomSkinData skin) async {
     if (_customSkins.length >= maxCustomSkins) return false;
     _customSkins.add(skin);
     await _persistCustomSkins();
+    unawaited(AnalyticsService.logCustomSkinCreated());
     return true;
   }
 
@@ -104,6 +113,7 @@ class SkinService {
   Future<void> deleteCustomSkin(int index) async {
     if (index < 0 || index >= _customSkins.length) return;
     _customSkins.removeAt(index);
+    unawaited(AnalyticsService.logCustomSkinDeleted());
     // Adjust selected index
     if (_selectedCustomIndex == index) {
       _selectedCustomIndex = -1;
@@ -163,5 +173,45 @@ class SkinService {
       );
     }
     return newUnlocks;
+  }
+
+  /// Purchases a skin using coins. Returns true on success.
+  /// If persistence fails after coin deduction, coins are refunded.
+  Future<bool> purchaseSkin(SkinId id, int cost, CoinsService coinsService) async {
+    if (_unlockedIds.contains(id)) return true;
+    final deducted = await coinsService.spendCoins(cost);
+    if (!deducted) return false;
+    _unlockedIds.add(id);
+    try {
+      await _prefs.setStringList(
+        _keyUnlocked,
+        _unlockedIds.map((skinId) => skinId.name).toList(),
+      );
+    } catch (e) {
+      // Rollback: remove from in-memory set and refund coins
+      _unlockedIds.remove(id);
+      await coinsService.addCoins(cost);
+      debugPrint('>>> purchaseSkin failed, refunded: $e');
+      return false;
+    }
+    unawaited(AnalyticsService.logSkinPurchased(skinName: id.name, cost: cost));
+    return true;
+  }
+
+  /// Unlocks all preset skins (for Pro users). Idempotent.
+  Future<void> unlockAllPresets() async {
+    bool anyNew = false;
+    for (final skin in PlayerSkin.all) {
+      if (!_unlockedIds.contains(skin.id)) {
+        _unlockedIds.add(skin.id);
+        anyNew = true;
+      }
+    }
+    if (anyNew) {
+      await _prefs.setStringList(
+        _keyUnlocked,
+        _unlockedIds.map((id) => id.name).toList(),
+      );
+    }
   }
 }

@@ -1,5 +1,33 @@
 import 'dart:ui';
 import '../game_state.dart';
+import 'obstacle_renderers/obstacle_renderer.dart';
+import 'obstacle_renderers/forest_obstacle_renderer.dart';
+import 'obstacle_renderers/city_obstacle_renderer.dart';
+import 'obstacle_renderers/crystal_obstacle_renderer.dart';
+import 'obstacle_renderers/volcano_obstacle_renderer.dart';
+import 'obstacle_renderers/desert_obstacle_renderer.dart';
+import 'obstacle_renderers/ocean_obstacle_renderer.dart';
+import 'obstacle_renderers/ruins_obstacle_renderer.dart';
+import 'obstacle_renderers/space_obstacle_renderer.dart';
+import 'obstacle_renderers/storm_obstacle_renderer.dart';
+import 'obstacle_renderers/neon_obstacle_renderer.dart';
+import 'obstacle_renderers/void_obstacle_renderer.dart';
+
+/// Central, stateless lookup of the per-biome obstacle render strategy.
+/// One shared instance per biome is enough — renderers hold no state.
+const Map<BiomeType, ObstacleRenderer> obstacleRenderers = {
+  BiomeType.forest: ForestObstacleRenderer(),
+  BiomeType.city: CityObstacleRenderer(),
+  BiomeType.crystal: CrystalObstacleRenderer(),
+  BiomeType.volcano: VolcanoObstacleRenderer(),
+  BiomeType.desert: DesertObstacleRenderer(),
+  BiomeType.ocean: OceanObstacleRenderer(),
+  BiomeType.ruins: RuinsObstacleRenderer(),
+  BiomeType.space: SpaceObstacleRenderer(),
+  BiomeType.storm: StormObstacleRenderer(),
+  BiomeType.neon: NeonObstacleRenderer(),
+  BiomeType.void_: VoidObstacleRenderer(),
+};
 
 class BiomePhase {
   final int maxM;
@@ -52,6 +80,9 @@ class BiomeData {
     }
     return phases.last;
   }
+
+  /// The stateless render strategy for this biome's obstacles.
+  ObstacleRenderer get obstacleRenderer => obstacleRenderers[type]!;
 }
 
 class BiomeManager {
@@ -72,9 +103,9 @@ class BiomeManager {
       obsGlowL: Color(0xB32d8c3a),
       obsGlowR: Color(0xB32d3a8c),
       phases: [
-        BiomePhase(maxM: 40, types: [ObstacleType.wall, ObstacleType.spike], minInterval: 130),
-        BiomePhase(maxM: 70, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter], minInterval: 110),
-        BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter, ObstacleType.doubleWall], minInterval: 95),
+        BiomePhase(maxM: 25, types: [ObstacleType.wall, ObstacleType.spike], minInterval: 100),
+        BiomePhase(maxM: 55, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter], minInterval: 90),
+        BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter, ObstacleType.doubleWall], minInterval: 80),
       ],
     ),
 
@@ -94,8 +125,8 @@ class BiomeManager {
       obsGlowL: Color(0xCC465a82),
       obsGlowR: Color(0xCC823737),
       phases: [
-        BiomePhase(maxM: 125, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter, ObstacleType.doubleWall], minInterval: 100),
-        BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 80),
+        BiomePhase(maxM: 125, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.shifter, ObstacleType.doubleWall], minInterval: 85),
+        BiomePhase(maxM: 9999, types: [ObstacleType.wall, ObstacleType.spike, ObstacleType.doubleWall, ObstacleType.shifter], minInterval: 72),
       ],
     ),
 

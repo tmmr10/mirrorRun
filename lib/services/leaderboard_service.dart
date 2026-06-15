@@ -35,6 +35,7 @@ class LeaderboardService {
         ),
       );
     } catch (e) {
+      _signedIn = false;
       debugPrint('>>> Submit score failed: $e');
     }
   }
@@ -52,6 +53,7 @@ class LeaderboardService {
     try {
       await Achievements.showAchievements();
     } catch (e) {
+      _signedIn = false;
       debugPrint('>>> Show achievements failed: $e');
     }
   }
@@ -72,6 +74,7 @@ class LeaderboardService {
         androidLeaderboardID: _leaderboardId,
       );
     } catch (e) {
+      _signedIn = false;
       debugPrint('>>> Show leaderboard failed: $e');
     }
   }

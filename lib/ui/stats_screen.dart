@@ -3,12 +3,13 @@ import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class StatsScreen extends StatelessWidget {
   final MirrorRunGame game;
   const StatsScreen({super.key, required this.game});
 
-  static const _accent = Color(0xFFB48CFF);
+  static const _accent = MR.accent;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,7 @@ class StatsScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xF00a0a0f), Color(0xF0080812), Color(0xF00f0a14)],
+          colors: [MR.bgTop, MR.bgMid, MR.bgBottom],
         ),
       ),
       child: SafeArea(
@@ -68,6 +69,7 @@ class StatsScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Builder(
                 builder: (ctx) => TapScale(
+                  minSize: MR.minTouchTarget,
                   onTap: () {
                     final box = ctx.findRenderObject() as RenderBox?;
                     final origin = box != null

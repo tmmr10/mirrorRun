@@ -4,7 +4,7 @@ import '../game/components/event_system.dart';
 import '../models/player_skin.dart';
 
 /// Automated screenshot tour.
-/// Cycles through game states and prints SCREENSHOT_READY:<name> markers.
+/// Cycles through game states and prints `SCREENSHOT_READY:<name>` markers.
 /// An external script watches for these markers and takes screenshots.
 Future<void> runScreenshotTour(MirrorRunGame game) async {
   debugPrint('>>> SCREENSHOT_TOUR_START');

@@ -6,6 +6,7 @@ class AchievementService {
   static const _prefsKey = 'unlocked_achievements';
 
   bool _signedIn = false;
+  late SharedPreferences _prefs;
   final Set<String> _unlocked = {};
 
   void setSignedIn(bool value) => _signedIn = value;
@@ -13,35 +14,36 @@ class AchievementService {
   bool isUnlocked(String id) => _unlocked.contains(id);
   int get unlockedCount => _unlocked.length;
 
-  /// Achievements unlocked during the current run (cleared on each check).
-  final List<String> newlyUnlocked = [];
-
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList(_prefsKey);
+    _prefs = await SharedPreferences.getInstance();
+    final stored = _prefs.getStringList(_prefsKey);
     if (stored != null) {
       _unlocked.addAll(stored);
     }
   }
 
-  Future<void> checkAfterRun({
+  /// Returns list of newly unlocked achievement IDs during this run.
+  Future<List<String>> checkAfterRun({
     required int runDistance,
     required int totalGames,
     required int currentBiome,
   }) async {
-    newlyUnlocked.clear();
+    final newlyUnlocked = <String>[];
+
     // Distance achievements
     const distanceThresholds = [75, 100, 300, 500, 750, 1000, 1400, 2000, 2500, 3000, 3200, 5000];
     for (final t in distanceThresholds) {
       if (runDistance >= t) {
-        await _unlock('achievement_distance_$t');
+        if (await _unlock('achievement_distance_$t')) {
+          newlyUnlocked.add('achievement_distance_$t');
+        }
       }
     }
 
     // Biome achievements
     const biomeMap = {
       2: 'crystal',
-      3: 'volcano', // index 3 = volcano (350m)
+      3: 'volcano',
       4: 'desert',
       5: 'ocean',
       9: 'neon',
@@ -49,7 +51,9 @@ class AchievementService {
     };
     for (final entry in biomeMap.entries) {
       if (currentBiome >= entry.key) {
-        await _unlock('achievement_biome_${entry.value}');
+        if (await _unlock('achievement_biome_${entry.value}')) {
+          newlyUnlocked.add('achievement_biome_${entry.value}');
+        }
       }
     }
 
@@ -57,23 +61,32 @@ class AchievementService {
     const gamesThresholds = [10, 50, 100, 500];
     for (final t in gamesThresholds) {
       if (totalGames >= t) {
-        await _unlock('achievement_games_$t');
+        if (await _unlock('achievement_games_$t')) {
+          newlyUnlocked.add('achievement_games_$t');
+        }
       }
     }
 
     // First game
     if (totalGames >= 1) {
-      await _unlock('achievement_first_game');
+      if (await _unlock('achievement_first_game')) {
+        newlyUnlocked.add('achievement_first_game');
+      }
     }
+
+    // Batch-persist all new unlocks at once
+    if (newlyUnlocked.isNotEmpty) {
+      await _prefs.setStringList(_prefsKey, _unlocked.toList());
+    }
+
+    return newlyUnlocked;
   }
 
-  Future<void> _unlock(String id) async {
-    if (_unlocked.contains(id)) return;
+  /// Returns true if the achievement was newly unlocked.
+  Future<bool> _unlock(String id) async {
+    if (_unlocked.contains(id)) return false;
     _unlocked.add(id);
-    newlyUnlocked.add(id);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_prefsKey, _unlocked.toList());
-    if (!_signedIn) return;
+    if (!_signedIn) return true;
     try {
       await Achievements.unlock(
         achievement: Achievement(
@@ -84,5 +97,6 @@ class AchievementService {
     } catch (e) {
       debugPrint('>>> Achievement unlock failed ($id): $e');
     }
+    return true;
   }
 }

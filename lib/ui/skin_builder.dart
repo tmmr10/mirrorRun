@@ -4,6 +4,7 @@ import '../models/player_skin.dart';
 import '../services/skin_service.dart';
 import 'player_scene_painter.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class SkinBuilder extends StatefulWidget {
   final MirrorRunGame game;
@@ -14,7 +15,7 @@ class SkinBuilder extends StatefulWidget {
 }
 
 class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStateMixin {
-  static const _accent = Color(0xFFB48CFF);
+  static const _accent = MR.accent;
 
   late final AnimationController _glowController;
   late final TextEditingController _nameController;
@@ -40,7 +41,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     _nameController = TextEditingController();
 
     _editIndex = widget.game.skinBuilderEditIndex;
-    if (_isEditing) {
+    if (_isEditing && _editIndex! >= 0 && _editIndex! < _skinService.customSkins.length) {
       final skin = _skinService.customSkins[_editIndex!];
       _nameController.text = skin.name;
       final leftHsl = HSLColor.fromColor(skin.leftColor);
@@ -64,14 +65,16 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
       if (preset['name'] != null) _nameController.text = preset['name'];
       widget.game.skinBuilderPreset = null;
     }
-    widget.game.adService.onProStatusChanged = () {
-      if (mounted) setState(() {});
-    };
+    widget.game.adService.proStatusNotifier.addListener(_onProStatus);
+  }
+
+  void _onProStatus() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    widget.game.adService.onProStatusChanged = null;
+    widget.game.adService.proStatusNotifier.removeListener(_onProStatus);
     _glowController.dispose();
     _nameController.dispose();
     super.dispose();
@@ -132,7 +135,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                 padding: const EdgeInsets.all(16),
                 child: Icon(
                   Icons.delete_outline_rounded,
-                  color: const Color(0xFFFF4444).withValues(alpha: 0.5),
+                  color: MR.alert.withValues(alpha: 0.5),
                   size: 20,
                 ),
               ),
@@ -143,7 +146,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   }
 
   Widget _buildLockedState() {
-    const gold = Color(0xFFFFD700);
+    const gold = MR.gold;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -408,6 +411,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: TapScale(
+              minSize: MR.minTouchTarget,
               onTap: () => setState(() => _headDeco = deco),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -459,6 +463,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
         return Padding(
           padding: const EdgeInsets.only(right: 8),
           child: TapScale(
+            minSize: MR.minTouchTarget,
             onTap: () => setState(() => _faceDeco = deco),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -522,6 +527,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
 
   Widget _buildActionButton(String label, Color color, VoidCallback onTap) {
     return TapScale(
+      minSize: MR.minTouchTarget,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
@@ -543,7 +549,9 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   }
 
   void _confirmDelete() {
-    final skin = _skinService.customSkins[_editIndex!];
+    final deleteIndex = _editIndex!;
+    if (deleteIndex < 0 || deleteIndex >= _skinService.customSkins.length) return;
+    final skin = _skinService.customSkins[deleteIndex];
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -561,7 +569,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           ),
         );
       },
-      pageBuilder: (ctx, _, __) {
+      pageBuilder: (ctx, _, _) {
         return Center(
           child: Material(
             color: Colors.transparent,
@@ -573,7 +581,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF4444).withValues(alpha: 0.08),
+                    color: MR.alert.withValues(alpha: 0.08),
                     blurRadius: 32,
                     spreadRadius: 4,
                   ),
@@ -606,6 +614,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                     children: [
                       Expanded(
                         child: TapScale(
+                          minSize: MR.minTouchTarget,
                           onTap: () => Navigator.pop(ctx),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -630,16 +639,17 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                       const SizedBox(width: 12),
                       Expanded(
                         child: TapScale(
+                          minSize: MR.minTouchTarget,
                           onTap: () {
                             Navigator.pop(ctx);
-                            _skinService.deleteCustomSkin(_editIndex!);
+                            _skinService.deleteCustomSkin(deleteIndex);
                             _goBack();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4),
-                              color: const Color(0xFFFF4444).withValues(alpha: 0.15),
+                              color: MR.alert.withValues(alpha: 0.15),
                             ),
                             child: Center(
                               child: Text(
@@ -647,7 +657,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFFFF4444).withValues(alpha: 0.8),
+                                  color: MR.alert.withValues(alpha: 0.8),
                                   letterSpacing: 3,
                                 ),
                               ),

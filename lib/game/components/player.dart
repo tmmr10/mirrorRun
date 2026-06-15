@@ -1,16 +1,16 @@
 import 'dart:math';
 import 'dart:ui';
-import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../models/player_skin.dart';
 import '../mirror_run_game.dart';
 
-class Player extends PositionComponent with CollisionCallbacks, HasGameReference<MirrorRunGame> {
+class Player extends PositionComponent with HasGameReference<MirrorRunGame> {
   final String side; // 'left', 'right'
   final Color color;
   final Color glowColor;
   double targetX;
   bool dead = false;
+  double nearMissFlash = 0; // 0..1, decays after near miss
 
   static const double pw = 24;
   static const double ph = 34;
@@ -21,6 +21,13 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
   double _accumulator = 0;
   double _totalTime = 0;
   final List<_TrailPoint> _trail = [];
+
+  // Reusable paints (avoid per-frame allocation in render()).
+  final Paint _trailPaint = Paint();
+  final Paint _bodyPaint = Paint();
+  final Paint _fillPaint = Paint();
+  final Paint _glowBlurPaint = Paint();
+  final Paint _strokePaint = Paint()..style = PaintingStyle.stroke;
 
   Player({
     required this.side,
@@ -34,14 +41,21 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     position = Vector2(targetX, groundY);
   }
 
-  @override
-  Future<void> onLoad() async {
-    add(RectangleHitbox(
-      size: Vector2(pw - 14, ph),
-      position: Vector2(7, 0),
-      collisionType: CollisionType.active,
-    ));
-  }
+  /// Collision rect (slightly inset from the visual body for fair hit testing).
+  Rect getHitRect() => Rect.fromLTWH(
+        position.x - pw / 2 + 5,
+        position.y - ph,
+        pw - 10,
+        ph,
+      );
+
+  /// Generous rect for picking up collectibles (full body width).
+  Rect getPickupRect() => Rect.fromLTWH(
+        position.x - pw / 2,
+        position.y - ph,
+        pw,
+        ph,
+      );
 
   @override
   void update(double dt) {
@@ -53,6 +67,9 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     while (_accumulator >= _fixedDt) {
       _accumulator -= _fixedDt;
       _fixedUpdate();
+      if (nearMissFlash > 0) {
+        nearMissFlash = (nearMissFlash - _fixedDt * 2.5).clamp(0.0, 1.0);
+      }
     }
   }
 
@@ -68,11 +85,17 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
   void render(Canvas canvas) {
     if (dead) return;
 
+    // Invincibility blinker — skip every other ~100ms tick
+    if (game.isInvincible) {
+      final blinkPhase = (game.invincibilityTimer * 10).floor() % 2 == 0;
+      if (!blinkPhase) return;
+    }
+
     // Trail
     for (int i = 0; i < _trail.length; i++) {
       final t = _trail[i];
       final a = (1 - i / _trail.length) * 0.12;
-      final trailPaint = Paint()..color = color.withValues(alpha: a);
+      _trailPaint.color = color.withValues(alpha: a);
       final trailRect = RRect.fromRectAndRadius(
         Rect.fromLTWH(
           t.x - position.x + 2,
@@ -82,18 +105,49 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ),
         const Radius.circular(5),
       );
-      canvas.drawRRect(trailRect, trailPaint);
+      canvas.drawRRect(trailRect, _trailPaint);
     }
 
-    // Glow
-    final glowPaint = Paint()
+    // Base glow (intensified during near-miss)
+    _bodyPaint
       ..color = glowColor
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
     final bodyRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, 0, pw, ph),
       const Radius.circular(7),
     );
-    canvas.drawRRect(bodyRect, glowPaint);
+    canvas.drawRRect(bodyRect, _bodyPaint);
+
+    // Invincibility: white outer ring
+    if (game.isInvincible) {
+      _strokePaint
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6)
+        ..strokeWidth = 1.5;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(-3, -3, pw + 6, ph + 6),
+          const Radius.circular(10),
+        ),
+        _strokePaint,
+      );
+    }
+
+    // Near-miss: soft expanding aura in skin color (radiates outward)
+    if (nearMissFlash > 0) {
+      final expandT = 1.0 - nearMissFlash; // 0→1 as flash decays
+      final expandSize = 4.0 + expandT * 18; // grows outward
+      final auraAlpha = nearMissFlash * 0.55;
+      _glowBlurPaint
+        ..color = glowColor.withValues(alpha: auraAlpha)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 14 + expandT * 10);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(-expandSize, -expandSize, pw + expandSize * 2, ph + expandSize * 2),
+          Radius.circular(7 + expandSize),
+        ),
+        _glowBlurPaint,
+      );
+    }
 
     // Body - tint during mirror swap
     final swapped = game.eventSystem.mirrorSwapped;
@@ -101,15 +155,18 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     final bodyColor = swapped
         ? (side == 'left' ? skin.rightColor : skin.leftColor)
         : color;
-    canvas.drawRRect(bodyRect, Paint()..color = bodyColor);
+    _bodyPaint
+      ..color = bodyColor
+      ..maskFilter = null;
+    canvas.drawRRect(bodyRect, _bodyPaint);
 
     // Head decoration
     _drawHeadDecoration(canvas, skin.headDecoration, bodyColor);
 
     // Eyes
-    final eyePaint = Paint()..color = const Color(0x80000000);
-    canvas.drawCircle(Offset(pw / 2 - 4, 10), 2.5, eyePaint);
-    canvas.drawCircle(Offset(pw / 2 + 4, 10), 2.5, eyePaint);
+    _fillPaint.color = const Color(0x80000000);
+    canvas.drawCircle(Offset(pw / 2 - 4, 10), 2.5, _fillPaint);
+    canvas.drawCircle(Offset(pw / 2 + 4, 10), 2.5, _fillPaint);
 
     // Face decoration (over eyes)
     _drawFaceDecoration(canvas, skin.faceDecoration, bodyColor);
@@ -160,8 +217,8 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
   }
 
   void _drawIceCrown(Canvas canvas, Color bodyColor) {
-    final paint = Paint()..color = const Color(0xCCAAEEFF);
-    final glowPaint = Paint()
+    _fillPaint.color = const Color(0xCCAAEEFF);
+    _glowBlurPaint
       ..color = const Color(0x4400CCFF)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
@@ -172,8 +229,8 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ..lineTo(pw / 2 + dx, h)
         ..lineTo(pw / 2 + dx + 2, 0)
         ..close();
-      canvas.drawPath(path, glowPaint);
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, _glowBlurPaint);
+      canvas.drawPath(path, _fillPaint);
     }
   }
 
@@ -197,16 +254,17 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ..quadraticBezierTo(pw / 2 + dx + w * 0.3, h - 2, pw / 2 + dx + w, 1)
         ..close();
 
-      canvas.drawPath(path, Paint()
+      _glowBlurPaint
         ..color = flameColors[i].withValues(alpha: 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
-      canvas.drawPath(path, Paint()..color = flameColors[i]);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawPath(path, _glowBlurPaint);
+      _fillPaint.color = flameColors[i];
+      canvas.drawPath(path, _fillPaint);
     }
   }
 
   void _drawCrown(Canvas canvas) {
-    final paint = Paint()..color = const Color(0xFFFFD700);
-    final glowPaint = Paint()
+    _glowBlurPaint
       ..color = const Color(0x60FFD700)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
@@ -220,67 +278,63 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
       ..lineTo(pw / 2 + 8, 2)
       ..close();
 
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, _glowBlurPaint);
+    _fillPaint.color = const Color(0xFFFFD700);
+    canvas.drawPath(path, _fillPaint);
 
-    final jewelPaint = Paint()..color = const Color(0xFFFF4444);
-    canvas.drawCircle(Offset(pw / 2, -4), 1.2, jewelPaint);
+    _fillPaint.color = const Color(0xFFFF4444);
+    canvas.drawCircle(Offset(pw / 2, -4), 1.2, _fillPaint);
   }
 
   void _drawGoggles(Canvas canvas, Color bodyColor) {
-    final strapPaint = Paint()
+    _strokePaint
       ..color = const Color(0xBB000000)
       ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    final lensPaint = Paint()..color = const Color(0xCC88DDFF);
-    final lensGlare = Paint()..color = const Color(0x55FFFFFF);
-    final framePaint = Paint()
-      ..color = const Color(0xCC444444)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+      ..strokeCap = StrokeCap.butt;
+    canvas.drawLine(Offset(0, 10), Offset(pw, 10), _strokePaint);
 
-    canvas.drawLine(Offset(0, 10), Offset(pw, 10), strapPaint);
+    _strokePaint
+      ..color = const Color(0xCC444444)
+      ..strokeWidth = 1;
 
     final ll = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2 - 4, 10), width: 7, height: 6),
       const Radius.circular(2),
     );
-    canvas.drawRRect(ll, lensPaint);
-    canvas.drawRRect(ll, framePaint);
-    canvas.drawCircle(Offset(pw / 2 - 5.5, 8.5), 1, lensGlare);
+    _fillPaint.color = const Color(0xCC88DDFF);
+    canvas.drawRRect(ll, _fillPaint);
+    canvas.drawRRect(ll, _strokePaint);
+    _fillPaint.color = const Color(0x55FFFFFF);
+    canvas.drawCircle(Offset(pw / 2 - 5.5, 8.5), 1, _fillPaint);
 
     final rl = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2 + 4, 10), width: 7, height: 6),
       const Radius.circular(2),
     );
-    canvas.drawRRect(rl, lensPaint);
-    canvas.drawRRect(rl, framePaint);
-    canvas.drawCircle(Offset(pw / 2 + 2.5, 8.5), 1, lensGlare);
+    _fillPaint.color = const Color(0xCC88DDFF);
+    canvas.drawRRect(rl, _fillPaint);
+    canvas.drawRRect(rl, _strokePaint);
+    _fillPaint.color = const Color(0x55FFFFFF);
+    canvas.drawCircle(Offset(pw / 2 + 2.5, 8.5), 1, _fillPaint);
   }
 
   void _drawAntenna(Canvas canvas, Color bodyColor) {
     final t = _totalTime * 3;
     final bobY = sin(t) * 2;
 
-    final stickPaint = Paint()
+    _strokePaint
       ..color = const Color(0x99FFFFFF)
       ..strokeWidth = 1.5
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(pw / 2, 2), Offset(pw / 2, -8 + bobY), stickPaint);
+    canvas.drawLine(Offset(pw / 2, 2), Offset(pw / 2, -8 + bobY), _strokePaint);
 
     final tipY = -9.0 + bobY;
-    canvas.drawCircle(
-      Offset(pw / 2, tipY),
-      3,
-      Paint()
-        ..color = bodyColor.withValues(alpha: 0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
-    );
-    canvas.drawCircle(
-      Offset(pw / 2, tipY),
-      2,
-      Paint()..color = bodyColor,
-    );
+    _glowBlurPaint
+      ..color = bodyColor.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(Offset(pw / 2, tipY), 3, _glowBlurPaint);
+    _fillPaint.color = bodyColor;
+    canvas.drawCircle(Offset(pw / 2, tipY), 2, _fillPaint);
   }
 
   void _drawHalo(Canvas canvas, Color bodyColor) {
@@ -288,25 +342,27 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     final bobY = sin(t) * 1.5;
     final haloY = -6.0 + bobY;
 
+    _glowBlurPaint
+      ..color = const Color(0x30FFFFFF)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pw / 2, haloY), width: 20, height: 6),
-      Paint()
-        ..color = const Color(0x30FFFFFF)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      _glowBlurPaint,
     );
 
+    _strokePaint
+      ..color = const Color(0xCCFFFFFF)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.butt;
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pw / 2, haloY), width: 18, height: 5),
-      Paint()
-        ..color = const Color(0xCCFFFFFF)
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke,
+      _strokePaint,
     );
   }
 
   void _drawHorns(Canvas canvas, Color bodyColor) {
-    final paint = Paint()..color = const Color(0xDDCC2222);
-    final glow = Paint()
+    _fillPaint.color = const Color(0xDDCC2222);
+    _glowBlurPaint
       ..color = const Color(0x40FF0000)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
     for (final side in [-1.0, 1.0]) {
@@ -315,15 +371,15 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ..quadraticBezierTo(pw / 2 + side * 9, -2, pw / 2 + side * 8, -8)
         ..lineTo(pw / 2 + side * 6, -1)
         ..close();
-      canvas.drawPath(path, glow);
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, _glowBlurPaint);
+      canvas.drawPath(path, _fillPaint);
     }
   }
 
   void _drawWings(Canvas canvas, Color bodyColor) {
     final flapY = sin(_totalTime * 6) * 2;
-    final paint = Paint()..color = bodyColor.withValues(alpha: 0.6);
-    final glow = Paint()
+    _fillPaint.color = bodyColor.withValues(alpha: 0.6);
+    _glowBlurPaint
       ..color = bodyColor.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     for (final side in [-1.0, 1.0]) {
@@ -333,14 +389,14 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ..quadraticBezierTo(wingX + side * 4, 2 + flapY, wingX + side * 2, -2 + flapY)
         ..quadraticBezierTo(wingX, 6 + flapY, pw / 2 + side * 10, 18)
         ..close();
-      canvas.drawPath(path, glow);
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, _glowBlurPaint);
+      canvas.drawPath(path, _fillPaint);
     }
   }
 
   void _drawMohawk(Canvas canvas, Color bodyColor) {
-    final paint = Paint()..color = bodyColor;
-    final glow = Paint()
+    _fillPaint.color = bodyColor;
+    _glowBlurPaint
       ..color = bodyColor.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
     for (int i = 0; i < 5; i++) {
@@ -351,8 +407,8 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
         ..lineTo(pw / 2 + dx, h)
         ..lineTo(pw / 2 + dx + 1.5, 1)
         ..close();
-      canvas.drawPath(path, glow);
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, _glowBlurPaint);
+      canvas.drawPath(path, _fillPaint);
     }
   }
 
@@ -360,8 +416,7 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
     final bobY = sin(_totalTime * 4) * 2;
     final starY = -10.0 + bobY;
     final cx = pw / 2;
-    final starPaint = Paint()..color = const Color(0xFFFFDD44);
-    final starGlow = Paint()
+    _glowBlurPaint
       ..color = const Color(0x60FFDD44)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
     final path = Path();
@@ -380,8 +435,9 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
       path.lineTo(ix, iy);
     }
     path.close();
-    canvas.drawPath(path, starGlow);
-    canvas.drawPath(path, starPaint);
+    canvas.drawPath(path, _glowBlurPaint);
+    _fillPaint.color = const Color(0xFFFFDD44);
+    canvas.drawPath(path, _fillPaint);
   }
 
   void _drawVisor(Canvas canvas, Color bodyColor) {
@@ -389,102 +445,94 @@ class Player extends PositionComponent with CollisionCallbacks, HasGameReference
       Rect.fromCenter(center: Offset(pw / 2, 10), width: pw - 2, height: 5),
       const Radius.circular(2.5),
     );
-    canvas.drawRRect(visorRect, Paint()
+    _glowBlurPaint
       ..color = bodyColor.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
-    canvas.drawRRect(visorRect, Paint()..color = bodyColor.withValues(alpha: 0.7));
-    canvas.drawLine(
-      Offset(3, 9),
-      Offset(pw - 3, 9),
-      Paint()
-        ..color = const Color(0x55FFFFFF)
-        ..strokeWidth = 0.8,
-    );
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawRRect(visorRect, _glowBlurPaint);
+    _fillPaint.color = bodyColor.withValues(alpha: 0.7);
+    canvas.drawRRect(visorRect, _fillPaint);
+    _strokePaint
+      ..color = const Color(0x55FFFFFF)
+      ..strokeWidth = 0.8
+      ..strokeCap = StrokeCap.butt;
+    canvas.drawLine(Offset(3, 9), Offset(pw - 3, 9), _strokePaint);
   }
   void _drawMask(Canvas canvas, Color bodyColor) {
     final maskRect = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2, 10), width: pw + 2, height: 7),
       const Radius.circular(3.5),
     );
-    canvas.drawRRect(maskRect, Paint()..color = const Color(0xDD111111));
+    _fillPaint.color = const Color(0xDD111111);
+    canvas.drawRRect(maskRect, _fillPaint);
+    _fillPaint.color = const Color(0xFF222222);
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pw / 2 - 4, 10), width: 6, height: 5),
-      Paint()..color = const Color(0xFF222222),
+      _fillPaint,
     );
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pw / 2 + 4, 10), width: 6, height: 5),
-      Paint()..color = const Color(0xFF222222),
+      _fillPaint,
     );
   }
 
   void _drawMonocle(Canvas canvas, Color bodyColor) {
-    canvas.drawLine(
-      Offset(pw / 2 + 4, 13),
-      Offset(pw / 2 + 7, 22),
-      Paint()
-        ..color = const Color(0x99FFD700)
-        ..strokeWidth = 0.7,
-    );
-    canvas.drawCircle(
-      Offset(pw / 2 + 4, 10),
-      4.5,
-      Paint()
-        ..color = const Color(0xCCFFD700)
-        ..strokeWidth = 1.2
-        ..style = PaintingStyle.stroke,
-    );
-    canvas.drawCircle(
-      Offset(pw / 2 + 3, 8.5),
-      1.2,
-      Paint()..color = const Color(0x44FFFFFF),
-    );
+    _strokePaint
+      ..color = const Color(0x99FFD700)
+      ..strokeWidth = 0.7
+      ..strokeCap = StrokeCap.butt;
+    canvas.drawLine(Offset(pw / 2 + 4, 13), Offset(pw / 2 + 7, 22), _strokePaint);
+    _strokePaint
+      ..color = const Color(0xCCFFD700)
+      ..strokeWidth = 1.2;
+    canvas.drawCircle(Offset(pw / 2 + 4, 10), 4.5, _strokePaint);
+    _fillPaint.color = const Color(0x44FFFFFF);
+    canvas.drawCircle(Offset(pw / 2 + 3, 8.5), 1.2, _fillPaint);
   }
 
   void _drawScar(Canvas canvas, Color bodyColor) {
-    final scarPaint = Paint()
+    _strokePaint
       ..color = const Color(0xCCCC4444)
       ..strokeWidth = 1.8
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(pw / 2 - 7, 5), Offset(pw / 2 - 1, 15), scarPaint);
+    canvas.drawLine(Offset(pw / 2 - 7, 5), Offset(pw / 2 - 1, 15), _strokePaint);
+    _strokePaint
+      ..color = const Color(0x88CC4444)
+      ..strokeWidth = 0.9
+      ..strokeCap = StrokeCap.butt;
     for (final dy in [-2.0, 1.0, 4.0]) {
       final cx = pw / 2 - 4 + dy * 0.5;
       canvas.drawLine(
         Offset(cx - 1.5, 10 + dy - 0.5),
         Offset(cx + 1.5, 10 + dy + 0.5),
-        Paint()
-          ..color = const Color(0x88CC4444)
-          ..strokeWidth = 0.9,
+        _strokePaint,
       );
     }
   }
 
   void _drawShades(Canvas canvas, Color bodyColor) {
-    canvas.drawLine(
-      Offset(pw / 2 - 3.5, 9), Offset(pw / 2 + 3.5, 9),
-      Paint()..color = const Color(0xCC111111)..strokeWidth = 1.2,
-    );
+    _strokePaint
+      ..color = const Color(0xCC111111)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.butt;
+    canvas.drawLine(Offset(pw / 2 - 3.5, 9), Offset(pw / 2 + 3.5, 9), _strokePaint);
     final ll = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2 - 4.5, 10), width: 9, height: 6),
       const Radius.circular(1.8),
     );
-    canvas.drawRRect(ll, Paint()..color = const Color(0xEE111111));
-    canvas.drawRRect(ll, Paint()
+    _fillPaint.color = const Color(0xEE111111);
+    canvas.drawRRect(ll, _fillPaint);
+    _strokePaint
       ..color = const Color(0x33FFFFFF)
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke);
+      ..strokeWidth = 0.5;
+    canvas.drawRRect(ll, _strokePaint);
     final rl = RRect.fromRectAndRadius(
       Rect.fromCenter(center: Offset(pw / 2 + 4.5, 10), width: 9, height: 6),
       const Radius.circular(1.8),
     );
-    canvas.drawRRect(rl, Paint()..color = const Color(0xEE111111));
-    canvas.drawRRect(rl, Paint()
-      ..color = const Color(0x33FFFFFF)
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke);
-    canvas.drawLine(
-      Offset(pw / 2 - 7, 8.5), Offset(pw / 2 - 2, 8.5),
-      Paint()..color = const Color(0x33FFFFFF)..strokeWidth = 0.8,
-    );
+    canvas.drawRRect(rl, _fillPaint);
+    canvas.drawRRect(rl, _strokePaint);
+    _strokePaint.strokeWidth = 0.8;
+    canvas.drawLine(Offset(pw / 2 - 7, 8.5), Offset(pw / 2 - 2, 8.5), _strokePaint);
   }
 }
 

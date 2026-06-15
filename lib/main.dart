@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,13 +24,25 @@ import 'ui/debug_overlay.dart';
 /// Global game reference for debug tooling (screenshot tour via VM service).
 late MirrorRunGame _game;
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  try {
+    await Firebase.initializeApp();
+    debugPrint('>>> Firebase OK');
+  } catch (e, st) {
+    // Silent-in-release would make monitoring impossible — at least surface in debug
+    debugPrint('>>> Firebase init failed: $e\n$st');
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('FATAL: Firebase init failed. Analytics disabled for this session.');
+    }
+  }
 
   final game = MirrorRunGame();
   _game = game;
@@ -50,6 +63,17 @@ void main() {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        // Clamp system text scaling so large accessibility font sizes can't
+        // overflow the caps/letter-spaced game UI.
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: mq.textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.3),
+          ),
+          child: child!,
+        );
+      },
       home: Scaffold(
         body: SwipeController(
           game: game,

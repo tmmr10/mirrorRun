@@ -2,27 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import 'tap_scale.dart';
+import 'theme.dart';
 
 class AchievementsScreen extends StatelessWidget {
   final MirrorRunGame game;
   const AchievementsScreen({super.key, required this.game});
 
-  static const _accent = Color(0xFFB48CFF);
+  static const _accent = MR.accent;
 
   static const _achievements = <_AchievementDef>[
     // Distance
-    _AchievementDef('achievement_distance_75', '75m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_100', '100m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_300', '300m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_500', '500m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_750', '750m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_1000', '1000m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_1400', '1400m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_2000', '2000m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_2500', '2500m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_3000', '3000m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_3200', '3200m', 'DISTANCE', Color(0xFFB48CFF)),
-    _AchievementDef('achievement_distance_5000', '5000m', 'DISTANCE', Color(0xFFB48CFF)),
+    _AchievementDef('achievement_distance_75', '75m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_100', '100m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_300', '300m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_500', '500m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_750', '750m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_1000', '1000m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_1400', '1400m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_2000', '2000m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_2500', '2500m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_3000', '3000m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_3200', '3200m', 'DISTANCE', MR.accent),
+    _AchievementDef('achievement_distance_5000', '5000m', 'DISTANCE', MR.accent),
     // Biomes
     _AchievementDef('achievement_biome_crystal', 'Crystal', 'BIOME', Color(0xFF40CCEE)),
     _AchievementDef('achievement_biome_volcano', 'Volcano', 'BIOME', Color(0xFFCC4400)),
@@ -31,10 +32,10 @@ class AchievementsScreen extends StatelessWidget {
     _AchievementDef('achievement_biome_neon', 'Neon', 'BIOME', Color(0xFF8800FF)),
     _AchievementDef('achievement_biome_void', 'Void', 'BIOME', Color(0xFFAAAAAA)),
     // Games
-    _AchievementDef('achievement_games_10', '10 Games', 'GAMES', Color(0xFF44DDFF)),
-    _AchievementDef('achievement_games_50', '50 Games', 'GAMES', Color(0xFF44DDFF)),
-    _AchievementDef('achievement_games_100', '100 Games', 'GAMES', Color(0xFF44DDFF)),
-    _AchievementDef('achievement_games_500', '500 Games', 'GAMES', Color(0xFF44DDFF)),
+    _AchievementDef('achievement_games_10', '10 Games', 'GAMES', MR.cyan),
+    _AchievementDef('achievement_games_50', '50 Games', 'GAMES', MR.cyan),
+    _AchievementDef('achievement_games_100', '100 Games', 'GAMES', MR.cyan),
+    _AchievementDef('achievement_games_500', '500 Games', 'GAMES', MR.cyan),
     // First
     _AchievementDef('achievement_first_game', '1st Run', 'FIRST RUN', Color(0xFFFF6644)),
   ];
@@ -49,7 +50,7 @@ class AchievementsScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xF00a0a0f), Color(0xF0080812), Color(0xF00f0a14)],
+          colors: [MR.bgTop, MR.bgMid, MR.bgBottom],
         ),
       ),
       child: SafeArea(

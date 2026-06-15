@@ -19,13 +19,13 @@ class AudioService {
 
   void playDeath() {
     if (_ready && _settings.soundEnabled) {
-      try { FlameAudio.play('death.wav'); } catch (_) {}
+      try { FlameAudio.play('death.wav'); } catch (e) { debugPrint('Audio play failed: $e'); }
     }
   }
 
   void playBiomeTransition() {
     if (_ready && _settings.soundEnabled) {
-      try { FlameAudio.play('biome_chime.wav'); } catch (_) {}
+      try { FlameAudio.play('biome_chime.wav'); } catch (e) { debugPrint('Audio play failed: $e'); }
     }
   }
 }
