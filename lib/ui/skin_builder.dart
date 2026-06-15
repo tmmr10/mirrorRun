@@ -93,13 +93,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     final unlocked = _skinService.customSkinUnlocked;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF0a0a0f), Color(0xFF080812), Color(0xFF0a060f)],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
         child: Column(
           children: [

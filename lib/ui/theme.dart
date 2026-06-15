@@ -37,8 +37,8 @@ class MR {
 
   /// The shared full-screen background gradient.
   static const LinearGradient bgGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [bgTop, bgMid, bgBottom],
   );
 

@@ -9,7 +9,10 @@ class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
   /// The 3 valid lane states in mirror mode (left lane, right lane).
   static const List<(int, int)> validStates = [(0, 2), (1, 1), (2, 0)];
 
-  final _rng = Random();
+  /// Optional seeded RNG for deterministic daily-seed runs.
+  final Random _rng;
+  ObstacleSpawner({Random? rng}) : _rng = rng ?? Random();
+
   double _spawnTimerLeft = 0;
   double _spawnTimerRight = 0.4;
 

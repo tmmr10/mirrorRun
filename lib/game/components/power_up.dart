@@ -4,7 +4,7 @@ import 'package:flame/components.dart';
 import '../mirror_run_game.dart';
 
 /// Rare mid-run pickups that grant a temporary advantage.
-enum PowerUpType { shield, syncLock, slowMo }
+enum PowerUpType { shield, syncLock, slowMo, foresight }
 
 extension PowerUpVisuals on PowerUpType {
   Color get color {
@@ -15,6 +15,8 @@ extension PowerUpVisuals on PowerUpType {
         return const Color(0xFFB48CFF); // accent violet
       case PowerUpType.slowMo:
         return const Color(0xFFFFD700); // gold
+      case PowerUpType.foresight:
+        return const Color(0xFF66FFC2); // green-cyan
     }
   }
 
@@ -26,6 +28,8 @@ extension PowerUpVisuals on PowerUpType {
         return 'SYNC LOCK';
       case PowerUpType.slowMo:
         return 'SLOW-MO';
+      case PowerUpType.foresight:
+        return 'FORESIGHT';
     }
   }
 }
@@ -117,6 +121,15 @@ class PowerUp extends PositionComponent with HasGameReference<MirrorRunGame> {
         canvas.drawCircle(c, 5, _iconPaint);
         canvas.drawLine(c, Offset(c.dx, c.dy - 3.5), _iconPaint);
         canvas.drawLine(c, Offset(c.dx + 2.5, c.dy), _iconPaint);
+      case PowerUpType.foresight:
+        // Stylized eye: horizontal lens (almond) + pupil dot
+        final eye = Path()
+          ..moveTo(c.dx - 6, c.dy)
+          ..quadraticBezierTo(c.dx, c.dy - 5, c.dx + 6, c.dy)
+          ..quadraticBezierTo(c.dx, c.dy + 5, c.dx - 6, c.dy)
+          ..close();
+        canvas.drawPath(eye, _iconPaint);
+        canvas.drawCircle(c, 1.6, _iconPaint);
     }
   }
 }

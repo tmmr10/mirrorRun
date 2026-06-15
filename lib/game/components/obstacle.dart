@@ -112,13 +112,16 @@ class Obstacle extends PositionComponent with HasGameReference<MirrorRunGame> {
   @override
   void render(Canvas canvas) {
     final phantomFade = game.eventSystem.phantomFade;
-    if (phantomFade >= 1.0) return;
+    final foresight = game.foresightActive;
+    if (!foresight && phantomFade >= 1.0) return;
 
     final biome = game.currentBiome;
     final Color col = side == 'left' ? biome.obsL : biome.obsR;
     final Color glow = side == 'left' ? biome.obsGlowL : biome.obsGlowR;
 
-    final a = phantomFade > 0 ? (1 - phantomFade) : 1.0;
+    final double a = foresight
+        ? (phantomFade > 0 ? max(1 - phantomFade, 0.4) : 1.0)
+        : (phantomFade > 0 ? (1 - phantomFade) : 1.0);
     final glowPaint = Paint()
       ..color = glow.withValues(alpha: glow.a * a)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);

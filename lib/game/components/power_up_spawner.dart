@@ -7,7 +7,9 @@ import 'power_up.dart';
 
 /// Spawns power-ups rarely, only in lanes free of obstacles, after a warm-up.
 class PowerUpSpawner extends Component with HasGameReference<MirrorRunGame> {
-  final _rng = Random();
+  final Random _rng;
+  PowerUpSpawner({Random? rng}) : _rng = rng ?? Random();
+
   double _spawnTimer = 12.0;
 
   /// Power-ups don't appear until the player has some distance under their belt.

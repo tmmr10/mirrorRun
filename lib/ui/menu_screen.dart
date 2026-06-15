@@ -1,11 +1,9 @@
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
-import '../models/player_skin.dart';
 import '../services/daily_challenge_service.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
@@ -55,17 +53,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
     const accentColor = MR.accent;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            MR.bgTop,
-            MR.bgMid,
-            MR.bgBottom,
-          ],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: Stack(
         children: [
           // Vertical mirror line accent
@@ -118,6 +106,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                     children: [
                       if (!widget.game.screenshotMode)
                         TapScale(
+                          minSize: MR.minTouchTarget,
                           onTap: () {
                             widget.game.overlays.remove('MenuScreen');
                             widget.game.overlays.add('AchievementsScreen');
@@ -135,35 +124,24 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                       if (!widget.game.screenshotMode)
                         ValueListenableBuilder<int>(
                           valueListenable: widget.game.coinsService.coinsNotifier,
-                          builder: (context, coins, _) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: MR.gold.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: MR.gold.withValues(alpha: 0.3),
-                                width: 0.5,
-                              ),
-                            ),
+                          builder: (context, coins, _) => _topChip(
+                            accent: MR.gold,
+                            onTap: () {
+                              // Coins are spent on perks → tap the balance to shop.
+                              widget.game.overlays.remove('MenuScreen');
+                              widget.game.overlays.add('PerkScreen');
+                            },
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.circle,
-                                  color: MR.gold,
-                                  size: 10,
-                                ),
+                                const Icon(Icons.circle, color: MR.gold, size: 9),
                                 const SizedBox(width: 5),
                                 Text(
                                   '$coins',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
-                                    color: MR.gold
-                                        .withValues(alpha: 0.9),
+                                    color: MR.gold.withValues(alpha: 0.9),
                                     letterSpacing: 1,
                                   ),
                                 ),
@@ -171,9 +149,15 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ).animate().fadeIn(duration: 400.ms, delay: _d(900)),
+                      const SizedBox(width: 4),
+                      if (!widget.game.screenshotMode)
+                        _buildSkinChip()
+                            .animate()
+                            .fadeIn(duration: 400.ms, delay: _d(950)),
                       const Spacer(),
                       if (kDebugMode && !widget.game.screenshotMode)
                         TapScale(
+                          minSize: MR.minTouchTarget,
                           onTap: () {
                             widget.game.overlays.remove('MenuScreen');
                             widget.game.overlays.add('DebugOverlay');
@@ -189,6 +173,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                         ),
                       if (!widget.game.screenshotMode)
                         TapScale(
+                          minSize: MR.minTouchTarget,
                           onTap: () {
                             widget.game.overlays.remove('MenuScreen');
                             widget.game.overlays.add('SettingsScreen');
@@ -206,40 +191,21 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                   ),
                 ),
 
-                // Center layout
+                // Center layout — Minimal Hero: logo, prominent PLAY, biome
+                // teaser, daily. (Skin lives in the top-bar chip; detailed
+                // next-biome/skin progress lives in the Stats screen.)
                 Expanded(
                   child: Column(
                     children: [
                       const Spacer(flex: 3),
                       _buildTitle(accentColor),
-                      const SizedBox(height: 40),
-                      // Only the TAP TO START prompt is tappable
-                      TapScale(
-                        onTap: () => widget.game.startGame(),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onVerticalDragEnd: (details) {
-                            if (details.velocity.pixelsPerSecond.dy < -100) {
-                              widget.game.startGame();
-                            }
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                            child: _buildStartPrompt(accentColor),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 48),
+                      const Spacer(flex: 3),
+                      _buildPlayButton(accentColor),
+                      const SizedBox(height: 28),
                       if (!widget.game.screenshotMode) _buildBiomeRoadmap(),
-                      const Spacer(),
-                      _buildSkinIndicator(accentColor),
-                      const SizedBox(height: 20),
-                      if (!widget.game.screenshotMode) _buildProgressPanel(accentColor),
-                      if (!widget.game.screenshotMode) ...[
-                        const SizedBox(height: 12),
-                        _buildDailyCard(accentColor),
-                      ],
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.04),
+                      const Spacer(flex: 4),
+                      if (!widget.game.screenshotMode) _buildDailyCard(accentColor),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                     ],
                   ),
                 ),
@@ -406,248 +372,161 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSkinIndicator(Color accent) {
+  /// Shared top-bar chip — fixed height so coin/skin chips align perfectly.
+  Widget _topChip({
+    required Color accent,
+    required Widget child,
+    VoidCallback? onTap,
+  }) {
+    final chip = Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: accent.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: child,
+    );
+    if (onTap == null) return chip;
+    return TapScale(minSize: MR.minTouchTarget, onTap: onTap, child: chip);
+  }
+
+  /// Compact current-skin chip for the top bar → opens the Skin selector
+  /// (which in turn hosts the Skin Creator/Builder).
+  Widget _buildSkinChip() {
     final skin = widget.game.skinService.currentSkin;
-    return TapScale(
+    return _topChip(
+      accent: MR.accent,
       onTap: () {
         widget.game.overlays.remove('MenuScreen');
         widget.game.overlays.add('SkinSelector');
       },
-      child: AnimatedBuilder(
-        animation: _shimmerController,
-        builder: (context, _) {
-          final glowT = _shimmerController.value;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Color.lerp(
-                  skin.leftColor,
-                  skin.rightColor,
-                  glowT,
-                )!.withValues(alpha: 0.25 + glowT * 0.1),
-                width: 0.8,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  skin.leftColor.withValues(alpha: 0.06),
-                  Colors.transparent,
-                  skin.rightColor.withValues(alpha: 0.06),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: skin.leftColor.withValues(alpha: 0.08 + glowT * 0.06),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                ),
-                BoxShadow(
-                  color: skin.rightColor.withValues(alpha: 0.06 + glowT * 0.04),
-                  blurRadius: 20,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomPaint(
-                  size: const Size(70, 50),
-                  painter: _MiniSkinPainter(
-                    leftColor: skin.leftColor,
-                    rightColor: skin.rightColor,
-                    glowT: glowT,
-                    headDecoration: skin.headDecoration,
-                    faceDecoration: skin.faceDecoration,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      skin.name,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white.withValues(alpha: 0.7),
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'CHANGE SKIN',
-                      style: TextStyle(
-                        fontSize: 8,
-                        color: accent.withValues(alpha: 0.45),
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 6),
-                Icon(
-                  Icons.chevron_right,
-                  color: accent.withValues(alpha: 0.35),
-                  size: 16,
-                ),
-              ],
-            ),
-          );
-        },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _miniAvatar(skin.leftColor),
+          const SizedBox(width: 3),
+          _miniAvatar(skin.rightColor),
+          const SizedBox(width: 6),
+          Icon(Icons.chevron_right,
+              size: 13, color: Colors.white.withValues(alpha: 0.35)),
+        ],
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: _d(800));
+    );
   }
 
-  Widget _buildStartPrompt(Color accent) {
-    return Column(
-      children: [
-        // Animated arrow up
-        Icon(
-              Icons.keyboard_arrow_up_rounded,
-              color: accent.withValues(alpha: 0.5),
-              size: 28,
-            )
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .moveY(
-              begin: 0,
-              end: -6,
-              duration: 800.ms,
-              curve: Curves.easeInOut,
+  Widget _miniAvatar(Color c) => Container(
+        width: 7,
+        height: 10,
+        decoration: BoxDecoration(
+          color: c,
+          borderRadius: BorderRadius.circular(2),
+          boxShadow: [BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 3)],
+        ),
+      );
+
+  /// Prominent primary action. Tap or swipe up to start.
+  Widget _buildPlayButton(Color accent) {
+    return TapScale(
+      onTap: () => widget.game.startGame(),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onVerticalDragEnd: (details) {
+          if (details.velocity.pixelsPerSecond.dy < -100) {
+            widget.game.startGame();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: LinearGradient(
+              colors: [
+                accent.withValues(alpha: 0.35),
+                accent.withValues(alpha: 0.12),
+              ],
             ),
-        const SizedBox(height: 4),
-        Text(
-              'TAP TO START',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: accent.withValues(alpha: 0.7),
-                letterSpacing: 4,
+            border: Border.all(color: accent.withValues(alpha: 0.6), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.3),
+                blurRadius: 28,
+                spreadRadius: 2,
               ),
-            )
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .fadeIn(duration: 1200.ms)
-            .then()
-            .fadeOut(duration: 1200.ms),
-      ],
-    ).animate().fadeIn(duration: 400.ms, delay: _d(1200));
+            ],
+          ),
+          child: const Text(
+            'PLAY',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 8,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 500.ms, delay: _d(900)).slideY(
+          begin: 0.2,
+          end: 0,
+          duration: 500.ms,
+          delay: _d(900),
+          curve: Curves.easeOutCubic,
+        );
   }
 
+  /// Compact single-row biome progress: one dot per biome, lit up to the
+  /// furthest reached. Replaces the dense 11-chip grid.
   Widget _buildBiomeRoadmap() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 4,
-      runSpacing: 4,
+    final biomes = BiomeManager.biomes;
+    final reached = widget.game.statsService.furthestBiomeIndex
+        .clamp(0, biomes.length - 1);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _biomeChip('FOREST', const Color(0xFF2d8c3a)),
-        _biomeDot(),
-        _biomeChip('CITY', const Color(0xFF4a5a7a)),
-        _biomeDot(),
-        _biomeChip('CRYSTAL', const Color(0xFF40CCEE)),
-        _biomeDot(),
-        _biomeChip('VOLCANO', const Color(0xFFaa4422)),
-        _biomeDot(),
-        _biomeChip('DESERT', const Color(0xFFCC9933)),
-        _biomeDot(),
-        _biomeChip('OCEAN', const Color(0xFF1a6090)),
-        _biomeDot(),
-        _biomeChip('RUINS', const Color(0xFF5A8A5A)),
-        _biomeDot(),
-        _biomeChip('SPACE', const Color(0xFF2020aa)),
-        _biomeDot(),
-        _biomeChip('STORM', const Color(0xFF7744BB)),
-        _biomeDot(),
-        _biomeChip('NEON', const Color(0xFF8800ff)),
-        _biomeDot(),
-        _biomeChip('VOID', const Color(0xFF333333)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < biomes.length; i++) ...[
+              if (i > 0)
+                Container(
+                  width: 10,
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+              _biomeProgressDot(biomes[i].lineL, i <= reached, i == reached),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          biomes[reached].name,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 3,
+            color: biomes[reached].lineL.withValues(alpha: 0.8),
+          ),
+        ),
       ],
     ).animate().fadeIn(duration: 500.ms, delay: _d(1400));
   }
 
-  Widget _biomeChip(String label, Color color) {
+  Widget _biomeProgressDot(Color color, bool lit, bool current) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      width: current ? 9 : 7,
+      height: current ? 9 : 7,
       decoration: BoxDecoration(
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 9,
-          color: color.withValues(alpha: 0.6),
-          letterSpacing: 1.5,
-          fontWeight: FontWeight.w500,
-        ),
+        shape: BoxShape.circle,
+        color: lit ? color.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.12),
+        boxShadow: current
+            ? [BoxShadow(color: color.withValues(alpha: 0.7), blurRadius: 8)]
+            : null,
       ),
     );
-  }
-
-  Widget _biomeDot() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Container(
-        width: 3,
-        height: 3,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressPanel(Color accent) {
-    final best = widget.game.highscoreService.getBest();
-    final stats = widget.game.statsService;
-
-    // Next biome target
-    final biomes = BiomeManager.biomes;
-    BiomeData? nextBiome;
-    for (final b in biomes) {
-      if (best < b.startM) {
-        nextBiome = b;
-        break;
-      }
-    }
-
-    // Next skin target — sorted by unlockBiomeIndex to ensure earliest-first,
-    // consistent with SkinService.checkUnlocks which uses >= for unlock gating.
-    final skinService = widget.game.skinService;
-    final lockedSkins = PlayerSkin.all
-        .where((s) => s.unlockBiomeIndex != null && !skinService.isUnlocked(s.id))
-        .toList()
-      ..sort((a, b) => a.unlockBiomeIndex!.compareTo(b.unlockBiomeIndex!));
-    final PlayerSkin? nextSkin = lockedSkins.isNotEmpty ? lockedSkins.first : null;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (nextBiome != null) _progressRow(
-            label: 'NEXT BIOME',
-            target: nextBiome.name,
-            current: best,
-            max: nextBiome.startM,
-            color: nextBiome.lineL,
-          ),
-          if (nextBiome != null && nextSkin != null) const SizedBox(height: 8),
-          if (nextSkin != null) _progressRow(
-            label: 'NEXT SKIN',
-            target: nextSkin.name,
-            current: stats.furthestBiomeIndex,
-            max: nextSkin.unlockBiomeIndex!,
-            color: nextSkin.leftColor,
-            isSkin: true,
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms, delay: _d(1000));
   }
 
   Widget _buildDailyCard(Color accent) {
@@ -749,6 +628,31 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                     color: Colors.white.withValues(alpha: 0.4),
                   ),
                 ),
+                const SizedBox(height: 10),
+                Container(height: 0.5, color: Colors.white.withValues(alpha: 0.08)),
+                const SizedBox(height: 8),
+                // Daily Seed Run — same obstacle/event patterns for everyone today.
+                TapScale(
+                  minSize: 40,
+                  onTap: () => widget.game.startGame(seeded: true),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.casino_outlined,
+                          size: 14, color: accent.withValues(alpha: 0.9)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'PLAY DAILY SEED RUN',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                          color: accent.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
@@ -756,557 +660,4 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
       ),
     ).animate().fadeIn(duration: 400.ms, delay: _d(1100));
   }
-
-  Widget _progressRow({
-    required String label,
-    required String target,
-    required int current,
-    required int max,
-    required Color color,
-    bool isSkin = false,
-  }) {
-    final progress = max > 0 ? (current / max).clamp(0.0, 1.0) : 0.0;
-    final displayCurrent = current.clamp(0, max);
-    final displayText = isSkin
-        ? 'Biome ${displayCurrent + 1}/${max + 1}'
-        : '${displayCurrent}m / ${max}m';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.35),
-                letterSpacing: 2,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                target,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: color.withValues(alpha: 0.8),
-                  letterSpacing: 2,
-                ),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              displayText,
-              style: TextStyle(
-                fontSize: 9,
-                color: Colors.white.withValues(alpha: 0.45),
-                letterSpacing: 1,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Container(
-          height: 3,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(2),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: progress,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    color.withValues(alpha: 0.6),
-                    color.withValues(alpha: 1.0),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(2),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 6,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MiniSkinPainter extends CustomPainter {
-  final Color leftColor;
-  final Color rightColor;
-  final double glowT;
-  final HeadDecoration headDecoration;
-  final FaceDecoration faceDecoration;
-
-  _MiniSkinPainter({
-    required this.leftColor,
-    required this.rightColor,
-    required this.glowT,
-    this.headDecoration = HeadDecoration.none,
-    this.faceDecoration = FaceDecoration.none,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final mid = w / 2;
-
-    // Mirror line (vertical, glowing)
-    final mirrorPaint = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(mid, 0),
-        Offset(mid, h),
-        [
-          Colors.transparent,
-          Color.lerp(
-            leftColor,
-            rightColor,
-            0.5,
-          )!.withValues(alpha: 0.15 + glowT * 0.1),
-          Colors.transparent,
-        ],
-        [0.0, 0.5, 1.0],
-      );
-    canvas.drawLine(Offset(mid, h * 0.1), Offset(mid, h * 0.95), mirrorPaint);
-
-    // Left player
-    _drawPlayer(canvas, mid * 0.5, h * 0.82, leftColor);
-
-    // Right player
-    _drawPlayer(canvas, mid + mid * 0.5, h * 0.82, rightColor);
-  }
-
-  void _drawPlayer(Canvas canvas, double x, double groundY, Color color) {
-    const bodyW = 14.0;
-    const bodyH = 20.0;
-    final bodyTop = groundY - bodyH;
-    final bodyRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(x - bodyW / 2, bodyTop, bodyW, bodyH),
-      const Radius.circular(5),
-    );
-
-    // Outer glow
-    canvas.drawRRect(
-      bodyRect.inflate(3 + glowT * 2),
-      Paint()
-        ..color = color.withValues(alpha: 0.08 + glowT * 0.06)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
-
-    // Inner glow
-    canvas.drawRRect(
-      bodyRect,
-      Paint()
-        ..color = color.withValues(alpha: 0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-    );
-
-    // Body
-    canvas.drawRRect(bodyRect, Paint()..color = color);
-
-    // Head decoration
-    _drawHeadDecoration(canvas, x, bodyTop, bodyW, color);
-
-    // Eyes
-    final eyeY = bodyTop + 6;
-    final eyePaint = Paint()..color = const Color(0x80000000);
-    canvas.drawCircle(Offset(x - 2.5, eyeY), 1.5, eyePaint);
-    canvas.drawCircle(Offset(x + 2.5, eyeY), 1.5, eyePaint);
-
-    // Face decoration
-    _drawFaceDecoration(canvas, x, eyeY, bodyW, color);
-  }
-
-  void _drawFaceDecoration(
-    Canvas canvas,
-    double x,
-    double eyeY,
-    double bodyW,
-    Color color,
-  ) {
-    switch (faceDecoration) {
-      case FaceDecoration.none:
-        break;
-      case FaceDecoration.goggles:
-        _drawGoggles(canvas, x, eyeY, bodyW);
-      case FaceDecoration.visor:
-        _drawVisor(canvas, x, eyeY, bodyW, color);
-      case FaceDecoration.mask:
-        _drawMask(canvas, x, eyeY, bodyW);
-      case FaceDecoration.monocle:
-        _drawMonocle(canvas, x, eyeY);
-      case FaceDecoration.scar:
-        _drawScar(canvas, x, eyeY);
-      case FaceDecoration.shades:
-        _drawShades(canvas, x, eyeY, bodyW);
-    }
-  }
-
-  void _drawHeadDecoration(
-    Canvas canvas,
-    double x,
-    double bodyTop,
-    double bodyW,
-    Color color,
-  ) {
-    switch (headDecoration) {
-      case HeadDecoration.none:
-        break;
-      case HeadDecoration.iceCrown:
-        final paint = Paint()..color = const Color(0xCCAAEEFF);
-        final glow = Paint()
-          ..color = const Color(0x4400CCFF)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-        for (final dx in [-3.0, 0.0, 3.0]) {
-          final h = dx == 0 ? -5.0 : -3.5;
-          final path = Path()
-            ..moveTo(x + dx - 1.2, bodyTop)
-            ..lineTo(x + dx, bodyTop + h)
-            ..lineTo(x + dx + 1.2, bodyTop)
-            ..close();
-          canvas.drawPath(path, glow);
-          canvas.drawPath(path, paint);
-        }
-      case HeadDecoration.flames:
-        final t = glowT * pi * 4;
-        final colors = [
-          const Color(0xDDFF6600),
-          const Color(0xBBFFAA00),
-          const Color(0x99FF3300),
-        ];
-        for (int i = 0; i < 3; i++) {
-          final dx = (i - 1) * 3.0;
-          final phase = t + i * 2.1;
-          final fh = -2.5 - sin(phase) * 2.5 - (i == 1 ? 2 : 0);
-          final fw = 2.0 + sin(phase * 0.7);
-          final path = Path()
-            ..moveTo(x + dx - fw, bodyTop + 1)
-            ..quadraticBezierTo(
-              x + dx - fw * 0.3,
-              bodyTop + fh - 1.2,
-              x + dx,
-              bodyTop + fh,
-            )
-            ..quadraticBezierTo(
-              x + dx + fw * 0.3,
-              bodyTop + fh - 1.2,
-              x + dx + fw,
-              bodyTop + 1,
-            )
-            ..close();
-          canvas.drawPath(
-            path,
-            Paint()
-              ..color = colors[i].withValues(alpha: 0.3)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-          );
-          canvas.drawPath(path, Paint()..color = colors[i]);
-        }
-      case HeadDecoration.crown:
-        final paint = Paint()..color = MR.gold;
-        final glow = Paint()
-          ..color = const Color(0x60FFD700)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-        final path = Path()
-          ..moveTo(x - 5, bodyTop + 1)
-          ..lineTo(x - 5, bodyTop - 2.5)
-          ..lineTo(x - 2.5, bodyTop - 0.5)
-          ..lineTo(x, bodyTop - 4.5)
-          ..lineTo(x + 2.5, bodyTop - 0.5)
-          ..lineTo(x + 5, bodyTop - 2.5)
-          ..lineTo(x + 5, bodyTop + 1)
-          ..close();
-        canvas.drawPath(path, glow);
-        canvas.drawPath(path, paint);
-        canvas.drawCircle(
-          Offset(x, bodyTop - 2.5),
-          0.8,
-          Paint()..color = MR.alert,
-        );
-      case HeadDecoration.antenna:
-        final bobY = sin(glowT * pi * 2) * 1.2;
-        canvas.drawLine(
-          Offset(x, bodyTop + 1),
-          Offset(x, bodyTop - 5 + bobY),
-          Paint()
-            ..color = Colors.white.withValues(alpha: 0.6)
-            ..strokeWidth = 1
-            ..strokeCap = ui.StrokeCap.round,
-        );
-        final tipY = bodyTop - 5.5 + bobY;
-        canvas.drawCircle(
-          Offset(x, tipY),
-          2,
-          Paint()
-            ..color = color.withValues(alpha: 0.4)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-        );
-        canvas.drawCircle(Offset(x, tipY), 1.3, Paint()..color = color);
-      case HeadDecoration.halo:
-        final bobY = sin(glowT * pi * 2) * 1.0;
-        final haloY = bodyTop - 4 + bobY;
-        canvas.drawOval(
-          Rect.fromCenter(center: Offset(x, haloY), width: 13, height: 4),
-          Paint()
-            ..color = const Color(0x30FFFFFF)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-        );
-        canvas.drawOval(
-          Rect.fromCenter(center: Offset(x, haloY), width: 12, height: 3.5),
-          Paint()
-            ..color = const Color(0xCCFFFFFF)
-            ..strokeWidth = 1
-            ..style = ui.PaintingStyle.stroke,
-        );
-      case HeadDecoration.horns:
-        final paint = Paint()..color = const Color(0xDDCC2222);
-        final glow = Paint()
-          ..color = const Color(0x40FF0000)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-        for (final side in [-1.0, 1.0]) {
-          final path = Path()
-            ..moveTo(x + side * 3, bodyTop + 1)
-            ..quadraticBezierTo(
-              x + side * 6,
-              bodyTop - 1,
-              x + side * 5.5,
-              bodyTop - 5,
-            )
-            ..lineTo(x + side * 4, bodyTop - 0.5)
-            ..close();
-          canvas.drawPath(path, glow);
-          canvas.drawPath(path, paint);
-        }
-      case HeadDecoration.wings:
-        final flapY = sin(glowT * pi * 3) * 1.2;
-        final paint = Paint()..color = color.withValues(alpha: 0.6);
-        final glow = Paint()
-          ..color = color.withValues(alpha: 0.2)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-        for (final side in [-1.0, 1.0]) {
-          final wingX = x + side * 8;
-          final path = Path()
-            ..moveTo(x + side * 5, bodyTop + 5)
-            ..quadraticBezierTo(
-              wingX + side * 3,
-              bodyTop + 1 + flapY,
-              wingX + side * 1.5,
-              bodyTop - 1 + flapY,
-            )
-            ..quadraticBezierTo(
-              wingX,
-              bodyTop + 4 + flapY,
-              x + side * 5,
-              bodyTop + 12,
-            )
-            ..close();
-          canvas.drawPath(path, glow);
-          canvas.drawPath(path, paint);
-        }
-      case HeadDecoration.mohawk:
-        final paint = Paint()..color = color;
-        final glow = Paint()
-          ..color = color.withValues(alpha: 0.3)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-        for (int i = 0; i < 5; i++) {
-          final dx = (i - 2) * 2.0;
-          final h = i == 2 ? -7.0 : (i == 1 || i == 3 ? -5.0 : -3.0);
-          final path = Path()
-            ..moveTo(x + dx - 1, bodyTop + 1)
-            ..lineTo(x + dx, bodyTop + h)
-            ..lineTo(x + dx + 1, bodyTop + 1)
-            ..close();
-          canvas.drawPath(path, glow);
-          canvas.drawPath(path, paint);
-        }
-      case HeadDecoration.star:
-        final bobY = sin(glowT * pi * 2) * 1.2;
-        final starY = bodyTop - 7 + bobY;
-        final starPaint = Paint()..color = const Color(0xFFFFDD44);
-        final starGlow = Paint()
-          ..color = const Color(0x60FFDD44)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-        final path = Path();
-        for (int i = 0; i < 5; i++) {
-          final outerAngle = -pi / 2 + i * 2 * pi / 5;
-          final innerAngle = outerAngle + pi / 5;
-          final ox = x + cos(outerAngle) * 3.5;
-          final oy = starY + sin(outerAngle) * 3.5;
-          final ix = x + cos(innerAngle) * 1.4;
-          final iy = starY + sin(innerAngle) * 1.4;
-          if (i == 0) {
-            path.moveTo(ox, oy);
-          } else {
-            path.lineTo(ox, oy);
-          }
-          path.lineTo(ix, iy);
-        }
-        path.close();
-        canvas.drawPath(path, starGlow);
-        canvas.drawPath(path, starPaint);
-    }
-  }
-
-  void _drawVisor(
-    Canvas canvas,
-    double x,
-    double eyeY,
-    double bodyW,
-    Color color,
-  ) {
-    final visorRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(x, eyeY), width: bodyW - 1, height: 3.5),
-      const Radius.circular(1.8),
-    );
-    canvas.drawRRect(
-      visorRect,
-      Paint()
-        ..color = color.withValues(alpha: 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
-    canvas.drawRRect(visorRect, Paint()..color = color.withValues(alpha: 0.7));
-    canvas.drawLine(
-      Offset(x - bodyW / 2 + 2, eyeY - 0.7),
-      Offset(x + bodyW / 2 - 2, eyeY - 0.7),
-      Paint()
-        ..color = const Color(0x55FFFFFF)
-        ..strokeWidth = 0.6,
-    );
-  }
-
-  void _drawGoggles(Canvas canvas, double x, double eyeY, double bodyW) {
-    final strap = Paint()
-      ..color = const Color(0xBB000000)
-      ..strokeWidth = 1
-      ..style = ui.PaintingStyle.stroke;
-    final lens = Paint()..color = const Color(0xCC88DDFF);
-    final frame = Paint()
-      ..color = const Color(0xCC444444)
-      ..strokeWidth = 0.8
-      ..style = ui.PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(x - bodyW / 2, eyeY),
-      Offset(x + bodyW / 2, eyeY),
-      strap,
-    );
-
-    for (final dx in [-2.5, 2.5]) {
-      final lr = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(x + dx, eyeY), width: 5, height: 4),
-        const Radius.circular(1.5),
-      );
-      canvas.drawRRect(lr, lens);
-      canvas.drawRRect(lr, frame);
-      canvas.drawCircle(
-        Offset(x + dx - 1, eyeY - 1),
-        0.7,
-        Paint()..color = const Color(0x55FFFFFF),
-      );
-    }
-  }
-
-  void _drawMask(Canvas canvas, double x, double eyeY, double bodyW) {
-    final maskRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(x, eyeY), width: bodyW + 1, height: 4.5),
-      const Radius.circular(2.2),
-    );
-    canvas.drawRRect(maskRect, Paint()..color = const Color(0xDD111111));
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(x - 2.5, eyeY), width: 4, height: 3),
-      Paint()..color = const Color(0xFF222222),
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(x + 2.5, eyeY), width: 4, height: 3),
-      Paint()..color = const Color(0xFF222222),
-    );
-  }
-
-  void _drawMonocle(Canvas canvas, double x, double eyeY) {
-    canvas.drawLine(
-      Offset(x + 2.5, eyeY + 2),
-      Offset(x + 4, eyeY + 7),
-      Paint()
-        ..color = const Color(0x99FFD700)
-        ..strokeWidth = 0.5,
-    );
-    canvas.drawCircle(
-      Offset(x + 2.5, eyeY),
-      3,
-      Paint()
-        ..color = const Color(0xCCFFD700)
-        ..strokeWidth = 0.8
-        ..style = ui.PaintingStyle.stroke,
-    );
-    canvas.drawCircle(
-      Offset(x + 1.8, eyeY - 0.8),
-      0.7,
-      Paint()..color = const Color(0x44FFFFFF),
-    );
-  }
-
-  void _drawScar(Canvas canvas, double x, double eyeY) {
-    canvas.drawLine(
-      Offset(x - 4, eyeY - 3.5),
-      Offset(x - 0.5, eyeY + 3.5),
-      Paint()
-        ..color = const Color(0xCCCC4444)
-        ..strokeWidth = 1.2
-        ..strokeCap = ui.StrokeCap.round,
-    );
-    for (final dy in [-1.5, 0.8, 3.0]) {
-      final cx = x - 2.2 + dy * 0.35;
-      canvas.drawLine(
-        Offset(cx - 0.8, eyeY + dy - 0.3),
-        Offset(cx + 0.8, eyeY + dy + 0.3),
-        Paint()
-          ..color = const Color(0x88CC4444)
-          ..strokeWidth = 0.6,
-      );
-    }
-  }
-
-  void _drawShades(Canvas canvas, double x, double eyeY, double bodyW) {
-    canvas.drawLine(
-      Offset(x - 2, eyeY - 0.7),
-      Offset(x + 2, eyeY - 0.7),
-      Paint()
-        ..color = const Color(0xCC111111)
-        ..strokeWidth = 0.8,
-    );
-    for (final dx in [-2.8, 2.8]) {
-      final lr = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(x + dx, eyeY), width: 6, height: 4),
-        const Radius.circular(1.2),
-      );
-      canvas.drawRRect(lr, Paint()..color = const Color(0xEE111111));
-      canvas.drawRRect(
-        lr,
-        Paint()
-          ..color = const Color(0x33FFFFFF)
-          ..strokeWidth = 0.4
-          ..style = ui.PaintingStyle.stroke,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniSkinPainter old) =>
-      old.glowT != glowT ||
-      old.leftColor != leftColor ||
-      old.rightColor != rightColor ||
-      old.headDecoration != headDecoration ||
-      old.faceDecoration != faceDecoration;
 }

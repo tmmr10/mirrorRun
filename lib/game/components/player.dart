@@ -170,6 +170,31 @@ class Player extends PositionComponent with HasGameReference<MirrorRunGame> {
 
     // Face decoration (over eyes)
     _drawFaceDecoration(canvas, skin.faceDecoration, bodyColor);
+
+    // Shield helmet — visible on the figure while a shield is active.
+    if (game.shieldUp) _drawShieldHelmet(canvas);
+  }
+
+  void _drawShieldHelmet(Canvas canvas) {
+    const c = Color(0xFF44DDFF); // shield cyan
+    final domeRect = Rect.fromLTWH(-2, -4, pw + 4, 22);
+    // soft glow behind the dome
+    _glowBlurPaint
+      ..color = c.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawArc(domeRect, pi, pi, true, _glowBlurPaint);
+    // translucent helmet shell
+    _fillPaint
+      ..color = c.withValues(alpha: 0.3)
+      ..maskFilter = null;
+    canvas.drawArc(domeRect, pi, pi, true, _fillPaint);
+    // bright rim along the dome edge
+    _strokePaint
+      ..color = c.withValues(alpha: 0.95)
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = null;
+    canvas.drawArc(domeRect, pi, pi, false, _strokePaint);
   }
 
   void _drawHeadDecoration(Canvas canvas, HeadDecoration deco, Color bodyColor) {

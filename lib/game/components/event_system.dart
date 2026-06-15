@@ -35,7 +35,8 @@ String eventAnalyticsId(GameEvent e) {
 }
 
 class EventSystem extends Component with HasGameReference<MirrorRunGame> {
-  final _rng = Random();
+  final Random _rng;
+  EventSystem({Random? rng}) : _rng = rng ?? Random();
 
   double _eventCooldown = 0;
   GameEvent? activeEvent;
@@ -83,6 +84,9 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
 
   /// Force-activate an event (for screenshots/debug).
   void forceEvent(GameEvent event) {
+    // Clear any pending warning so it can't fire a surprise second event later.
+    _pendingEvent = null;
+    _warningTimer = 0;
     activeEvent = event;
     _eventCooldown = 999;
     switch (event) {

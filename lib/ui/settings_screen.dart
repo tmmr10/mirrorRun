@@ -16,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _helpExpanded = false;
   bool _biomesExpanded = false;
+  bool _isRestoring = false;
 
   static const _accent = MR.accent;
 
@@ -24,13 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settings = widget.game.settingsService;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [MR.bgTop, MR.bgMid, MR.bgBottom],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -264,15 +259,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 TapScale(
                   minSize: MR.minTouchTarget,
-                  onTap: () => widget.game.adService.restorePurchases(),
-                  child: Text(
-                    'RESTORE PURCHASES',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.7),
-                      letterSpacing: 3,
-                    ),
+                  onTap: _isRestoring ? null : _restore,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _isRestoring
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                          )
+                        : Text(
+                            'RESTORE PURCHASES',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.7),
+                              letterSpacing: 3,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -318,6 +325,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _restore() async {
+    setState(() => _isRestoring = true);
+    await widget.game.adService.restorePurchases();
+    if (mounted) {
+      setState(() => _isRestoring = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.game.adService.isPro
+                ? 'Purchases restored.'
+                : 'Restore complete.',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   /// Opens the licenses page inside a dark theme so it matches the app's

@@ -46,13 +46,7 @@ class AchievementsScreen extends StatelessWidget {
     final unlocked = service.unlockedCount;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [MR.bgTop, MR.bgMid, MR.bgBottom],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),

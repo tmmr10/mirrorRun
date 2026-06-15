@@ -28,4 +28,10 @@ class AudioService {
       try { FlameAudio.play('biome_chime.wav'); } catch (e) { debugPrint('Audio play failed: $e'); }
     }
   }
+
+  void playComboMilestone() {
+    if (_ready && _settings.soundEnabled) {
+      try { FlameAudio.play('biome_chime.wav', volume: 0.9); } catch (e) { debugPrint('Audio play failed: $e'); }
+    }
+  }
 }

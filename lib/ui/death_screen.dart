@@ -61,8 +61,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
     final adReady = game.adService.isRewardedAdReady;
     final canProFreeRevive = game.adService.canUseFreeProRevive();
 
-    // Show panel if either Pro-free-revive OR rewarded ad is available
-    if (!adReady && !canProFreeRevive) return;
+    // Show panel if any revive path is available: Pro-free, rewarded ad, or coins.
+    if (!adReady && !canProFreeRevive && !game.canAffordCoinRevive) return;
 
     _continueVisible = true;
     _continueProgressController = AnimationController(
@@ -135,6 +135,18 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
       return;
     }
     widget.game.revivePlayer(viaAd: false);
+  }
+
+  void _reviveWithCoins() async {
+    if (_revivingInProgress) return;
+    setState(() => _revivingInProgress = true);
+    _continueTimeoutTimer?.cancel();
+    _continueProgressController?.stop();
+    final ok = await widget.game.reviveWithCoins();
+    // On success revivePlayer() removes this overlay; on failure re-enable.
+    if (!ok && mounted) {
+      setState(() => _revivingInProgress = false);
+    }
   }
 
   void _declineContinue() {
@@ -362,7 +374,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                   .animate()
                   .fadeIn(duration: 400.ms, delay: 1100.ms)
                   .slideY(begin: 0.2, end: 0, duration: 400.ms, delay: 1100.ms)
-                  .shimmer(duration: 1500.ms, delay: 1300.ms, color: const Color(0x40FFD700)),
+                  .shimmer(duration: 1500.ms, delay: 1300.ms, color: MR.gold.withValues(alpha: 0.25)),
             ],
 
             const SizedBox(height: 16),
@@ -376,18 +388,18 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFFFFCC44).withValues(alpha: 0.5),
+                      color: MR.gold.withValues(alpha: 0.5),
                       width: 0.5,
                     ),
                     borderRadius: BorderRadius.circular(2),
-                    color: const Color(0xFFFFCC44).withValues(alpha: 0.06),
+                    color: MR.gold.withValues(alpha: 0.06),
                   ),
-                  child: const Text(
+                  child: Text(
                     'NEW RECORD',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFFFFCC44),
+                      color: MR.gold,
                       letterSpacing: 4,
                     ),
                   ),
@@ -537,8 +549,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
     return Column(
       children: [
         // Tap to retry prompt — the ONLY touch target that restarts the run.
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
+        TapScale(
           onTap: _retry,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
@@ -724,8 +735,11 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
     const gold = MR.gold;
     const cyan = MR.cyan;
 
-    // Guard: if no actionable button available, hide panel entirely
-    final hasAction = (isPro && canProFreeRevive) || adReady;
+    // Guard: if no actionable button available, hide panel entirely.
+    // Coin-revive counts — otherwise the coin button below would never show
+    // when neither an ad nor a Pro revive is ready.
+    final hasAction =
+        (isPro && canProFreeRevive) || adReady || game.canAffordCoinRevive;
     if (!hasAction) return const SizedBox.shrink();
 
     final progressCtrl = _continueProgressController;
@@ -827,6 +841,18 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               color: cyan,
               onTap: _reviveViaAd,
             ),
+
+          // Coin revive — always offered when affordable (alternative to ad/Pro).
+          if (widget.game.canAffordCoinRevive) ...[
+            const SizedBox(height: 8),
+            _buildReviveButton(
+              label: 'CONTINUE',
+              subtitle: '${MirrorRunGame.reviveCoinCost} COINS',
+              icon: Icons.monetization_on_outlined,
+              color: gold,
+              onTap: _reviveWithCoins,
+            ),
+          ],
         ],
       ),
     )

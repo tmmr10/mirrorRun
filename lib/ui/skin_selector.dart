@@ -44,13 +44,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF0a0a0f), Color(0xFF080812), Color(0xFF0a060f)],
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
         child: Column(
           children: [
@@ -388,8 +382,8 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                 Text(
                   'TAP TO EQUIP',
                   style: TextStyle(
-                    fontSize: 7,
-                    color: Colors.white.withValues(alpha: 0.2),
+                    fontSize: 9,
+                    color: Colors.white.withValues(alpha: 0.5),
                     letterSpacing: 2,
                   ),
                 ),
@@ -526,8 +520,8 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                       Text(
                         'TAP TO EQUIP',
                         style: TextStyle(
-                          fontSize: 7,
-                          color: Colors.white.withValues(alpha: 0.2),
+                          fontSize: 9,
+                          color: Colors.white.withValues(alpha: 0.5),
                           letterSpacing: 2,
                         ),
                       ),
@@ -578,8 +572,8 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
             skin.unlockDescription,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 8,
-              color: Colors.white.withValues(alpha: 0.15),
+              fontSize: 9,
+              color: Colors.white.withValues(alpha: 0.5),
               letterSpacing: 1,
               height: 1.3,
             ),

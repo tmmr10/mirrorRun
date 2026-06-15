@@ -1,13 +1,14 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import '../game_state.dart';
 import '../mirror_run_game.dart';
 
 /// Darkens one side of the playfield during the BLACKOUT event, forcing the
 /// player to navigate that side from memory.
 class BlackoutOverlay extends PositionComponent
     with HasGameReference<MirrorRunGame> {
-  static const double mid = 220;
-  static const double vw = 440;
+  static const double vw = MirrorRunGame.vw;
+  static const double mid = vw / 2;
 
   final Paint _paint = Paint();
 
@@ -15,6 +16,9 @@ class BlackoutOverlay extends PositionComponent
 
   @override
   void render(Canvas canvas) {
+    // Only while actually playing — otherwise a death mid-blackout would leave
+    // the screen half-dark on the death screen (events don't tick when dead).
+    if (game.playState != PlayState.playing) return;
     final es = game.eventSystem;
     final side = es.blackoutSide;
     if (side == null || es.blackoutFade <= 0) return;

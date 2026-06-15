@@ -6,7 +6,9 @@ import 'collectible.dart';
 import 'obstacle.dart';
 
 class CollectibleSpawner extends Component with HasGameReference<MirrorRunGame> {
-  final _rng = Random();
+  final Random _rng;
+  CollectibleSpawner({Random? rng}) : _rng = rng ?? Random();
+
   double _spawnTimer = 1.5;
 
   @override

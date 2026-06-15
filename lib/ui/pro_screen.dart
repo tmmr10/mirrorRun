@@ -16,6 +16,7 @@ class _ProScreenState extends State<ProScreen> {
   static const _gold = MR.gold;
   static const _accent = MR.accent;
   bool _isPurchasing = false;
+  bool _isRestoring = false;
 
   @override
   void initState() {
@@ -50,6 +51,24 @@ class _ProScreenState extends State<ProScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _restore() async {
+    setState(() => _isRestoring = true);
+    await widget.game.adService.restorePurchases();
+    if (mounted) {
+      setState(() => _isRestoring = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.game.adService.isPro
+                ? 'Purchases restored.'
+                : 'Restore complete.',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -252,15 +271,25 @@ class _ProScreenState extends State<ProScreen> {
 
               // Restore
               TapScale(
-                onTap: () => widget.game.adService.restorePurchases(),
-                child: Text(
-                  'RESTORE PURCHASES',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.25),
-                    letterSpacing: 2,
-                  ),
-                ),
+                minSize: MR.minTouchTarget,
+                onTap: _isRestoring ? null : _restore,
+                child: _isRestoring
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                      )
+                    : Text(
+                        'RESTORE PURCHASES',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.55),
+                          letterSpacing: 2,
+                        ),
+                      ),
               ).animate().fadeIn(duration: 400.ms, delay: 1100.ms),
             ],
 

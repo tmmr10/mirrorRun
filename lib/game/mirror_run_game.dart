@@ -19,6 +19,7 @@ import 'components/player.dart';
 import 'components/power_up.dart';
 import 'components/power_up_spawner.dart';
 import 'components/blackout_overlay.dart';
+import 'components/floating_text.dart';
 import 'world/biome.dart';
 import '../models/player_skin.dart';
 import '../services/ad_service.dart';
@@ -33,6 +34,7 @@ import '../services/skin_service.dart';
 import '../services/analytics_service.dart';
 import '../services/stats_service.dart';
 import '../services/daily_challenge_service.dart';
+import '../services/upgrade_service.dart';
 
 class MirrorRunGame extends FlameGame with KeyboardEvents {
   static const double vw = 440;
@@ -60,6 +62,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   late AchievementService achievementService;
   late SkinService skinService;
   late DailyChallengeService dailyChallengeService;
+  late UpgradeService upgradeService;
 
   /// Set after a run when the daily challenge was just completed (for UI feedback).
   final ValueNotifier<DailyRunResult?> dailyResultNotifier = ValueNotifier(null);
@@ -122,7 +125,16 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   late CollectibleSpawner collectibleSpawner;
   late ParticleSystem particleSystem;
   late EventSystem eventSystem;
+  late FloatingTextLayer floatingText;
   int _lastBiomeIdx = -1;
+
+  // Screen-shake on death
+  double _shakeTimer = 0;
+  static const double _shakeDuration = 0.32;
+  final Random _shakeRng = Random();
+
+  /// True while playing a Daily Seed Run (deterministic patterns for the day).
+  bool seedRunActive = false;
 
   // Revive + invincibility state
   bool _reviveUsedThisRun = false;
@@ -132,20 +144,40 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   // Power-up state
   late PowerUpSpawner powerUpSpawner;
   bool shieldActive = false;
+  /// Perk: score at which the start-shield recharges (0 = no recharge pending).
+  int _nextShieldRechargeScore = 0;
+  static const int _shieldRechargeMeters = 400;
   double _syncLockTimer = 0;
   double _slowMoTimer = 0;
+  double _foresightTimer = 0;
   static const double _syncLockDuration = 4.0;
   static const double _slowMoDuration = 3.5;
+  // Longer than the others so it reliably overlaps a (relatively rare) PHANTOM.
+  static const double _foresightDuration = 10.0;
   static const double _slowMoFactor = 0.55;
   bool get syncLockActive => _syncLockTimer > 0;
   bool get slowMoActive => _slowMoTimer > 0;
+  /// True while Foresight reveals obstacles hidden by PHANTOM (read by Obstacle).
+  bool get foresightActive => _foresightTimer > 0;
   bool get shieldUp => shieldActive;
 
   /// Currently-active power-ups, for the HUD indicator.
   final ValueNotifier<List<PowerUpType>> powerUpsNotifier = ValueNotifier([]);
   List<PowerUpType> _lastPowerUps = const [];
 
+  /// Coin price to continue a run (alternative to ad/Pro revive).
+  static const int reviveCoinCost = 50;
   bool get canRevive => playState == PlayState.dead && !_reviveUsedThisRun;
+  bool get canAffordCoinRevive => coinsService.totalCoins >= reviveCoinCost;
+
+  /// Spend coins to continue the run. Returns false if not allowed/affordable.
+  Future<bool> reviveWithCoins() async {
+    if (!canRevive || !canAffordCoinRevive) return false;
+    final ok = await coinsService.spendCoins(reviveCoinCost);
+    if (!ok) return false;
+    revivePlayer(viaAd: false);
+    return true;
+  }
   bool get isInvincible => _invincibilityTimer > 0;
   double get invincibilityTimer => _invincibilityTimer;
 
@@ -219,6 +251,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     dailyChallengeService = DailyChallengeService();
     await dailyChallengeService.init();
 
+    upgradeService = UpgradeService();
+    await upgradeService.init();
+
     // Run GameCenter sign-in in background with timeout — don't block app startup.
     // Runs AFTER achievementService is initialized to avoid LateInitializationError.
     unawaited(
@@ -242,11 +277,21 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     world.add(mirrorLine);
     world.add(particleSystem);
     world.add(BlackoutOverlay());
+    floatingText = FloatingTextLayer();
+    world.add(floatingText);
 
     overlays.add('MenuScreen');
   }
 
-  void startGame() {
+  /// Today's deterministic seed (same for all players on a calendar day).
+  int _dailySeed() {
+    final n = DateTime.now();
+    return n.year * 10000 + n.month * 100 + n.day;
+  }
+
+  void startGame({bool seeded = false}) {
+    seedRunActive = seeded;
+    final seed = seeded ? _dailySeed() : null;
     playState = PlayState.countdown;
     _runStartTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     final startScore = kDebugMode ? debugStartScore : 0;
@@ -259,13 +304,28 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _scoreBaseAccumulator = startScore.toDouble();
     _scoreBonusAccumulator = 0;
     comboNotifier.value = 1.0;
+    // Perk: head start — begin mid-combo (level 1/2/3 → x1.2/x1.5/x2.0), with a
+    // grace window so the bought combo doesn't decay away in the first seconds.
+    final headStart = upgradeService.startComboNearMisses;
+    if (headStart > 0) {
+      _comboNearMisses = headStart;
+      _timeSinceNearMiss = -3.0;
+      _updateComboTier();
+    }
     _reviveUsedThisRun = false;
     _invincibilityTimer = 0;
-    shieldActive = false;
     _syncLockTimer = 0;
     _slowMoTimer = 0;
+    _foresightTimer = 0;
+    // Perk: start each run with a shield if owned.
+    shieldActive = upgradeService.startShield;
+    _nextShieldRechargeScore = 0;
     _lastPowerUps = const [];
     powerUpsNotifier.value = const [];
+    _updatePowerUpNotifier();
+    floatingText.clearAll();
+    _shakeTimer = 0;
+    camera.viewfinder.position = Vector2.zero();
     coinsService.resetSession();
     _lastBiomeIdx = BiomeManager.getBiomeIndex(startScore);
     _currentBiome = BiomeManager.getBiome(startScore);
@@ -293,7 +353,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (world.children.contains(oldEventSystem)) {
       oldEventSystem.removeFromParent();
     }
-    eventSystem = EventSystem();
+    eventSystem = EventSystem(rng: seed != null ? Random(seed + 3) : null);
     eventSystem.reset();
 
     final startX = mirrorLanesL[1]; // center lane
@@ -313,19 +373,19 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     world.add(playerLeft!);
     world.add(playerRight!);
 
-    spawner = ObstacleSpawner();
+    spawner = ObstacleSpawner(rng: seed != null ? Random(seed) : null);
     world.add(spawner);
     world.add(eventSystem);
 
     // Remove old collectibles + spawner; create fresh
     world.children.whereType<Collectible>().toList().forEach((c) => c.removeFromParent());
-    collectibleSpawner = CollectibleSpawner();
+    collectibleSpawner = CollectibleSpawner(rng: seed != null ? Random(seed + 1) : null);
     world.add(collectibleSpawner);
 
     // Power-ups: clear any leftovers and start a fresh spawner.
     world.children.whereType<PowerUp>().toList().forEach((p) => p.removeFromParent());
     if (world.children.contains(powerUpSpawner)) powerUpSpawner.removeFromParent();
-    powerUpSpawner = PowerUpSpawner();
+    powerUpSpawner = PowerUpSpawner(rng: seed != null ? Random(seed + 2) : null);
     world.add(powerUpSpawner);
 
     background.spawnInitialDecos();
@@ -353,6 +413,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (settingsService.hapticEnabled) {
       HapticFeedback.heavyImpact();
     }
+    _shakeTimer = _shakeDuration;
 
     particleSystem.spawnShards(Vector2(220, groundY));
 
@@ -452,10 +513,16 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     eventNotifier.value = null;
     eventWarningNotifier.value = null;
     shieldActive = false;
+    _nextShieldRechargeScore = 0;
     _syncLockTimer = 0;
     _slowMoTimer = 0;
+    _foresightTimer = 0;
     _lastPowerUps = const [];
     powerUpsNotifier.value = const [];
+    floatingText.clearAll();
+    _shakeTimer = 0;
+    camera.viewfinder.position = Vector2.zero();
+    seedRunActive = false;
     playerLeft = null;
     playerRight = null;
     // Reset run state so menu shows clean values
@@ -482,6 +549,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     overlays.remove('StatsScreen');
     overlays.remove('SkinSelector');
     overlays.remove('ProScreen');
+    overlays.remove('PerkScreen');
     overlays.remove('MenuScreen');
     overlays.add('MenuScreen');
   }
@@ -520,6 +588,21 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (playState == PlayState.dead) {
       _deathTimer += dt.clamp(0, 0.5);
     }
+
+    // Death screen-shake — decays the camera offset back to zero.
+    if (_shakeTimer > 0) {
+      _shakeTimer -= dt;
+      if (_shakeTimer <= 0) {
+        camera.viewfinder.position = Vector2.zero();
+      } else {
+        final mag = (_shakeTimer / _shakeDuration) * 7.0;
+        camera.viewfinder.position = Vector2(
+          (_shakeRng.nextDouble() - 0.5) * mag,
+          (_shakeRng.nextDouble() - 0.5) * mag,
+        );
+      }
+    }
+
     if (playState != PlayState.playing && playState != PlayState.countdown) return;
 
     _frameAccumulator += dt;
@@ -561,7 +644,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   /// One fixed simulation step. World movement + collision run in lockstep so a
   /// frame spike can never let an obstacle teleport past the player (tunneling).
   void _tick(double step) {
-    if (playState != PlayState.playing && playState != PlayState.countdown) return;
+    // Only simulate while actually running — no score/speed creep during the
+    // countdown (the run should start exactly at the start score).
+    if (playState != PlayState.playing) return;
 
     // Accumulate score at the current speed (no retroactive speed jumps).
     _scoreBaseAccumulator += speed * step;
@@ -570,13 +655,25 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     }
     // Single floor on the sum avoids the ±1 flicker of flooring each part.
     score = (_scoreBaseAccumulator + _scoreBonusAccumulator).floor();
-    speed = min(6.0, 2.0 + score * 0.004);
+    // Primary ramp caps at 6.0 (≈1000m); a gentle late-game creep keeps the
+    // pressure rising afterwards instead of plateauing.
+    speed = score <= 1000
+        ? 2.0 + score * 0.004
+        : min(7.5, 6.0 + (score - 1000) * 0.0006);
+
+    // Perk: recharging shield regrows once the player covers enough distance.
+    if (!shieldActive &&
+        _nextShieldRechargeScore > 0 &&
+        score >= _nextShieldRechargeScore) {
+      shieldActive = true;
+      _nextShieldRechargeScore = 0;
+      _updatePowerUpNotifier();
+      if (settingsService.hapticEnabled) HapticFeedback.lightImpact();
+    }
 
     if (_invincibilityTimer > 0) {
       _invincibilityTimer = (_invincibilityTimer - step).clamp(0.0, double.infinity);
     }
-
-    if (playState != PlayState.playing) return;
 
     // Power-up effect timers
     if (_syncLockTimer > 0) {
@@ -590,6 +687,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     }
     if (_slowMoTimer > 0) {
       _slowMoTimer = (_slowMoTimer - step).clamp(0.0, double.infinity);
+    }
+    if (_foresightTimer > 0) {
+      _foresightTimer = (_foresightTimer - step).clamp(0.0, double.infinity);
     }
     _updatePowerUpNotifier();
 
@@ -625,6 +725,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (shieldActive) active.add(PowerUpType.shield);
     if (syncLockActive) active.add(PowerUpType.syncLock);
     if (slowMoActive) active.add(PowerUpType.slowMo);
+    if (foresightActive) active.add(PowerUpType.foresight);
     if (active.length != _lastPowerUps.length ||
         !_samePowerUps(active, _lastPowerUps)) {
       _lastPowerUps = active;
@@ -633,6 +734,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   }
 
   bool _samePowerUps(List<PowerUpType> a, List<PowerUpType> b) {
+    if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;
     }
@@ -658,13 +760,16 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   }
 
   void _activatePowerUp(PowerUpType type) {
+    final mult = upgradeService.powerUpDurationMult; // perk: longer power-ups
     switch (type) {
       case PowerUpType.shield:
         shieldActive = true;
       case PowerUpType.syncLock:
-        _syncLockTimer = _syncLockDuration;
+        _syncLockTimer = _syncLockDuration * mult;
       case PowerUpType.slowMo:
-        _slowMoTimer = _slowMoDuration;
+        _slowMoTimer = _slowMoDuration * mult;
+      case PowerUpType.foresight:
+        _foresightTimer = _foresightDuration * mult;
     }
     _updatePowerUpNotifier();
     unawaited(AnalyticsService.logEventTriggered(eventType: 'powerup_${type.name}'));
@@ -692,6 +797,10 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (shieldActive) {
       shieldActive = false;
       _invincibilityTimer = 0.8; // short grace so the same wave can't re-hit
+      // Perk: a recharging shield regrows after some distance.
+      if (upgradeService.startShield) {
+        _nextShieldRechargeScore = score + _shieldRechargeMeters;
+      }
       _updatePowerUpNotifier();
       particleSystem.burst(burstPos, color);
       if (settingsService.hapticEnabled) {
@@ -741,6 +850,11 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       if (settingsService.hapticEnabled) {
         HapticFeedback.lightImpact();
       }
+      floatingText.spawn(
+        'NEAR',
+        Vector2(nearMissPlayer.position.x, nearMissPlayer.position.y - Player.ph),
+        const Color(0xFF44DDFF),
+      );
       _comboNearMisses++;
       _timeSinceNearMiss = 0; // refresh the decay window
       _updateComboTier();
@@ -761,8 +875,10 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       newMultiplier = 1.0;
     }
     if (newMultiplier != comboMultiplier) {
+      final increased = newMultiplier > comboMultiplier;
       comboMultiplier = newMultiplier;
       comboNotifier.value = newMultiplier;
+      if (increased) audioService.playComboMilestone();
     }
   }
 
@@ -790,12 +906,23 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       final player = coll.side == 'left' ? playerLeft : playerRight;
       if (player == null || player.dead) continue;
 
-      if (player.getPickupRect().overlaps(coll.getPickupRect())) {
+      // Perk: coin magnet widens the pickup range.
+      final pad = upgradeService.coinMagnetPadding;
+      final pRect = pad > 0
+          ? player.getPickupRect().inflate(pad)
+          : player.getPickupRect();
+      if (pRect.overlaps(coll.getPickupRect())) {
         coll.collected = true;
-        // Coin value scales with the active combo tier (1×/1×/2×/2×/3×).
-        final value = comboMultiplier.round().clamp(1, 3);
+        // Coin value scales with the combo tier (1×/1×/2×/2×/3×) + coin-bonus perk.
+        final value = comboMultiplier.round().clamp(1, 3) +
+            upgradeService.coinBonusPerPickup;
         unawaited(coinsService.addCoins(value));
         particleSystem.burstCoin(Vector2(coll.laneCenterX, coll.scrollPos));
+        floatingText.spawn(
+          '+$value',
+          Vector2(coll.laneCenterX, coll.scrollPos),
+          const Color(0xFFFFD700),
+        );
         if (settingsService.hapticEnabled) {
           HapticFeedback.selectionClick();
         }
@@ -824,6 +951,17 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
         o.removeFromParent();
       }
     }
+
+    // Reset any event that was active at death — otherwise inverted controls
+    // (mirror swap), desync speeds or a blackout would persist after reviving.
+    eventSystem.reset();
+    eventNotifier.value = null;
+    eventWarningNotifier.value = null;
+
+    // Re-mirror the right player in case sync-lock/swap left it desynced.
+    final pl = playerLeft;
+    final pr = playerRight;
+    if (pl != null && pr != null) pr.targetX = vw - pl.targetX;
 
     // We're continuing the run — clear "new record" banner state
     newRecordNotifier.value = false;

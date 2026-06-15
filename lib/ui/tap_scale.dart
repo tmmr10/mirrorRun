@@ -26,7 +26,6 @@ class TapScale extends StatefulWidget {
 
 class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<double> _scale;
   late final Animation<double> _opacity;
 
   @override
@@ -34,12 +33,10 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 90),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _opacity = Tween<double>(begin: 1.0, end: 0.7).animate(
+    // Press feedback dims (tints) the button content — no scale/zoom.
+    _opacity = Tween<double>(begin: 1.0, end: 0.5).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -89,10 +86,7 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
         animation: _controller,
         builder: (context, child) => Opacity(
           opacity: _opacity.value,
-          child: ScaleTransition(
-            scale: _scale,
-            child: child,
-          ),
+          child: child,
         ),
         child: content,
       ),

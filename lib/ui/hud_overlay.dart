@@ -33,9 +33,10 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Show pause screen when app goes to background during gameplay
-    if ((state == AppLifecycleState.paused ||
-         state == AppLifecycleState.inactive) &&
+    // Only auto-pause on a real backgrounding. `inactive` also fires for
+    // transient interruptions (Control Center, notification banners, the app
+    // switcher peek), which shouldn't slam the pause screen up mid-run.
+    if (state == AppLifecycleState.paused &&
         widget.game.playState == PlayState.playing &&
         !_showQuitConfirm) {
       widget.game.pauseEngine();
@@ -526,13 +527,16 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
           ),
         ),
 
-        // Quit confirmation overlay
+        // Quit confirmation overlay — must be the topmost, full-screen tappable
+        // layer so RESUME and the dimmed background reliably resume the game.
         if (_showQuitConfirm)
-          GestureDetector(
-            onTap: _toggleQuit,
-            child: Container(
-              color: const Color(0xCC000000),
-              child: Center(
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _toggleQuit,
+              child: Container(
+                color: const Color(0xCC000000),
+                child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -613,6 +617,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 ),
               ),
             ),
+          ),
           ),
       ],
     );
