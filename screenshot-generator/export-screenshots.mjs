@@ -44,7 +44,7 @@ const DEVICES = [
   },
 ];
 
-const SLIDE_COUNT = 6;
+const SLIDE_COUNT = 7;
 const OUTPUT_DIR = path.resolve("fastlane/screenshots");
 
 async function main() {
