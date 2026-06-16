@@ -23,7 +23,7 @@ class BlackoutOverlay extends PositionComponent
     final side = es.blackoutSide;
     if (side == null || es.blackoutFade <= 0) return;
 
-    final alpha = (es.blackoutFade.clamp(0.0, 1.0)) * 0.82;
+    final alpha = (es.blackoutFade.clamp(0.0, 1.0)) * 0.98;
     final vh = MirrorRunGame.vh;
     final rect = side == 'left'
         ? Rect.fromLTWH(0, 0, mid, vh)
@@ -37,7 +37,7 @@ class BlackoutOverlay extends PositionComponent
       to,
       [
         const Color(0xFF000000).withValues(alpha: alpha),
-        const Color(0xFF000000).withValues(alpha: alpha * 0.7),
+        const Color(0xFF000000).withValues(alpha: alpha * 0.9),
       ],
     );
     canvas.drawRect(rect, _paint);
