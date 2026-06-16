@@ -12,12 +12,21 @@ class TapScale extends StatefulWidget {
   /// behaviour (no extra constraints).
   final double? minSize;
 
+  /// When true, the button fires [onTap] on pointer-up anywhere within its
+  /// bounds — even if the finger drifted past the tap slop in between (a
+  /// "swipe-ish" press). Uses a raw [Listener] instead of a tap recognizer so
+  /// it can't be cancelled by movement or lose a gesture-arena race. Use this
+  /// for critical modal buttons (e.g. the pause overlay's RESUME / QUIT) where
+  /// a stationary tap can't be relied upon.
+  final bool movementTolerant;
+
   const TapScale({
     super.key,
     required this.child,
     this.onTap,
     this.behavior = HitTestBehavior.opaque,
     this.minSize,
+    this.movementTolerant = false,
   });
 
   @override
@@ -58,6 +67,32 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
 
   void _onTapCancel() => _controller.reverse();
 
+  // ── Movement-tolerant (Listener) handlers ──
+  void _onPointerDown(PointerDownEvent _) {
+    if (widget.onTap != null) _controller.forward();
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    _controller.reverse();
+    if (widget.onTap == null) return;
+    // Only fire if the release lands within this button's bounds — pressing
+    // then dragging far away and releasing should NOT trigger it.
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) {
+      widget.onTap!.call();
+      return;
+    }
+    final local = box.globalToLocal(event.position);
+    if (local.dx >= 0 &&
+        local.dy >= 0 &&
+        local.dx <= box.size.width &&
+        local.dy <= box.size.height) {
+      widget.onTap!.call();
+    }
+  }
+
+  void _onPointerCancel(PointerCancelEvent _) => _controller.reverse();
+
   @override
   Widget build(BuildContext context) {
     Widget content = widget.child;
@@ -77,19 +112,31 @@ class _TapScaleState extends State<TapScale> with SingleTickerProviderStateMixin
       );
     }
 
+    final visual = AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Opacity(
+        opacity: _opacity.value,
+        child: child,
+      ),
+      child: content,
+    );
+
+    if (widget.movementTolerant) {
+      return Listener(
+        behavior: widget.behavior,
+        onPointerDown: _onPointerDown,
+        onPointerUp: _onPointerUp,
+        onPointerCancel: _onPointerCancel,
+        child: visual,
+      );
+    }
+
     return GestureDetector(
       behavior: widget.behavior,
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) => Opacity(
-          opacity: _opacity.value,
-          child: child,
-        ),
-        child: content,
-      ),
+      child: visual,
     );
   }
 }

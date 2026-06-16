@@ -96,6 +96,12 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
 
   PlayState playState = PlayState.menu;
 
+  /// Set by the HUD while a blocking overlay (the pause/quit confirm) is shown.
+  /// The drag steering recognizer checks this so a swipe-ish tap on RESUME/QUIT
+  /// can't be stolen by the horizontal-drag recognizer (which would cancel the
+  /// button tap). [pauseEngine]'s `paused` flag alone proved unreliable here.
+  bool steeringSuspended = false;
+
   int debugStartScore = 0;
   bool screenshotMode = false;
 

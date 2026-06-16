@@ -53,7 +53,9 @@ class _GatedHorizontalDragRecognizer extends HorizontalDragGestureRecognizer {
   _GatedHorizontalDragRecognizer(this.game);
 
   bool get _steeringActive =>
-      game.playState == PlayState.playing && !game.paused;
+      game.playState == PlayState.playing &&
+      !game.paused &&
+      !game.steeringSuspended;
 
   @override
   bool isPointerAllowed(PointerEvent event) {

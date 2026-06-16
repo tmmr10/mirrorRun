@@ -49,21 +49,25 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
             widget.game.playState == PlayState.countdown) &&
         !_showQuitConfirm) {
       widget.game.pauseEngine();
+      widget.game.steeringSuspended = true;
       setState(() => _showQuitConfirm = true);
     }
   }
 
   void _toggleQuit() {
     if (_showQuitConfirm) {
+      widget.game.steeringSuspended = false;
       setState(() => _showQuitConfirm = false);
       widget.game.resumeEngine();
     } else {
       widget.game.pauseEngine();
+      widget.game.steeringSuspended = true;
       setState(() => _showQuitConfirm = true);
     }
   }
 
   void _quit() {
+    widget.game.steeringSuspended = false;
     setState(() => _showQuitConfirm = false);
     widget.game.goToMenu();
   }
@@ -587,6 +591,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                         // Continue button
                         TapScale(
                           onTap: _toggleQuit,
+                          movementTolerant: true,
                           child: Container(
                             padding: EdgeInsets.symmetric(horizontal: 24 * s, vertical: 12 * s),
                             decoration: BoxDecoration(
@@ -616,6 +621,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                         // Quit button
                         TapScale(
                           onTap: _quit,
+                          movementTolerant: true,
                           child: Container(
                             padding: EdgeInsets.symmetric(horizontal: 24 * s, vertical: 12 * s),
                             decoration: BoxDecoration(
