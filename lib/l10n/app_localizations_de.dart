@@ -625,4 +625,52 @@ class AppLocalizationsDe extends AppLocalizations {
   String worldStartAt(int m) {
     return 'Erreicht bei ${m}m';
   }
+
+  @override
+  String get decoNone => 'OHNE';
+
+  @override
+  String get decoIce => 'EIS';
+
+  @override
+  String get decoFire => 'FEUER';
+
+  @override
+  String get decoCrown => 'KRONE';
+
+  @override
+  String get decoAntenna => 'ANTENNE';
+
+  @override
+  String get decoHalo => 'HALO';
+
+  @override
+  String get decoHorns => 'HÖRNER';
+
+  @override
+  String get decoWings => 'FLÜGEL';
+
+  @override
+  String get decoMohawk => 'IROKESE';
+
+  @override
+  String get decoStar => 'STERN';
+
+  @override
+  String get decoGoggles => 'BRILLE';
+
+  @override
+  String get decoVisor => 'VISIER';
+
+  @override
+  String get decoMask => 'MASKE';
+
+  @override
+  String get decoMonocle => 'MONOKEL';
+
+  @override
+  String get decoScar => 'NARBE';
+
+  @override
+  String get decoShades => 'SHADES';
 }

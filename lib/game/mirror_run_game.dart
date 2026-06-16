@@ -71,6 +71,11 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   bool _freePlayRun = false;
   bool get isFreePlayRun => _freePlayRun;
 
+  /// In a picked-world (Free Play) run the displayed distance counts from 0
+  /// (the world is just the starting scenery); internally [score] still tracks
+  /// the absolute distance so the biome stays correct.
+  int _scoreDisplayOffset = 0;
+
   /// Set after a run when the daily challenge was just completed (for UI feedback).
   final ValueNotifier<DailyRunResult?> dailyResultNotifier = ValueNotifier(null);
 
@@ -333,6 +338,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _runStartTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
     final startScore =
         startAtScore > 0 ? startAtScore : (kDebugMode ? debugStartScore : 0);
+    // Free Play: show distance run this session (from 0), not the world's
+    // absolute start distance.
+    _scoreDisplayOffset = freePlay ? startScore : 0;
     score = startScore;
     _frameAccumulator = 0;
     speed = 2.0;
@@ -370,7 +378,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _lastBiomeIdx = BiomeManager.getBiomeIndex(startScore);
     _currentBiome = BiomeManager.getBiome(startScore);
 
-    scoreNotifier.value = startScore;
+    scoreNotifier.value = startScore - _scoreDisplayOffset;
     biomeNotifier.value = BiomeManager.getBiome(startScore).name;
     bestNotifier.value = highscoreService.getBest();
     _runStartBest = highscoreService.getBest();
@@ -573,6 +581,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     playerRight = null;
     // Reset run state so menu shows clean values
     score = 0;
+    _scoreDisplayOffset = 0;
     _frameAccumulator = 0;
     speed = 2.0;
     comboMultiplier = 1.0;
@@ -661,11 +670,11 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       _tick(step);
     }
 
-    scoreNotifier.value = score;
+    scoreNotifier.value = score - _scoreDisplayOffset;
     _currentBiome = BiomeManager.getBiome(score);
 
     // In-run record cue: fire once when overtaking the previous best.
-    if (!_beatRecordThisRun && _runStartBest > 0 && score > _runStartBest) {
+    if (!_freePlayRun && !_beatRecordThisRun && _runStartBest > 0 && score > _runStartBest) {
       _beatRecordThisRun = true;
       beatRecordNotifier.value = true;
     }
@@ -974,7 +983,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
         // tier-up is felt, plus the coin-bonus perk.
         final value = _comboCoinMultiplier() +
             (seedRunActive ? 0 : upgradeService.coinBonusPerPickup);
-        unawaited(coinsService.addCoins(value));
+        // Free Play (picked world) doesn't credit coins — otherwise unlocking a
+        // late world once would enable an endless coin farm.
+        if (!_freePlayRun) unawaited(coinsService.addCoins(value));
         particleSystem.burstCoin(Vector2(coll.laneCenterX, coll.scrollPos));
         floatingText.spawn(
           '+$value',

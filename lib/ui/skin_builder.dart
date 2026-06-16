@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
 import '../models/player_skin.dart';
 import '../services/skin_service.dart';
@@ -437,19 +438,6 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   }
 
   Widget _buildHeadPicker() {
-    const labels = {
-      HeadDecoration.none: 'NONE',
-      HeadDecoration.iceCrown: 'ICE',
-      HeadDecoration.flames: 'FIRE',
-      HeadDecoration.crown: 'CROWN',
-      HeadDecoration.antenna: 'ANTENNA',
-      HeadDecoration.halo: 'HALO',
-      HeadDecoration.horns: 'HORNS',
-      HeadDecoration.wings: 'WINGS',
-      HeadDecoration.mohawk: 'MOHAWK',
-      HeadDecoration.star: 'STAR',
-    };
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -473,7 +461,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                   ),
                 ),
                 child: Text(
-                  labels[deco]!,
+                  headDecorationLocalized(context, deco),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -492,15 +480,6 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   }
 
   Widget _buildFacePicker() {
-    const labels = {
-      FaceDecoration.none: 'NONE',
-      FaceDecoration.goggles: 'GOGGLES',
-      FaceDecoration.visor: 'VISOR',
-      FaceDecoration.mask: 'MASK',
-      FaceDecoration.monocle: 'MONOCLE',
-      FaceDecoration.scar: 'SCAR',
-      FaceDecoration.shades: 'SHADES',
-    };
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -525,7 +504,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                 ),
               ),
               child: Text(
-                labels[deco]!,
+                faceDecorationLocalized(context, deco),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,

@@ -345,5 +345,21 @@
         "type": "int"
       }
     }
-  }
+  },
+  "decoNone": "NONE",
+  "decoIce": "ICE",
+  "decoFire": "FIRE",
+  "decoCrown": "CROWN",
+  "decoAntenna": "ANTENNA",
+  "decoHalo": "HALO",
+  "decoHorns": "HORNS",
+  "decoWings": "WINGS",
+  "decoMohawk": "MOHAWK",
+  "decoStar": "STAR",
+  "decoGoggles": "GOGGLES",
+  "decoVisor": "VISOR",
+  "decoMask": "MASK",
+  "decoMonocle": "MONOCLE",
+  "decoScar": "SCAR",
+  "decoShades": "SHADES"
 }

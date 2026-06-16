@@ -1225,6 +1225,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reached at {m}m'**
   String worldStartAt(int m);
+
+  /// No description provided for @decoNone.
+  ///
+  /// In en, this message translates to:
+  /// **'NONE'**
+  String get decoNone;
+
+  /// No description provided for @decoIce.
+  ///
+  /// In en, this message translates to:
+  /// **'ICE'**
+  String get decoIce;
+
+  /// No description provided for @decoFire.
+  ///
+  /// In en, this message translates to:
+  /// **'FIRE'**
+  String get decoFire;
+
+  /// No description provided for @decoCrown.
+  ///
+  /// In en, this message translates to:
+  /// **'CROWN'**
+  String get decoCrown;
+
+  /// No description provided for @decoAntenna.
+  ///
+  /// In en, this message translates to:
+  /// **'ANTENNA'**
+  String get decoAntenna;
+
+  /// No description provided for @decoHalo.
+  ///
+  /// In en, this message translates to:
+  /// **'HALO'**
+  String get decoHalo;
+
+  /// No description provided for @decoHorns.
+  ///
+  /// In en, this message translates to:
+  /// **'HORNS'**
+  String get decoHorns;
+
+  /// No description provided for @decoWings.
+  ///
+  /// In en, this message translates to:
+  /// **'WINGS'**
+  String get decoWings;
+
+  /// No description provided for @decoMohawk.
+  ///
+  /// In en, this message translates to:
+  /// **'MOHAWK'**
+  String get decoMohawk;
+
+  /// No description provided for @decoStar.
+  ///
+  /// In en, this message translates to:
+  /// **'STAR'**
+  String get decoStar;
+
+  /// No description provided for @decoGoggles.
+  ///
+  /// In en, this message translates to:
+  /// **'GOGGLES'**
+  String get decoGoggles;
+
+  /// No description provided for @decoVisor.
+  ///
+  /// In en, this message translates to:
+  /// **'VISOR'**
+  String get decoVisor;
+
+  /// No description provided for @decoMask.
+  ///
+  /// In en, this message translates to:
+  /// **'MASK'**
+  String get decoMask;
+
+  /// No description provided for @decoMonocle.
+  ///
+  /// In en, this message translates to:
+  /// **'MONOCLE'**
+  String get decoMonocle;
+
+  /// No description provided for @decoScar.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAR'**
+  String get decoScar;
+
+  /// No description provided for @decoShades.
+  ///
+  /// In en, this message translates to:
+  /// **'SHADES'**
+  String get decoShades;
 }
 
 class _AppLocalizationsDelegate

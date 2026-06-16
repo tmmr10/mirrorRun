@@ -103,9 +103,13 @@ class _DebugOverlayState extends State<DebugOverlay> {
               const SizedBox(height: 12),
               TapScale(
                 onTap: () async {
-                  await game.adService.debugResetPro();
+                  // Reset the skin creator (custom-skin unlock feeds isPro) and
+                  // perks first, then Pro last — so debugResetPro's
+                  // proStatusNotifier sync runs with customSkinUnlocked already
+                  // false and ends up correctly false.
                   await game.upgradeService.debugResetAll();
                   await game.skinService.debugResetPurchases();
+                  await game.adService.debugResetPro();
                   if (mounted) setState(() {});
                 },
                 child: Container(

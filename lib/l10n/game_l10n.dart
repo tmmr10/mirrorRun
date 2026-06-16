@@ -191,3 +191,51 @@ String achievementLabelLocalized(
       return rawLabel;
   }
 }
+
+/// Localized label for a head decoration in the skin creator.
+String headDecorationLocalized(BuildContext c, HeadDecoration d) {
+  final l = c.l10n;
+  switch (d) {
+    case HeadDecoration.none:
+      return l.decoNone;
+    case HeadDecoration.iceCrown:
+      return l.decoIce;
+    case HeadDecoration.flames:
+      return l.decoFire;
+    case HeadDecoration.crown:
+      return l.decoCrown;
+    case HeadDecoration.antenna:
+      return l.decoAntenna;
+    case HeadDecoration.halo:
+      return l.decoHalo;
+    case HeadDecoration.horns:
+      return l.decoHorns;
+    case HeadDecoration.wings:
+      return l.decoWings;
+    case HeadDecoration.mohawk:
+      return l.decoMohawk;
+    case HeadDecoration.star:
+      return l.decoStar;
+  }
+}
+
+/// Localized label for a face decoration in the skin creator.
+String faceDecorationLocalized(BuildContext c, FaceDecoration d) {
+  final l = c.l10n;
+  switch (d) {
+    case FaceDecoration.none:
+      return l.decoNone;
+    case FaceDecoration.goggles:
+      return l.decoGoggles;
+    case FaceDecoration.visor:
+      return l.decoVisor;
+    case FaceDecoration.mask:
+      return l.decoMask;
+    case FaceDecoration.monocle:
+      return l.decoMonocle;
+    case FaceDecoration.scar:
+      return l.decoScar;
+    case FaceDecoration.shades:
+      return l.decoShades;
+  }
+}

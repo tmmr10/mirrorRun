@@ -187,5 +187,21 @@
   "worldStart": "START",
   "worldUnlock": "FREISCHALTEN",
   "worldFreePlayNote": "Free Play · nicht gewertet",
-  "worldStartAt": "Erreicht bei {m}m"
+  "worldStartAt": "Erreicht bei {m}m",
+  "decoNone": "OHNE",
+  "decoIce": "EIS",
+  "decoFire": "FEUER",
+  "decoCrown": "KRONE",
+  "decoAntenna": "ANTENNE",
+  "decoHalo": "HALO",
+  "decoHorns": "HÖRNER",
+  "decoWings": "FLÜGEL",
+  "decoMohawk": "IROKESE",
+  "decoStar": "STERN",
+  "decoGoggles": "BRILLE",
+  "decoVisor": "VISIER",
+  "decoMask": "MASKE",
+  "decoMonocle": "MONOKEL",
+  "decoScar": "NARBE",
+  "decoShades": "SHADES"
 }
