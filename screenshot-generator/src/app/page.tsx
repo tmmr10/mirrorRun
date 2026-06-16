@@ -50,10 +50,9 @@ const THEME = {
 const FILES: Record<string, string> = {
   menu: "01_menu.png",
   gameplay: "02_gameplay.png",
-  phantom: "03_phantom.png",
-  swap: "04_swap.png",
-  skins: "05_skins.png",
   creator: "06_creator.png",
+  achievements: "07_achievements.png",
+  powerups: "08_powerups.png",
 };
 // Locale is threaded via renderSlide (keeps the Slide components clean).
 let _shotLocale: Locale = "en";
@@ -66,30 +65,28 @@ type Slide = { id: string; eyebrow: string; headline: string; sub: string };
 
 const COPY: Record<Locale, Slide[]> = {
   en: [
-    { id: "hero",     eyebrow: "MIRROR RUNNERS",  headline: "One move.\nTwo runners.", sub: "A split-screen reflex runner. |Steer both sides at once.|" },
-    { id: "worlds",   eyebrow: "11 WORLDS",       headline: "Run further.\nSee more.",  sub: "Forest, crystal, volcano, space — |11 worlds| to chase." },
-    { id: "phantom",  eyebrow: "PHANTOM EVENT",   headline: "They vanish.\nRemember.",  sub: "Obstacles turn invisible — |memorize| them before they fade." },
-    { id: "swap",     eyebrow: "MIRROR SWAP",     headline: "Controls flip.\nStay sharp.", sub: "Left becomes right. |Rewire your reflexes| on the fly." },
-    { id: "skins",    eyebrow: "UNLOCK SKINS",    headline: "Earn them\nby playing.",   sub: "Collect coins and |unlock new runners| as you go." },
-    { id: "creator",  eyebrow: "SKIN CREATOR",    headline: "Make it\nyours.",          sub: "Design your own runner — |colors, helmets, faces|." },
-    { id: "outro",    eyebrow: "MIRROR RUNNERS",  headline: "Get it free.",             sub: "One move. Two runners. |Endless mirror chaos.|" },
+    { id: "hero",         eyebrow: "MIRROR RUNNERS", headline: "One move.\nTwo runners.", sub: "A split-screen reflex runner. |Steer both sides at once.|" },
+    { id: "gameplay",     eyebrow: "11 WORLDS",      headline: "Run further.\nSee more.",  sub: "Forest, crystal, volcano, space — |11 worlds| to chase." },
+    { id: "creator",      eyebrow: "SKIN CREATOR",   headline: "Make it\nyours.",          sub: "Design your own runner — |colors, helmets, faces|." },
+    { id: "achievements", eyebrow: "ACHIEVEMENTS",   headline: "Chase every\nmilestone.",  sub: "Unlock |23 achievements| across distance, biomes & runs." },
+    { id: "powerups",     eyebrow: "POWER-UPS",      headline: "Tip the odds\nyour way.",  sub: "Shield, Sync-Lock, Slow-Mo & Foresight — |grab them mid-run|." },
+    { id: "outro",        eyebrow: "MIRROR RUNNERS", headline: "Get it free.",             sub: "One move. Two runners. |Endless mirror chaos.|" },
   ],
   de: [
-    { id: "hero",     eyebrow: "MIRROR RUNNERS",  headline: "Eine Bewegung.\nZwei Runner.", sub: "Ein Splitscreen-Reflex-Runner. |Steuere beide Seiten zugleich.|" },
-    { id: "worlds",   eyebrow: "11 WELTEN",       headline: "Lauf weiter.\nEntdecke mehr.", sub: "Wald, Kristall, Vulkan, All — |11 Welten| warten auf dich." },
-    { id: "phantom",  eyebrow: "PHANTOM-EVENT",   headline: "Sie verschwinden.\nMerk sie dir.", sub: "Hindernisse werden unsichtbar — |einprägen|, bevor sie weg sind." },
-    { id: "swap",     eyebrow: "SPIEGEL-TAUSCH",  headline: "Steuerung kippt.\nBleib wach.", sub: "Links wird rechts. |Verdrahte deine Reflexe| neu." },
-    { id: "skins",    eyebrow: "SKINS FREISPIELEN", headline: "Erspiele sie\ndurch Spielen.", sub: "Sammle Coins und |schalte neue Runner frei|." },
-    { id: "creator",  eyebrow: "SKIN CREATOR",    headline: "Mach ihn\neinzigartig.",   sub: "Gestalte deinen Runner — |Farben, Helme, Gesichter|." },
-    { id: "outro",    eyebrow: "MIRROR RUNNERS",  headline: "Jetzt gratis holen.",      sub: "Eine Bewegung. Zwei Runner. |Endloses Spiegel-Chaos.|" },
+    { id: "hero",         eyebrow: "MIRROR RUNNERS", headline: "Eine Bewegung.\nZwei Runner.", sub: "Ein Splitscreen-Reflex-Runner. |Steuere beide Seiten zugleich.|" },
+    { id: "gameplay",     eyebrow: "11 WELTEN",      headline: "Lauf weiter.\nEntdecke mehr.", sub: "Wald, Kristall, Vulkan, All — |11 Welten| warten auf dich." },
+    { id: "creator",      eyebrow: "SKIN CREATOR",   headline: "Mach ihn\neinzigartig.",   sub: "Gestalte deinen Runner — |Farben, Helme, Gesichter|." },
+    { id: "achievements", eyebrow: "ERFOLGE",        headline: "Jage jeden\nMeilenstein.", sub: "Schalte |23 Erfolge| frei — Distanz, Biome & Läufe." },
+    { id: "powerups",     eyebrow: "POWER-UPS",      headline: "Dreh die Chancen\nzu deinen Gunsten.", sub: "Schild, Sync-Lock, Slow-Mo & Voraussicht — |im Lauf einsammeln|." },
+    { id: "outro",        eyebrow: "MIRROR RUNNERS", headline: "Jetzt gratis holen.",      sub: "Eine Bewegung. Zwei Runner. |Endloses Spiegel-Chaos.|" },
   ],
 };
 
-const SLIDE_COUNT = 7;
+const SLIDE_COUNT = 6;
 
 // Per-slide accent + radial-glow background tint (index-aligned)
-const ACCENTS = [THEME.purple, THEME.cyan, THEME.magenta, THEME.orange, THEME.pink, THEME.green, THEME.purple];
-const GLOWS = ["#160C2A", "#08182A", "#1C0A28", "#241208", "#220C16", "#08221A", "#140A26"];
+const ACCENTS = [THEME.purple, THEME.orange, THEME.green, THEME.cyan, THEME.magenta, THEME.purple];
+const GLOWS = ["#160C2A", "#241208", "#08221A", "#08182A", "#1C0A28", "#140A26"];
 
 // ============================================================================
 // PRIMITIVES
@@ -219,11 +216,10 @@ function renderSlide(index: number, cw: number, ch: number, locale: Locale) {
   switch (index) {
     case 0: return <HeroSlide cw={cw} ch={ch} slide={s} />;
     case 1: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[1]} glow={GLOWS[1]} shotKey="gameplay" />;
-    case 2: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[2]} glow={GLOWS[2]} shotKey="phantom" />;
-    case 3: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[3]} glow={GLOWS[3]} shotKey="swap" />;
-    case 4: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[4]} glow={GLOWS[4]} shotKey="skins" />;
-    case 5: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[5]} glow={GLOWS[5]} shotKey="creator" />;
-    case 6: return <OutroSlide cw={cw} ch={ch} slide={s} />;
+    case 2: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[2]} glow={GLOWS[2]} shotKey="creator" />;
+    case 3: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[3]} glow={GLOWS[3]} shotKey="achievements" />;
+    case 4: return <FeatureSlide cw={cw} ch={ch} slide={s} accent={ACCENTS[4]} glow={GLOWS[4]} shotKey="powerups" />;
+    case 5: return <OutroSlide cw={cw} ch={ch} slide={s} />;
     default: return null;
   }
 }
@@ -347,7 +343,7 @@ export default function ScreenshotsPage() {
         <span className="text-neutral-500 text-xs">Click a slide to export</span>
         <button onClick={exportAll} disabled={exporting} className="ml-auto bg-[#B48CFF] text-black px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#c5a3ff] disabled:opacity-40">{exporting ? "Exporting…" : "Export All"}</button>
       </div>
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
         {Array.from({ length: SLIDE_COUNT }, (_, i) => (
           <ScreenshotPreview key={`${device}-${i}-${locale}`} index={i} locale={locale} device={device} onExport={exportSlide} />
         ))}
