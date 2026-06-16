@@ -7,6 +7,7 @@ import '../game/world/biome.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
 import '../services/daily_challenge_service.dart';
+import 'overlay_shell.dart';
 import 'player_scene_painter.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
@@ -95,9 +96,13 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          // Main layout
+          // Main layout — foreground content is width-capped + centered via
+          // [OverlayShell] so the menu cards don't stretch edge-to-edge on
+          // wide displays (iPad). The mirror-line background above stays
+          // outside the shell so it still fills the whole screen.
           SafeArea(
-            child: Column(
+            child: OverlayShell(
+              child: Column(
               children: [
                 // Top bar: settings gear (right)
                 Padding(
@@ -193,32 +198,14 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                 // teaser, daily. (Skin lives in the top-bar chip; detailed
                 // next-biome/skin progress lives in the Stats screen.)
                 Expanded(
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 3),
-                      _buildTitle(accentColor),
-                      const Spacer(flex: 3),
-                      _buildPlayButton(context, accentColor),
-                      const SizedBox(height: 28),
-                      if (!widget.game.screenshotMode)
-                        TapScale(
-                          onTap: () {
-                            widget.game.overlays.remove('MenuScreen');
-                            widget.game.overlays.add('WorldPicker');
-                          },
-                          child: _buildBiomeRoadmap(),
-                        ),
-                      const Spacer(flex: 4),
-                      if (!widget.game.screenshotMode) _buildDailyCard(accentColor),
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                    ],
-                  ),
+                  child: _buildCenterColumn(context, accentColor),
                 ),
 
                 // Bottom: skin showcase — entry to skins + Creator (Pro pitch),
                 // replaces the old GO PRO button.
                 if (!widget.game.screenshotMode) _buildSkinShowcase(),
               ],
+              ),
             ),
           ),
         ],
@@ -226,14 +213,57 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTitle(Color accent) {
+  /// The center hero column. On short screens (e.g. iPhone SE, 667pt) it
+  /// becomes scrollable so nothing overflows; on regular phones the [Spacer]s
+  /// still distribute space exactly as before.
+  Widget _buildCenterColumn(BuildContext context, Color accentColor) {
+    final column = Column(
+      children: [
+        const Spacer(flex: 3),
+        _buildTitle(context, accentColor),
+        const Spacer(flex: 3),
+        _buildPlayButton(context, accentColor),
+        const SizedBox(height: 28),
+        if (!widget.game.screenshotMode)
+          TapScale(
+            onTap: () {
+              widget.game.overlays.remove('MenuScreen');
+              widget.game.overlays.add('WorldPicker');
+            },
+            child: _buildBiomeRoadmap(),
+          ),
+        const Spacer(flex: 4),
+        if (!widget.game.screenshotMode) _buildDailyCard(accentColor),
+        SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+      ],
+    );
+
+    if (MediaQuery.of(context).size.height >= 700) return column;
+
+    // Tight screens: allow scrolling while keeping the Spacer-based layout.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(child: column),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTitle(BuildContext context, Color accent) {
+    // Cap the title size relative to width so it never overflows on narrow
+    // phones; on regular phones (width*0.11 > 44) it stays exactly 44.
+    final titleSize = min(44.0, MediaQuery.of(context).size.width * 0.11);
     return Column(
       children: [
         // "MIRROR" reflected
         Text(
               'MIRROR',
               style: TextStyle(
-                fontSize: 44,
+                fontSize: titleSize,
                 fontWeight: FontWeight.w100,
                 color: Colors.white.withValues(alpha: 0.15),
                 letterSpacing: 18,
@@ -261,7 +291,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
             child: Text(
               'MIRROR',
               style: TextStyle(
-                fontSize: 44,
+                fontSize: titleSize,
                 fontWeight: FontWeight.w100,
                 color: Colors.white,
                 letterSpacing: 18,

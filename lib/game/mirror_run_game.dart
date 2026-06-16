@@ -39,8 +39,17 @@ import '../services/world_unlock_service.dart';
 
 class MirrorRunGame extends FlameGame with KeyboardEvents {
   static const double vw = 440;
+  /// Fixed design height. The playfield is a constant [vw] x [vh] box on EVERY
+  /// device (uniform-fit + letterboxing), so vertical reaction time no longer
+  /// depends on the screen aspect ratio — fair across iPhone, iPad and SE, which
+  /// matters for the shared leaderboard.
   static double vh = 956; // dynamic, updated in onGameResize
   static double get groundY => vh - 160;
+
+  /// The actual rendered zoom (uniform-fit min of width/height ratios), used to
+  /// map screen-space drag deltas back into game coordinates under letterboxing.
+  double _renderZoom = 1.0;
+  double get renderZoom => _renderZoom;
   static const List<double> mirrorLanesL = [25, 110, 195];
   static const List<double> mirrorLanesR = [245, 330, 415];
 
@@ -215,10 +224,22 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    // Fill the full screen width (no letterbox): the 440-wide playfield always
+    // spans the device width; the vertical play space [vh] follows the aspect
+    // ratio. [_renderZoom] is the real px-per-game-unit, used to map drag input.
     final zoom = size.x / vw;
+    _renderZoom = zoom;
     camera.viewfinder.zoom = zoom;
     vh = size.y / zoom;
+    _baseCameraPosition = Vector2.zero();
+    if (_shakeTimer <= 0) {
+      camera.viewfinder.position = _baseCameraPosition.clone();
+    }
   }
+
+  /// Camera position that centres the design box (recomputed on every resize).
+  /// Screen-shake offsets are added on top of this.
+  Vector2 _baseCameraPosition = Vector2.zero();
 
   @override
   Future<void> onLoad() async {
@@ -384,7 +405,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _updatePowerUpNotifier();
     floatingText.clearAll();
     _shakeTimer = 0;
-    camera.viewfinder.position = Vector2.zero();
+    camera.viewfinder.position = _baseCameraPosition.clone();
     coinsService.resetSession();
     _lastBiomeIdx = BiomeManager.getBiomeIndex(startScore);
     _currentBiome = BiomeManager.getBiome(startScore);
@@ -618,7 +639,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     powerUpsNotifier.value = const [];
     floatingText.clearAll();
     _shakeTimer = 0;
-    camera.viewfinder.position = Vector2.zero();
+    camera.viewfinder.position = _baseCameraPosition.clone();
     seedRunActive = false;
     playerLeft = null;
     playerRight = null;
@@ -666,10 +687,16 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   ];
 
   /// Called by SwipeController with the screen-space drag delta.
-  void onDrag(double screenDx, double screenWidth) {
+  void onDrag(double screenDx) {
     if (playState != PlayState.playing && playState != PlayState.countdown) return;
 
-    final gameDx = screenDx * (vw / screenWidth);
+    // Under uniform-fit + letterboxing the playfield is scaled by [renderZoom]
+    // (not by screenWidth/vw, which was only correct when the field filled the
+    // full width). Dividing by the actual zoom keeps a finger-swipe of N screen
+    // px move the player by the same N/zoom game-px on every device — including
+    // a pillarboxed iPad, where the field is narrower than the screen.
+    final z = _renderZoom > 0 ? _renderZoom : 1.0;
+    final gameDx = screenDx / z;
     _movePlayer(gameDx);
   }
 
@@ -700,17 +727,18 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       _deathTimer += dt.clamp(0, 0.5);
     }
 
-    // Death screen-shake — decays the camera offset back to zero.
+    // Death screen-shake — decays the camera offset back to the centred base.
     if (_shakeTimer > 0) {
       _shakeTimer -= dt;
       if (_shakeTimer <= 0) {
-        camera.viewfinder.position = Vector2.zero();
+        camera.viewfinder.position = _baseCameraPosition.clone();
       } else {
         final mag = (_shakeTimer / _shakeDuration) * 7.0;
-        camera.viewfinder.position = Vector2(
-          (_shakeRng.nextDouble() - 0.5) * mag,
-          (_shakeRng.nextDouble() - 0.5) * mag,
-        );
+        camera.viewfinder.position = _baseCameraPosition +
+            Vector2(
+              (_shakeRng.nextDouble() - 0.5) * mag,
+              (_shakeRng.nextDouble() - 0.5) * mag,
+            );
       }
     }
 

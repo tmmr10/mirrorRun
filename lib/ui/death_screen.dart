@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,6 +10,7 @@ import '../models/player_skin.dart';
 import '../services/analytics_service.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
+import 'overlay_shell.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -201,25 +203,39 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(flex: 4),
+          child: OverlayShell(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          const Spacer(flex: 4),
 
-              // Score section
-              _buildScoreSection(),
+                          // Score section
+                          _buildScoreSection(),
 
-              const Spacer(flex: 2),
+                          const Spacer(flex: 2),
 
-              // CONTINUE panel (above action buttons)
-              if (_continueVisible) _buildContinuePanel(context),
+                          // CONTINUE panel (above action buttons)
+                          if (_continueVisible) _buildContinuePanel(context),
 
-              const Spacer(),
+                          const Spacer(),
 
-              // Action buttons
-              _buildActions(context),
+                          // Action buttons
+                          _buildActions(context),
 
-              const Spacer(flex: 2),
-            ],
+                          const Spacer(flex: 2),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -270,7 +286,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
 
             const SizedBox(height: 12),
 
-            // Score number
+            // Score number — capped relative to width so it never overflows
+            // on narrow phones; on regular phones width*0.18 > 72 → unchanged.
             ShaderMask(
               shaderCallback: (bounds) => LinearGradient(
                 colors: [leftColor, Colors.white, rightColor],
@@ -278,8 +295,9 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               ).createShader(bounds),
               child: Text(
                 '$score',
-                style: const TextStyle(
-                  fontSize: 72,
+                style: TextStyle(
+                  fontSize:
+                      math.min(72.0, MediaQuery.of(context).size.width * 0.18),
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                   letterSpacing: 4,

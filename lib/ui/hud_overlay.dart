@@ -20,6 +20,12 @@ class HudOverlay extends StatefulWidget {
 class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
   bool _showQuitConfirm = false;
 
+  /// HUD text/icon scale. The HUD is built in fixed logical pixels tuned for a
+  /// phone (~393pt wide); on a physically larger tablet those sizes look tiny.
+  /// Scale up with the screen's shortest side, capped so it stays tasteful.
+  double _uiScale(BuildContext context) =>
+      (MediaQuery.sizeOf(context).shortestSide / 393).clamp(1.0, 1.5);
+
   @override
   void initState() {
     super.initState();
@@ -123,6 +129,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
 
   Widget _buildWarningOverlay(String warning) {
     final color = _eventColorFromLabel(warning);
+    final s = _uiScale(context);
     return Positioned.fill(
       key: ValueKey('warning_$warning'),
       child: IgnorePointer(
@@ -157,14 +164,14 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                   children: [
                     Icon(
                       Icons.warning_amber_rounded,
-                      size: 30,
+                      size: 30 * s,
                       color: color.withValues(alpha: 0.9),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       warning,
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 24 * s,
                         fontWeight: FontWeight.w900,
                         color: color,
                         letterSpacing: 8,
@@ -192,6 +199,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
   Widget _buildActiveEventOverlay(GameEvent event) {
     final label = _activeLabel(event);
     final color = _eventColorFromLabel(eventLabel(event));
+    final s = _uiScale(context);
     return Positioned.fill(
       key: ValueKey('active_$label'),
       child: IgnorePointer(
@@ -213,7 +221,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 18 * s, vertical: 8 * s),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
@@ -229,7 +237,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 14 * s,
                       fontWeight: FontWeight.w800,
                       color: color,
                       letterSpacing: 4,
@@ -249,6 +257,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
 
 
   Widget _buildPowerUpIndicator() {
+    final s = _uiScale(context);
     return Positioned(
       bottom: 28 + MediaQuery.of(context).padding.bottom,
       left: 0,
@@ -265,7 +274,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                   for (final p in active)
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(horizontal: 10 * s, vertical: 5 * s),
                       decoration: BoxDecoration(
                         // Solid dark base so the chip sits cleanly OVER the
                         // mirror line instead of letting it show through.
@@ -276,7 +285,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                       child: Text(
                         p.label,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 10 * s,
                           fontWeight: FontWeight.w800,
                           color: p.color,
                           letterSpacing: 2,
@@ -297,6 +306,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
       valueListenable: widget.game.beatRecordNotifier,
       builder: (context, beat, _) {
         if (!beat) return const SizedBox.shrink();
+        final s = _uiScale(context);
         return Positioned(
           top: MediaQuery.of(context).padding.top + 64,
           left: 0,
@@ -306,7 +316,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
               child: Text(
                 context.l10n.hudNewBest,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16 * s,
                   fontWeight: FontWeight.w900,
                   color: MR.gold,
                   letterSpacing: 4,
@@ -330,6 +340,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final s = _uiScale(context);
     return Stack(
       children: [
         // Event indicator (centered)
@@ -358,7 +369,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                       return Text(
                         '$score',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 24 * s,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
                           letterSpacing: 2,
@@ -375,8 +386,8 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                     valueListenable: widget.game.comboNotifier,
                     builder: (context, combo, child) {
                       // Reserved height for layout stability (avoids score jitter)
-                      const rowHeight = 22.0;
-                      if (combo <= 1.0) return const SizedBox(height: rowHeight);
+                      final rowHeight = 22.0 * s;
+                      if (combo <= 1.0) return SizedBox(height: rowHeight);
                       final tier = _comboTier(combo);
                       final comboColor = _comboColor(combo);
                       // Use fixed display per tier to avoid rounding mismatch with color
@@ -388,7 +399,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                         child: Text(
                           'x$display',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 14 * s,
                             fontWeight: FontWeight.w900,
                             color: comboColor,
                             letterSpacing: 3,
@@ -423,7 +434,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 TapScale(
                   onTap: _toggleQuit,
                   child: Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(14 * s),
                     decoration: BoxDecoration(
                       color: _showQuitConfirm
                           ? Colors.white.withValues(alpha: 0.08)
@@ -438,7 +449,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                     ),
                     child: Icon(
                       _showQuitConfirm ? Icons.close_rounded : Icons.pause_rounded,
-                      size: 20,
+                      size: 20 * s,
                       color: Colors.white.withValues(alpha: _showQuitConfirm ? 0.7 : 0.55),
                     ),
                   ),
@@ -449,7 +460,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 ValueListenableBuilder<String>(
                   valueListenable: widget.game.biomeNotifier,
                   builder: (context, biome, child) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 8 * s, vertical: 4 * s),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(4),
@@ -461,7 +472,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                     child: Text(
                       biome,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 10 * s,
                         fontWeight: FontWeight.w600,
                         color: Colors.white.withValues(alpha: 0.45),
                         letterSpacing: 1.5,
@@ -476,7 +487,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 ValueListenableBuilder<int>(
                   valueListenable: widget.game.bestNotifier,
                   builder: (context, best, child) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 8 * s, vertical: 4 * s),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(4),
@@ -488,7 +499,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                     child: Text(
                       context.l10n.hudBest(best),
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 10 * s,
                         fontWeight: FontWeight.w600,
                         color: Colors.white.withValues(alpha: 0.35),
                         letterSpacing: 1,
@@ -501,7 +512,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 ValueListenableBuilder<int>(
                   valueListenable: widget.game.coinsService.coinsNotifier,
                   builder: (context, coins, child) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 8 * s, vertical: 4 * s),
                     decoration: BoxDecoration(
                       color: MR.gold.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(4),
@@ -513,16 +524,16 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.circle,
                           color: MR.gold,
-                          size: 8,
+                          size: 8 * s,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '$coins',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 10 * s,
                             fontWeight: FontWeight.w600,
                             color: MR.gold.withValues(alpha: 0.85),
                             letterSpacing: 1,
@@ -553,7 +564,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                     // Pause icon
                     Icon(
                       Icons.pause_rounded,
-                      size: 32,
+                      size: 32 * s,
                       color: Colors.white.withValues(alpha: 0.15),
                     )
                         .animate()
@@ -569,7 +580,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                         TapScale(
                           onTap: _toggleQuit,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: EdgeInsets.symmetric(horizontal: 24 * s, vertical: 12 * s),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(6),
@@ -581,7 +592,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                             child: Text(
                               context.l10n.hudResume,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 13 * s,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white.withValues(alpha: 0.7),
                                 letterSpacing: 3,
@@ -598,7 +609,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                         TapScale(
                           onTap: _quit,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: EdgeInsets.symmetric(horizontal: 24 * s, vertical: 12 * s),
                             decoration: BoxDecoration(
                               color: MR.danger.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
@@ -609,8 +620,8 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                             ),
                             child: Text(
                               context.l10n.hudQuit,
-                              style: const TextStyle(
-                                fontSize: 13,
+                              style: TextStyle(
+                                fontSize: 13 * s,
                                 fontWeight: FontWeight.w600,
                                 color: MR.danger,
                                 letterSpacing: 3,

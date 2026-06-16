@@ -4,6 +4,7 @@ import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
+import 'overlay_shell.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -29,42 +30,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: CustomScrollView(
-            slivers: [
-              SliverList(
-                delegate: SliverChildListDelegate([
-              // Top bar with back button and title
-              Row(
-                children: [
-                  TapScale(
-                    onTap: () {
-                      widget.game.overlays.remove('SettingsScreen');
-                      widget.game.overlays.add('MenuScreen');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Icon(
-                        Icons.arrow_back_ios_rounded,
-                        color: _accent.withValues(alpha: 0.5),
-                        size: 20,
+        child: OverlayShell(
+          child: Column(
+            children: [
+              // Top bar with back button and title — pinned at the top
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                child: Row(
+                  children: [
+                    TapScale(
+                      onTap: () {
+                        widget.game.overlays.remove('SettingsScreen');
+                        widget.game.overlays.add('MenuScreen');
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Icon(
+                          Icons.arrow_back_ios_rounded,
+                          color: _accent.withValues(alpha: 0.5),
+                          size: 20,
+                        ),
                       ),
                     ),
-                  ),
-                  Text(
-                    context.l10n.settingsTitle,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: _accent,
-                      letterSpacing: 6,
+                    Text(
+                      context.l10n.settingsTitle,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: _accent,
+                        letterSpacing: 6,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 40),
 
+              // Settings body — vertically centered when it fits, scrolls when taller
+              Expanded(
+                child: CenterableScroll(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
               // Sound toggle
               _buildToggleRow(
                 context.l10n.settingsSound,
@@ -377,7 +384,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-            ]),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

@@ -116,9 +116,10 @@ class _CountdownOverlayState extends State<CountdownOverlay>
       },
     );
 
-    if (!_showControlsHint) return countdown;
+    if (!_showControlsHint) return SafeArea(child: countdown);
 
-    return Stack(
+    return SafeArea(
+      child: Stack(
       children: [
         countdown,
         // One-time, dezent controls hint — fades out as the countdown ends.
@@ -147,6 +148,7 @@ class _CountdownOverlayState extends State<CountdownOverlay>
           ),
         ),
       ],
+      ),
     );
   }
 

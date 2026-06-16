@@ -6,6 +6,7 @@ import '../game/world/biome.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
 import '../services/world_unlock_service.dart';
+import 'overlay_shell.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -84,26 +85,32 @@ class _WorldPickerScreenState extends State<WorldPickerScreen> {
     return Container(
       decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
-        child: Column(
+        child: OverlayShell(
+          child: Column(
           children: [
             _buildHeader(),
             const SizedBox(height: 8),
             Expanded(
-              child: ListView.builder(
+              child: CenterableScroll(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                itemCount: biomes.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildWorldCard(biomes[index], index),
-                  )
-                      .animate()
-                      .fadeIn(duration: 350.ms, delay: (50 * index).ms)
-                      .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic);
-                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var index = 0; index < biomes.length; index++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildWorldCard(biomes[index], index),
+                      )
+                          .animate()
+                          .fadeIn(duration: 350.ms, delay: (50 * index).ms)
+                          .slideY(
+                              begin: 0.08, end: 0, curve: Curves.easeOutCubic),
+                  ],
+                ),
               ),
             ),
           ],
+        ),
         ),
       ),
     );

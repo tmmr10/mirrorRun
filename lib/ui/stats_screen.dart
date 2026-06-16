@@ -4,6 +4,7 @@ import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
+import 'overlay_shell.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -25,7 +26,8 @@ class StatsScreen extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
-        child: Padding(
+        child: OverlayShell(
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,62 +60,72 @@ class StatsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 40),
-              _statRow(context.l10n.statsTotalDistance, context.l10n.statsMeters(stats.totalDistance)),
-              _statRow(context.l10n.statsGamesPlayed, '${stats.totalGamesPlayed}'),
-              _statRow(context.l10n.statsPlaytime, _formatPlaytime(context, stats.totalPlaytimeSeconds)),
-              _statRow(context.l10n.statsFurthestBiome, furthestBiomeName),
-              _statRow(context.l10n.statsBestScore, context.l10n.statsMeters(best)),
-              const SizedBox(height: 20),
-              Builder(
-                builder: (ctx) => TapScale(
-                  minSize: MR.minTouchTarget,
-                  onTap: () {
-                    final box = ctx.findRenderObject() as RenderBox?;
-                    final origin = box != null
-                        ? box.localToGlobal(Offset.zero) & box.size
-                        : null;
-                    final playtime = _formatPlaytime(ctx, stats.totalPlaytimeSeconds);
-                    Share.share(
-                      ctx.l10n.statsShareText(
-                        best,
-                        stats.totalGamesPlayed,
-                        playtime,
-                        furthestBiomeName,
-                      ),
-                      sharePositionOrigin: origin,
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: _accent.withValues(alpha: 0.2),
-                        width: 0.5,
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.share_rounded, size: 13, color: _accent.withValues(alpha: 0.5)),
-                        const SizedBox(width: 6),
-                        Text(
-                          ctx.l10n.statsShare,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: _accent.withValues(alpha: 0.5),
-                            letterSpacing: 2,
+              Expanded(
+                child: CenterableScroll(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _statRow(context.l10n.statsTotalDistance, context.l10n.statsMeters(stats.totalDistance)),
+                      _statRow(context.l10n.statsGamesPlayed, '${stats.totalGamesPlayed}'),
+                      _statRow(context.l10n.statsPlaytime, _formatPlaytime(context, stats.totalPlaytimeSeconds)),
+                      _statRow(context.l10n.statsFurthestBiome, furthestBiomeName),
+                      _statRow(context.l10n.statsBestScore, context.l10n.statsMeters(best)),
+                      const SizedBox(height: 20),
+                      Builder(
+                        builder: (ctx) => TapScale(
+                          minSize: MR.minTouchTarget,
+                          onTap: () {
+                            final box = ctx.findRenderObject() as RenderBox?;
+                            final origin = box != null
+                                ? box.localToGlobal(Offset.zero) & box.size
+                                : null;
+                            final playtime = _formatPlaytime(ctx, stats.totalPlaytimeSeconds);
+                            Share.share(
+                              ctx.l10n.statsShareText(
+                                best,
+                                stats.totalGamesPlayed,
+                                playtime,
+                                furthestBiomeName,
+                              ),
+                              sharePositionOrigin: origin,
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _accent.withValues(alpha: 0.2),
+                                width: 0.5,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.share_rounded, size: 13, color: _accent.withValues(alpha: 0.5)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  ctx.l10n.statsShare,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: _accent.withValues(alpha: 0.5),
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const Spacer(),
             ],
           ),
+        ),
         ),
       ),
     );

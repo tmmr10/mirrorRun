@@ -4,6 +4,7 @@ import '../game/mirror_run_game.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
 import '../models/player_skin.dart';
+import 'overlay_shell.dart';
 import 'player_scene_painter.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
@@ -48,7 +49,8 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
     return Container(
       decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
-        child: Column(
+        child: OverlayShell(
+          child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 20, top: 24, right: 20),
@@ -86,8 +88,9 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
 
             // Scrollable rows
             Expanded(
-              child: SingleChildScrollView(
+              child: CenterableScroll(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Row 1: SKIN CREATOR
@@ -113,6 +116,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
 
             const SizedBox(height: 24),
           ],
+        ),
         ),
       ),
     );

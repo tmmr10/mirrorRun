@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../l10n/l10n_ext.dart';
+import 'overlay_shell.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -88,7 +89,8 @@ class _ProScreenState extends State<ProScreen> {
         ),
       ),
       child: SafeArea(
-        child: Column(
+        child: OverlayShell(
+          child: Column(
           children: [
             // Back button
             Padding(
@@ -109,8 +111,12 @@ class _ProScreenState extends State<ProScreen> {
               ),
             ).animate().fadeIn(duration: 300.ms),
 
-            const Spacer(flex: 2),
-
+            // Scrollable body — vertically centered when it fits, scrolls when taller.
+            Expanded(
+              child: CenterableScroll(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
             // Crown icon with glow
             Container(
               width: 72,
@@ -193,7 +199,7 @@ class _ProScreenState extends State<ProScreen> {
               delay: 800,
             ),
 
-            const Spacer(),
+            const SizedBox(height: 36),
 
             // Price badge + button OR active state
             if (isPro)
@@ -300,9 +306,12 @@ class _ProScreenState extends State<ProScreen> {
                       ),
               ).animate().fadeIn(duration: 400.ms, delay: 1100.ms),
             ],
-
-            const Spacer(flex: 2),
+                  ],
+                ),
+              ),
+            ),
           ],
+        ),
         ),
       ),
     );

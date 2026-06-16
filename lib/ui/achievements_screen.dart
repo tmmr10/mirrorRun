@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../l10n/game_l10n.dart';
 import '../l10n/l10n_ext.dart';
+import 'overlay_shell.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -46,11 +47,14 @@ class AchievementsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final service = game.achievementService;
     final unlocked = service.unlockedCount;
+    final width = MediaQuery.of(context).size.width;
+    final columns = width < 400 ? 2 : (width > 700 ? 5 : 3);
 
     return Container(
       decoration: const BoxDecoration(gradient: MR.bgGradient),
       child: SafeArea(
-        child: Padding(
+        child: OverlayShell(
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,28 +104,33 @@ class AchievementsScreen extends StatelessWidget {
 
               // Grid
               Expanded(
-                child: GridView.builder(
-                  padding: EdgeInsets.zero,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.75,
+                child: CenterableScroll(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.75,
+                    ),
+                    itemCount: _achievements.length,
+                    itemBuilder: (context, index) {
+                      final a = _achievements[index];
+                      final isUnlocked = service.isUnlocked(a.id);
+                      return _AchievementTile(
+                        achievement: a,
+                        unlocked: isUnlocked,
+                        index: index,
+                      );
+                    },
                   ),
-                  itemCount: _achievements.length,
-                  itemBuilder: (context, index) {
-                    final a = _achievements[index];
-                    final isUnlocked = service.isUnlocked(a.id);
-                    return _AchievementTile(
-                      achievement: a,
-                      unlocked: isUnlocked,
-                      index: index,
-                    );
-                  },
                 ),
               ),
             ],
           ),
+        ),
         ),
       ),
     );

@@ -24,23 +24,21 @@ class SwipeController extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return RawGestureDetector(
-          gestures: {
-            _GatedHorizontalDragRecognizer:
-                GestureRecognizerFactoryWithHandlers<
-                    _GatedHorizontalDragRecognizer>(
-              () => _GatedHorizontalDragRecognizer(game),
-              (recognizer) {
-                recognizer.onUpdate = (details) =>
-                    game.onDrag(details.delta.dx, constraints.maxWidth);
-              },
-            ),
+    // The game maps the screen-space drag delta into game coordinates using its
+    // own render zoom (uniform-fit + letterboxing), so the widget no longer
+    // needs to pass the layout width — a raw RawGestureDetector is enough.
+    return RawGestureDetector(
+      gestures: {
+        _GatedHorizontalDragRecognizer:
+            GestureRecognizerFactoryWithHandlers<
+                _GatedHorizontalDragRecognizer>(
+          () => _GatedHorizontalDragRecognizer(game),
+          (recognizer) {
+            recognizer.onUpdate = (details) => game.onDrag(details.delta.dx);
           },
-          child: child,
-        );
+        ),
       },
+      child: child,
     );
   }
 }
