@@ -552,12 +552,20 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
         // layer so RESUME and the dimmed background reliably resume the game.
         if (_showQuitConfirm)
           Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _toggleQuit,
-              child: Container(
-                color: const Color(0xCC000000),
-                child: Center(
+            child: Stack(
+              children: [
+                // Full-screen dismiss barrier sits BEHIND the buttons (a
+                // sibling, not a parent) so the RESUME/QUIT taps win cleanly
+                // instead of competing with a wrapping detector in the gesture
+                // arena — that ambiguity randomly made QUIT unhittable.
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggleQuit,
+                    child: Container(color: const Color(0xCC000000)),
+                  ),
+                ),
+                Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -637,8 +645,8 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                   ],
                 ),
               ),
+              ],
             ),
-          ),
           ),
       ],
     );
