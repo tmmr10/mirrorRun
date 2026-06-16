@@ -45,7 +45,8 @@ const THEME = {
   bg: "#08080F",
 };
 
-// === SHOTS — filenames Tom drops into /public/screenshots/ ===
+// === SHOTS — per-locale app screenshots: /public/screenshots/<locale>/<file> ===
+// The in-app UI is localized, so each language uses its own captures.
 const FILES: Record<string, string> = {
   menu: "01_menu.png",
   gameplay: "02_gameplay.png",
@@ -54,7 +55,9 @@ const FILES: Record<string, string> = {
   skins: "05_skins.png",
   creator: "06_creator.png",
 };
-const shot = (key: string) => `/screenshots/${FILES[key]}`;
+// Locale is threaded via renderSlide (keeps the Slide components clean).
+let _shotLocale: Locale = "en";
+const shot = (key: string) => `/screenshots/${_shotLocale}/${FILES[key]}`;
 
 // === LOCALES + COPY ===
 const LOCALES = ["en", "de"] as const;
@@ -211,6 +214,7 @@ function OutroSlide({ cw, ch, slide }: { cw: number; ch: number; slide: Slide })
 // SLIDE REGISTRY
 // ============================================================================
 function renderSlide(index: number, cw: number, ch: number, locale: Locale) {
+  _shotLocale = locale;
   const s = COPY[locale][index];
   switch (index) {
     case 0: return <HeroSlide cw={cw} ch={ch} slide={s} />;
