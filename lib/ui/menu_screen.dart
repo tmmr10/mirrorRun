@@ -200,7 +200,14 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                       const Spacer(flex: 3),
                       _buildPlayButton(context, accentColor),
                       const SizedBox(height: 28),
-                      if (!widget.game.screenshotMode) _buildBiomeRoadmap(),
+                      if (!widget.game.screenshotMode)
+                        TapScale(
+                          onTap: () {
+                            widget.game.overlays.remove('MenuScreen');
+                            widget.game.overlays.add('WorldPicker');
+                          },
+                          child: _buildBiomeRoadmap(),
+                        ),
                       const Spacer(flex: 4),
                       if (!widget.game.screenshotMode) _buildDailyCard(accentColor),
                       SizedBox(height: MediaQuery.of(context).size.height * 0.03),

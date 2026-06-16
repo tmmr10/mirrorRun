@@ -333,5 +333,17 @@
       }
     }
   },
-  "achFirstRun": "1st Run"
+  "achFirstRun": "1st Run",
+  "worldsTitle": "WORLDS",
+  "worldStart": "START",
+  "worldUnlock": "UNLOCK",
+  "worldFreePlayNote": "Free Play · not ranked",
+  "worldStartAt": "Reached at {m}m",
+  "@worldStartAt": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  }
 }

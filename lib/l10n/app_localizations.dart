@@ -1195,6 +1195,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'1st Run'**
   String get achFirstRun;
+
+  /// No description provided for @worldsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WORLDS'**
+  String get worldsTitle;
+
+  /// No description provided for @worldStart.
+  ///
+  /// In en, this message translates to:
+  /// **'START'**
+  String get worldStart;
+
+  /// No description provided for @worldUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'UNLOCK'**
+  String get worldUnlock;
+
+  /// No description provided for @worldFreePlayNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Free Play · not ranked'**
+  String get worldFreePlayNote;
+
+  /// No description provided for @worldStartAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Reached at {m}m'**
+  String worldStartAt(int m);
 }
 
 class _AppLocalizationsDelegate

@@ -35,6 +35,7 @@ import '../services/analytics_service.dart';
 import '../services/stats_service.dart';
 import '../services/daily_challenge_service.dart';
 import '../services/upgrade_service.dart';
+import '../services/world_unlock_service.dart';
 
 class MirrorRunGame extends FlameGame with KeyboardEvents {
   static const double vw = 440;
@@ -63,6 +64,12 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   late SkinService skinService;
   late DailyChallengeService dailyChallengeService;
   late UpgradeService upgradeService;
+  late WorldUnlockService worldUnlockService;
+
+  /// True while the current run was started from a picked world (Free Play):
+  /// such runs don't count toward leaderboard, highscore, daily or unlocks.
+  bool _freePlayRun = false;
+  bool get isFreePlayRun => _freePlayRun;
 
   /// Set after a run when the daily challenge was just completed (for UI feedback).
   final ValueNotifier<DailyRunResult?> dailyResultNotifier = ValueNotifier(null);
@@ -271,6 +278,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     upgradeService = UpgradeService();
     await upgradeService.init();
 
+    worldUnlockService = WorldUnlockService();
+    await worldUnlockService.init();
+
     // Run GameCenter sign-in in background with timeout — don't block app startup.
     // Runs AFTER achievementService is initialized to avoid LateInitializationError.
     unawaited(
@@ -306,12 +316,23 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     return n.year * 10000 + n.month * 100 + n.day;
   }
 
-  void startGame({bool seeded = false}) {
+  /// Starts a run at the given world (biome index). Index 0 = normal ranked
+  /// run; any higher index is "Free Play" — it doesn't count toward
+  /// leaderboard / highscore / daily / achievements / unlocks.
+  void startGameAtWorld(int biomeIndex) {
+    final idx = biomeIndex.clamp(0, BiomeManager.biomes.length - 1);
+    overlays.remove('WorldPicker');
+    startGame(startAtScore: BiomeManager.biomes[idx].startM, freePlay: idx > 0);
+  }
+
+  void startGame({bool seeded = false, int startAtScore = 0, bool freePlay = false}) {
     seedRunActive = seeded;
+    _freePlayRun = freePlay;
     final seed = seeded ? _dailySeed() : null;
     playState = PlayState.countdown;
     _runStartTime = DateTime.now().millisecondsSinceEpoch / 1000.0;
-    final startScore = kDebugMode ? debugStartScore : 0;
+    final startScore =
+        startAtScore > 0 ? startAtScore : (kDebugMode ? debugStartScore : 0);
     score = startScore;
     _frameAccumulator = 0;
     speed = 2.0;
@@ -438,7 +459,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
 
     // Check highscore (update notifiers synchronously for immediate UI feedback)
     final best = highscoreService.getBest();
-    final isNewRecord = score > best;
+    final isNewRecord = !_freePlayRun && score > best;
     if (isNewRecord) {
       newRecordNotifier.value = true;
       bestNotifier.value = score;
@@ -462,6 +483,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   }
 
   Future<void> _recordRunAsync({bool isNewRecord = false}) async {
+    // Free Play (picked-world start): no progression is persisted at all, so
+    // it can't game the leaderboard, highscore, daily, achievements or unlocks.
+    if (_freePlayRun) return;
     try {
       if (isNewRecord) {
         await highscoreService.saveBest(score);
@@ -472,6 +496,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
         biomeIndex: _lastBiomeIdx,
         durationSeconds: lastRunDuration,
       );
+      // Unlock worlds in the picker as they're reached naturally.
+      unawaited(worldUnlockService.registerReached(statsService.furthestBiomeIndex));
       // Daily challenge + streak (record before awarding so run coins aren't
       // inflated by the reward itself).
       final daily = await dailyChallengeService.recordRun(

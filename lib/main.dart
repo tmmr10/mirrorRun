@@ -22,6 +22,7 @@ import 'ui/skin_selector.dart';
 import 'ui/skin_builder.dart';
 import 'ui/pro_screen.dart';
 import 'ui/perk_screen.dart';
+import 'ui/world_picker_screen.dart';
 import 'ui/achievements_screen.dart';
 import 'ui/debug_overlay.dart';
 
@@ -134,6 +135,8 @@ Future<void> main() async {
                   ProScreen(game: game as MirrorRunGame),
               'PerkScreen': (context, game) =>
                   PerkScreen(game: game as MirrorRunGame),
+              'WorldPicker': (context, game) =>
+                  WorldPickerScreen(game: game as MirrorRunGame),
               'AchievementsScreen': (context, game) =>
                   AchievementsScreen(game: game as MirrorRunGame),
               if (kDebugMode)

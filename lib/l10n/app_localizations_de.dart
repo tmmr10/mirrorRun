@@ -608,4 +608,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get achFirstRun => '1. Lauf';
+
+  @override
+  String get worldsTitle => 'WELTEN';
+
+  @override
+  String get worldStart => 'START';
+
+  @override
+  String get worldUnlock => 'FREISCHALTEN';
+
+  @override
+  String get worldFreePlayNote => 'Free Play · nicht gewertet';
+
+  @override
+  String worldStartAt(int m) {
+    return 'Erreicht bei ${m}m';
+  }
 }

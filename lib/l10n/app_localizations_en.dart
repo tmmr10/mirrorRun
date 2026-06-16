@@ -602,4 +602,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get achFirstRun => '1st Run';
+
+  @override
+  String get worldsTitle => 'WORLDS';
+
+  @override
+  String get worldStart => 'START';
+
+  @override
+  String get worldUnlock => 'UNLOCK';
+
+  @override
+  String get worldFreePlayNote => 'Free Play · not ranked';
+
+  @override
+  String worldStartAt(int m) {
+    return 'Reached at ${m}m';
+  }
 }

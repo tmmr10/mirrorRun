@@ -182,5 +182,10 @@
   "achBiomeNeon": "Neon",
   "achBiomeVoid": "Leere",
   "achGamesCount": "{count} Spiele",
-  "achFirstRun": "1. Lauf"
+  "achFirstRun": "1. Lauf",
+  "worldsTitle": "WELTEN",
+  "worldStart": "START",
+  "worldUnlock": "FREISCHALTEN",
+  "worldFreePlayNote": "Free Play · nicht gewertet",
+  "worldStartAt": "Erreicht bei {m}m"
 }
