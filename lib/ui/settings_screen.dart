@@ -133,6 +133,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'SWAP',
                   description: 'Controls are reversed. Left becomes right, right becomes left.',
                 ),
+                const SizedBox(height: 20),
+                // Desync event
+                _HelpSection(
+                  illustration: const _DesyncIllustration(),
+                  title: 'DESYNC',
+                  description: 'The two sides scroll at different speeds.',
+                ),
+                const SizedBox(height: 20),
+                // Blackout event
+                _HelpSection(
+                  illustration: const _BlackoutIllustration(),
+                  title: 'BLACKOUT',
+                  description: 'One side goes dark — run it from memory.',
+                ),
+                const SizedBox(height: 24),
+                // Power-ups sub-header
+                Text(
+                  'POWER-UPS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    letterSpacing: 3,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Shield
+                _HelpSection(
+                  illustration: const _PowerUpOrb(kind: _OrbKind.shield),
+                  title: 'SHIELD',
+                  description: 'Absorbs one hit. The Shield perk starts you with one and recharges it over distance.',
+                ),
+                const SizedBox(height: 20),
+                // Sync-lock
+                _HelpSection(
+                  illustration: const _PowerUpOrb(kind: _OrbKind.syncLock),
+                  title: 'SYNC-LOCK',
+                  description: 'Controls briefly un-mirror — both runners move the same direction.',
+                ),
+                const SizedBox(height: 20),
+                // Slow-mo
+                _HelpSection(
+                  illustration: const _PowerUpOrb(kind: _OrbKind.slowMo),
+                  title: 'SLOW-MO',
+                  description: 'Slows the world down for a moment.',
+                ),
+                const SizedBox(height: 20),
+                // Foresight
+                _HelpSection(
+                  illustration: const _PowerUpOrb(kind: _OrbKind.foresight),
+                  title: 'FORESIGHT',
+                  description: 'Reveals obstacles hidden during PHANTOM.',
+                ),
               ],
               const SizedBox(height: 24),
 
@@ -473,6 +526,219 @@ class _HelpSection extends StatelessWidget {
       ],
     );
   }
+}
+
+// ── Desync illustration ──
+class _DesyncIllustration extends StatelessWidget {
+  const _DesyncIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _DesyncPainter());
+  }
+}
+
+class _DesyncPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final mid = w / 2;
+
+    // Mirror line
+    canvas.drawLine(Offset(mid, 0), Offset(mid, h),
+      Paint()..color = const Color(0x40B48CFF)..strokeWidth = 1);
+
+    // Ground
+    final groundY = h * 0.78;
+    canvas.drawLine(Offset(0, groundY), Offset(w, groundY),
+      Paint()..color = const Color(0x30FFFFFF)..strokeWidth = 0.5);
+
+    // Left player — sits higher (faster scroll)
+    final lpx = mid * 0.5;
+    _drawPlayer(canvas, lpx, groundY - 16, MR.danger);
+    // Right player — sits lower (slower scroll)
+    final rpx = mid + mid * 0.5;
+    _drawPlayer(canvas, rpx, groundY, const Color(0xFF9966ff));
+
+    // Arrows of different length showing different speeds
+    final arrowPaint = Paint()
+      ..color = const Color(0x80B48CFF)
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+    // Left: long arrow (fast)
+    _arrowDown(canvas, lpx, groundY + 6, 14, arrowPaint);
+    // Right: short arrow (slow)
+    _arrowDown(canvas, rpx, groundY + 6, 7, arrowPaint);
+  }
+
+  void _arrowDown(Canvas canvas, double x, double y, double len, Paint p) {
+    canvas.drawLine(Offset(x, y), Offset(x, y + len), p);
+    canvas.drawLine(Offset(x, y + len), Offset(x - 3, y + len - 3), p);
+    canvas.drawLine(Offset(x, y + len), Offset(x + 3, y + len - 3), p);
+  }
+
+  void _drawPlayer(Canvas canvas, double x, double y, Color color) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(x - 4, y - 14, 8, 14), const Radius.circular(2)),
+      Paint()..color = color,
+    );
+    canvas.drawCircle(Offset(x, y - 7), 6,
+      Paint()..color = color.withValues(alpha: 0.2)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Blackout illustration ──
+class _BlackoutIllustration extends StatelessWidget {
+  const _BlackoutIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _BlackoutPainter());
+  }
+}
+
+class _BlackoutPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final mid = w / 2;
+
+    // Ground
+    final groundY = h * 0.78;
+    canvas.drawLine(Offset(0, groundY), Offset(w, groundY),
+      Paint()..color = const Color(0x30FFFFFF)..strokeWidth = 0.5);
+
+    // Left player (lit, orange)
+    final lpx = mid * 0.5;
+    _drawPlayer(canvas, lpx, groundY, MR.danger, 1.0);
+
+    // Right player (barely visible in the dark)
+    final rpx = mid + mid * 0.5;
+    _drawPlayer(canvas, rpx, groundY, const Color(0xFF9966ff), 0.18);
+
+    // Dark overlay over the right half
+    final darkPaint = Paint()..color = const Color(0xE6000000);
+    canvas.drawRect(Rect.fromLTWH(mid, 0, mid, h), darkPaint);
+
+    // Mirror line (drawn over the overlay so it stays visible)
+    canvas.drawLine(Offset(mid, 0), Offset(mid, h),
+      Paint()..color = const Color(0x40B48CFF)..strokeWidth = 1);
+  }
+
+  void _drawPlayer(Canvas canvas, double x, double y, Color color, double alpha) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromLTWH(x - 4, y - 14, 8, 14), const Radius.circular(2)),
+      Paint()..color = color.withValues(alpha: alpha),
+    );
+    canvas.drawCircle(Offset(x, y - 7), 6,
+      Paint()..color = color.withValues(alpha: 0.2 * alpha)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Power-up orb illustration (mirrors the in-game PowerUp look) ──
+enum _OrbKind { shield, syncLock, slowMo, foresight }
+
+class _PowerUpOrb extends StatelessWidget {
+  final _OrbKind kind;
+  const _PowerUpOrb({required this.kind});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _PowerUpOrbPainter(kind));
+  }
+}
+
+class _PowerUpOrbPainter extends CustomPainter {
+  final _OrbKind kind;
+  _PowerUpOrbPainter(this.kind);
+
+  Color get _color {
+    switch (kind) {
+      case _OrbKind.shield:
+        return MR.cyan;
+      case _OrbKind.syncLock:
+        return MR.accent;
+      case _OrbKind.slowMo:
+        return MR.gold;
+      case _OrbKind.foresight:
+        return const Color(0xFF66FFC2);
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = _color;
+    final center = Offset(size.width / 2, size.height / 2);
+    const radius = 13.0;
+
+    // Soft glow
+    canvas.drawCircle(center, radius + 5,
+      Paint()
+        ..color = c.withValues(alpha: 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+
+    // Dark fill
+    canvas.drawCircle(center, radius,
+      Paint()..color = const Color(0xFF0A0A12).withValues(alpha: 0.85));
+
+    // Colored ring
+    canvas.drawCircle(center, radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = c);
+
+    _drawIcon(canvas, center, c);
+  }
+
+  void _drawIcon(Canvas canvas, Offset c, Color color) {
+    final iconPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    switch (kind) {
+      case _OrbKind.shield:
+        final p = Path()
+          ..moveTo(c.dx, c.dy - 5)
+          ..lineTo(c.dx + 4, c.dy - 2)
+          ..lineTo(c.dx + 4, c.dy + 1)
+          ..quadraticBezierTo(c.dx + 4, c.dy + 5, c.dx, c.dy + 6)
+          ..quadraticBezierTo(c.dx - 4, c.dy + 5, c.dx - 4, c.dy + 1)
+          ..lineTo(c.dx - 4, c.dy - 2)
+          ..close();
+        canvas.drawPath(p, iconPaint);
+      case _OrbKind.syncLock:
+        for (final dx in [-3.0, 3.0]) {
+          canvas.drawLine(Offset(c.dx + dx, c.dy - 4), Offset(c.dx + dx, c.dy + 4), iconPaint);
+          canvas.drawLine(Offset(c.dx + dx, c.dy + 4), Offset(c.dx + dx - 2, c.dy + 1), iconPaint);
+          canvas.drawLine(Offset(c.dx + dx, c.dy + 4), Offset(c.dx + dx + 2, c.dy + 1), iconPaint);
+        }
+      case _OrbKind.slowMo:
+        canvas.drawCircle(c, 5, iconPaint);
+        canvas.drawLine(c, Offset(c.dx, c.dy - 3.5), iconPaint);
+        canvas.drawLine(c, Offset(c.dx + 2.5, c.dy), iconPaint);
+      case _OrbKind.foresight:
+        final eye = Path()
+          ..moveTo(c.dx - 6, c.dy)
+          ..quadraticBezierTo(c.dx, c.dy - 5, c.dx + 6, c.dy)
+          ..quadraticBezierTo(c.dx, c.dy + 5, c.dx - 6, c.dy)
+          ..close();
+        canvas.drawPath(eye, iconPaint);
+        canvas.drawCircle(c, 1.6, iconPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PowerUpOrbPainter oldDelegate) => oldDelegate.kind != kind;
 }
 
 // ── Mirror movement illustration ──

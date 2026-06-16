@@ -145,37 +145,42 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 .then()
                 .fadeOut(duration: 300.ms),
 
-            // Big centered warning text
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    size: 36,
-                    color: color.withValues(alpha: 0.9),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    warning,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: color,
-                      letterSpacing: 8,
-                      shadows: [
-                        Shadow(color: color.withValues(alpha: 0.8), blurRadius: 30),
-                        Shadow(color: color.withValues(alpha: 0.4), blurRadius: 60),
-                      ],
+            // Warning text — anchored at the top, never the center
+            Positioned(
+              top: 120 + MediaQuery.of(context).padding.top,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 30,
+                      color: color.withValues(alpha: 0.9),
                     ),
-                  ),
-                ],
-              )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scaleXY(begin: 0.95, end: 1.05, duration: 300.ms)
-                  .fadeIn(duration: 200.ms)
-                  .then()
-                  .fadeOut(duration: 200.ms),
+                    const SizedBox(height: 6),
+                    Text(
+                      warning,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: color,
+                        letterSpacing: 8,
+                        shadows: [
+                          Shadow(color: color.withValues(alpha: 0.8), blurRadius: 30),
+                          Shadow(color: color.withValues(alpha: 0.4), blurRadius: 60),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scaleXY(begin: 0.95, end: 1.05, duration: 300.ms)
+                    .fadeIn(duration: 200.ms)
+                    .then()
+                    .fadeOut(duration: 200.ms),
+              ),
             ),
           ],
         ),
@@ -200,9 +205,9 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                 .animate()
                 .fadeIn(duration: 200.ms),
 
-            // Event label bar (kept clear of the home indicator)
+            // Event label bar — top of screen, below score/combo
             Positioned(
-              bottom: 110 + MediaQuery.of(context).padding.bottom,
+              top: 124 + MediaQuery.of(context).padding.top,
               left: 0,
               right: 0,
               child: Center(
@@ -261,7 +266,9 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: p.color.withValues(alpha: 0.15),
+                        // Solid dark base so the chip sits cleanly OVER the
+                        // mirror line instead of letting it show through.
+                        color: const Color(0xFF0A0A12),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: p.color.withValues(alpha: 0.7), width: 1),
                       ),
