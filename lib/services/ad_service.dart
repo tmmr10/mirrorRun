@@ -44,6 +44,15 @@ class AdService {
     proStatusNotifier.value = isPro;
   }
 
+  /// Debug only: clear the purchased Pro / ad-free state.
+  Future<void> debugResetPro() async {
+    _isPro = false;
+    _isAdFree = false;
+    await _prefs.setBool('is_pro', false);
+    await _prefs.setBool('ad_free', false);
+    _syncProStatus();
+  }
+
   String get _interstitialAdUnitId {
     if (Platform.isAndroid) {
       return 'ca-app-pub-6061884014427414/7321834932';

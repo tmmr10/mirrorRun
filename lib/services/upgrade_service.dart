@@ -80,6 +80,15 @@ class UpgradeService {
     return true;
   }
 
+  /// Debug only: reset every perk back to level 0.
+  Future<void> debugResetAll() async {
+    for (final p in Perk.values) {
+      _levels[p] = 0;
+      await _prefs.setInt(_key(p), 0);
+    }
+    revision.value++;
+  }
+
   // ── Effect accessors (read by the game) ──
 
   /// Start each run with a shield already active.

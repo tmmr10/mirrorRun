@@ -155,6 +155,23 @@ class SkinService {
     );
   }
 
+  /// Debug only: lock all preset skins, lock the skin creator and reset the
+  /// selection to default — back to the un-purchased free state.
+  Future<void> debugResetPurchases() async {
+    _unlockedIds
+      ..clear()
+      ..add(SkinId.default_);
+    _selectedId = SkinId.default_;
+    _selectedCustomIndex = -1;
+    _customSkinUnlocked = false;
+    _customSkins.clear();
+    await _prefs.setStringList(_keyUnlocked, [SkinId.default_.name]);
+    await _prefs.setString(_keySelected, SkinId.default_.name);
+    await _prefs.setInt(_keyCustomSelected, -1);
+    await _prefs.setBool(_keyCustomUnlocked, false);
+    await _persistCustomSkins();
+  }
+
   /// Returns list of newly unlocked skin IDs.
   Future<List<SkinId>> checkUnlocks(int furthestBiomeIndex) async {
     final newUnlocks = <SkinId>[];

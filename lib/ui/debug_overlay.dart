@@ -100,6 +100,32 @@ class _DebugOverlayState extends State<DebugOverlay> {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              TapScale(
+                onTap: () async {
+                  await game.adService.debugResetPro();
+                  await game.upgradeService.debugResetAll();
+                  await game.skinService.debugResetPurchases();
+                  if (mounted) setState(() {});
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _red.withValues(alpha: 0.5), width: 1),
+                    borderRadius: BorderRadius.circular(6),
+                    color: _red.withValues(alpha: 0.1),
+                  ),
+                  child: const Text(
+                    'RESET PURCHASES',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: MR.alert,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               Expanded(
                 child: ListView(
