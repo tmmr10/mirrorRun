@@ -7,6 +7,8 @@ import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import '../models/player_skin.dart';
 import '../services/analytics_service.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -163,14 +165,15 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
     widget.game.startGame();
   }
 
-  String _getMotivationalText(int score) {
-    if (score < 30) return 'KEEP GOING';
-    if (score < 100) return 'NOT BAD';
-    if (score < 250) return 'NICE RUN';
-    if (score < 500) return 'IMPRESSIVE';
-    if (score < 1000) return 'INCREDIBLE';
-    if (score < 2000) return 'UNSTOPPABLE';
-    return 'LEGENDARY';
+  String _getMotivationalText(BuildContext context, int score) {
+    final l10n = context.l10n;
+    if (score < 30) return l10n.deathMotivKeepGoing;
+    if (score < 100) return l10n.deathMotivNotBad;
+    if (score < 250) return l10n.deathMotivNiceRun;
+    if (score < 500) return l10n.deathMotivImpressive;
+    if (score < 1000) return l10n.deathMotivIncredible;
+    if (score < 2000) return l10n.deathMotivUnstoppable;
+    return l10n.deathMotivLegendary;
   }
 
   void _menu() {
@@ -208,12 +211,12 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               const Spacer(flex: 2),
 
               // CONTINUE panel (above action buttons)
-              if (_continueVisible) _buildContinuePanel(),
+              if (_continueVisible) _buildContinuePanel(context),
 
               const Spacer(),
 
               // Action buttons
-              _buildActions(),
+              _buildActions(context),
 
               const Spacer(flex: 2),
             ],
@@ -254,7 +257,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
 
             // Motivational text
             Text(
-              _getMotivationalText(score),
+              _getMotivationalText(context, score),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -311,7 +314,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'METER',
+                  context.l10n.deathMeter,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -355,7 +358,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                     color: MR.gold.withValues(alpha: 0.06),
                   ),
                   child: Text(
-                    '★ NEW RECORD',
+                    '★ ${context.l10n.deathNewRecord}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -373,7 +376,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
             const SizedBox(height: 18),
 
             // Stat card: THIS RUN / BEST / COINS
-            _buildStatCard(score, leftColor, rightColor),
+            _buildStatCard(context, score, leftColor, rightColor),
 
             // Unlock banners (skins + achievements) — bounded + scrollable so a
             // record run with many simultaneous unlocks can't overflow into the
@@ -391,7 +394,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                           children: [
                             const SizedBox(height: 10),
                             for (final skinId in newSkins)
-                              _buildSkinUnlockBanner(skinId),
+                              _buildSkinUnlockBanner(context, skinId),
                           ],
                         );
                       },
@@ -404,7 +407,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                           children: [
                             const SizedBox(height: 10),
                             for (final id in newAchievements)
-                              _buildAchievementUnlockBanner(id),
+                              _buildAchievementUnlockBanner(context, id),
                           ],
                         );
                       },
@@ -421,7 +424,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
 
   /// Stat card: one card with three columns separated by thin dividers.
   /// THIS RUN = final score, BEST = best (live), COINS = coins earned this run.
-  Widget _buildStatCard(int score, Color leftColor, Color rightColor) {
+  Widget _buildStatCard(BuildContext context, int score, Color leftColor, Color rightColor) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 36),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
@@ -437,7 +440,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           children: [
             Expanded(
               child: _buildStatColumn(
-                label: 'THIS RUN',
+                label: context.l10n.deathThisRun,
                 value: '$score',
                 valueColor: Colors.white.withValues(alpha: 0.9),
               ),
@@ -447,7 +450,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               child: ValueListenableBuilder<int>(
                 valueListenable: widget.game.bestNotifier,
                 builder: (context, best, child) => _buildStatColumn(
-                  label: 'BEST',
+                  label: context.l10n.deathBest,
                   value: '$best',
                   valueColor: MR.gold,
                 ),
@@ -456,7 +459,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
             _statDivider(),
             Expanded(
               child: _buildStatColumn(
-                label: 'COINS',
+                label: context.l10n.deathCoins,
                 value: '+${widget.game.coinsService.sessionEarned}',
                 valueColor: MR.gold,
               ),
@@ -508,7 +511,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildSkinUnlockBanner(SkinId skinId) {
+  Widget _buildSkinUnlockBanner(BuildContext context, SkinId skinId) {
     final skin = PlayerSkin.getById(skinId);
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -541,7 +544,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           ),
           const SizedBox(width: 10),
           Text(
-            'NEW SKIN: ${skin.name}',
+            context.l10n.deathNewSkin(skinNameLocalized(context, skin.id)),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -558,15 +561,18 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
         .shimmer(duration: 1500.ms, delay: 1800.ms, color: skin.leftColor.withValues(alpha: 0.3));
   }
 
-  String _achievementLabel(String id) {
+  String _achievementLabel(BuildContext context, String id) {
     if (id.startsWith('achievement_distance_')) return '${id.replaceFirst('achievement_distance_', '')}m';
-    if (id.startsWith('achievement_biome_')) return id.replaceFirst('achievement_biome_', '').toUpperCase();
-    if (id.startsWith('achievement_games_')) return '${id.replaceFirst('achievement_games_', '')} GAMES';
-    if (id == 'achievement_first_game') return '1ST RUN';
+    if (id.startsWith('achievement_biome_')) {
+      final raw = id.replaceFirst('achievement_biome_', '').toUpperCase();
+      return biomeNameLocalized(context, raw).toUpperCase();
+    }
+    if (id.startsWith('achievement_games_')) return context.l10n.deathAchievementGames(id.replaceFirst('achievement_games_', ''));
+    if (id == 'achievement_first_game') return context.l10n.deathAchievementFirstRun;
     return id.toUpperCase();
   }
 
-  Widget _buildAchievementUnlockBanner(String id) {
+  Widget _buildAchievementUnlockBanner(BuildContext context, String id) {
     const color = MR.gold;
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -582,7 +588,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           Icon(Icons.emoji_events_rounded, color: color.withValues(alpha: 0.8), size: 14),
           const SizedBox(width: 10),
           Text(
-            _achievementLabel(id),
+            _achievementLabel(context, id),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -599,7 +605,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
         .shimmer(duration: 1500.ms, delay: 1900.ms, color: color.withValues(alpha: 0.3));
   }
 
-  Widget _buildActions() {
+  Widget _buildActions(BuildContext context) {
     // Primary action uses the app accent (violet) — identical to the menu PLAY
     // button — so the screen stays color-harmonious.
     const accent = MR.accent;
@@ -637,9 +643,9 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                   size: 22,
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'RETRY',
-                  style: TextStyle(
+                Text(
+                  context.l10n.deathRetry,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 6,
@@ -662,7 +668,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           children: [
             _buildActionButton(
               onTap: _menu,
-              label: 'MENU',
+              label: context.l10n.deathMenu,
               icon: null,
               color: Colors.white.withValues(alpha: 0.55),
               borderColor: Colors.white.withValues(alpha: 0.12),
@@ -674,7 +680,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                 onTap: () {
                   if (_canInteract) widget.game.leaderboardService.showLeaderboard();
                 },
-                label: 'RANKS',
+                label: context.l10n.deathRanks,
                 icon: Icons.leaderboard_rounded,
                 color: Colors.white.withValues(alpha: 0.55),
                 borderColor: Colors.white.withValues(alpha: 0.12),
@@ -689,19 +695,20 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                 try {
                   final score = widget.game.scoreNotifier.value;
                   final biomeIdx = BiomeManager.getBiomeIndex(score);
-                  final biomeName = BiomeManager.biomes[biomeIdx].name;
+                  final biomeName =
+                      biomeNameLocalized(ctx, BiomeManager.biomes[biomeIdx].name);
                   final box = ctx.findRenderObject() as RenderBox?;
                   final origin = box != null
                       ? box.localToGlobal(Offset.zero) & box.size
                       : null;
                   Share.share(
-                    'I ran ${score}m through $biomeName in Mirror Runners!',
+                    ctx.l10n.deathShareText(score, biomeName),
                     sharePositionOrigin: origin,
                   );
                   unawaited(AnalyticsService.logShareTapped(score: score));
                 } catch (_) {}
               },
-              label: 'SHARE',
+              label: ctx.l10n.deathShare,
               icon: Icons.share_rounded,
               color: Colors.white.withValues(alpha: 0.55),
               borderColor: Colors.white.withValues(alpha: 0.12),
@@ -738,7 +745,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'GO PRO',
+                    context.l10n.deathGoPro,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -797,7 +804,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
         .fadeIn(duration: 400.ms, delay: Duration(milliseconds: delay));
   }
 
-  Widget _buildContinuePanel() {
+  Widget _buildContinuePanel(BuildContext context) {
     final game = widget.game;
     final isPro = game.adService.isPro;
     final adReady = game.adService.isRewardedAdReady;
@@ -839,7 +846,7 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
               const Icon(Icons.auto_awesome, size: 14, color: gold),
               const SizedBox(width: 8),
               Text(
-                'CONTINUE?',
+                context.l10n.deathContinueQ,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -888,15 +895,15 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           // Buttons — simplified: Pro-free revive OR watch ad, not both
           if (isPro && canProFreeRevive) ...[
             _buildReviveButton(
-              label: 'FREE REVIVE',
-              subtitle: '$proRemaining / 3 TODAY',
+              label: context.l10n.deathFreeRevive,
+              subtitle: context.l10n.deathProRevivesToday(proRemaining),
               icon: Icons.workspace_premium_rounded,
               color: gold,
               onTap: _reviveFreeForPro,
             ),
             const SizedBox(height: 4),
             Text(
-              'RESETS AT MIDNIGHT',
+              context.l10n.deathResetsAtMidnight,
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w500,
@@ -906,8 +913,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
             ),
           ] else if (adReady)
             _buildReviveButton(
-              label: 'WATCH AD',
-              subtitle: 'CONTINUE',
+              label: context.l10n.deathWatchAd,
+              subtitle: context.l10n.deathContinue,
               icon: Icons.play_circle_outline,
               color: cyan,
               onTap: _reviveViaAd,
@@ -917,8 +924,8 @@ class _DeathScreenState extends State<DeathScreen> with TickerProviderStateMixin
           if (widget.game.canAffordCoinRevive) ...[
             const SizedBox(height: 8),
             _buildReviveButton(
-              label: 'CONTINUE',
-              subtitle: '${MirrorRunGame.reviveCoinCost} COINS',
+              label: context.l10n.deathContinue,
+              subtitle: context.l10n.deathCoinCost(MirrorRunGame.reviveCoinCost),
               icon: Icons.monetization_on_outlined,
               color: gold,
               onTap: _reviveWithCoins,

@@ -5,6 +5,7 @@ import '../game/components/power_up.dart';
 import '../game/game_state.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import '../l10n/l10n_ext.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -303,7 +304,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
           child: IgnorePointer(
             child: Center(
               child: Text(
-                'NEW BEST!',
+                context.l10n.hudNewBest,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w900,
@@ -485,7 +486,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                       ),
                     ),
                     child: Text(
-                      'BEST $best',
+                      context.l10n.hudBest(best),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -578,7 +579,7 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                               ),
                             ),
                             child: Text(
-                              'RESUME',
+                              context.l10n.hudResume,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -606,9 +607,9 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
                                 width: 0.5,
                               ),
                             ),
-                            child: const Text(
-                              'QUIT',
-                              style: TextStyle(
+                            child: Text(
+                              context.l10n.hudQuit,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: MR.danger,

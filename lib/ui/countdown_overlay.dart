@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../game/game_state.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/l10n_ext.dart';
 
 class CountdownOverlay extends StatefulWidget {
   final MirrorRunGame game;
@@ -132,7 +133,7 @@ class _CountdownOverlayState extends State<CountdownOverlay>
               curve: Curves.easeOut,
               child: Center(
                 child: Text(
-                  'DRAG TO MOVE',
+                  context.l10n.cdDragToMove,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import '../models/player_skin.dart';
 import 'player_scene_painter.dart';
 import 'tap_scale.dart';
@@ -67,7 +69,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     ),
                   ),
                   Text(
-                    'SKINS',
+                    context.l10n.skinTitle,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -89,7 +91,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Row 1: SKIN CREATOR
-                    _buildSectionHeader('SKIN CREATOR'),
+                    _buildSectionHeader(context.l10n.skinSectionCreator),
                     SizedBox(
                       height: 200,
                       child: _buildCreatorRow(),
@@ -98,7 +100,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     const SizedBox(height: 20),
 
                     // Row 2: COLLECTION
-                    _buildSectionHeader('COLLECTION'),
+                    _buildSectionHeader(context.l10n.skinSectionCollection),
                     SizedBox(
                       height: 200,
                       child: _buildCollectionRow(),
@@ -212,7 +214,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'CREATE',
+                      context.l10n.skinCreate,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -222,7 +224,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'NEW SKIN',
+                      context.l10n.skinCreateNewSkin,
                       style: TextStyle(
                         fontSize: 8,
                         color: _accent.withValues(alpha: 0.5),
@@ -286,7 +288,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'GO PRO',
+                          context.l10n.skinGoPro,
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
@@ -370,7 +372,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
               const SizedBox(height: 4),
               if (selected)
                 Text(
-                  'EQUIPPED',
+                  context.l10n.skinEquipped,
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.w700,
@@ -380,7 +382,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                 )
               else
                 Text(
-                  'TAP TO EQUIP',
+                  context.l10n.skinTapToEquip,
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.white.withValues(alpha: 0.5),
@@ -395,7 +397,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Text(
-                    'EDIT',
+                    context.l10n.skinEdit,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -497,7 +499,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     ),
                     const Spacer(),
                     Text(
-                      skin.name,
+                      skinNameLocalized(context, skin.id),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -508,7 +510,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                     const SizedBox(height: 4),
                     if (selected)
                       Text(
-                        'EQUIPPED',
+                        context.l10n.skinEquipped,
                         style: TextStyle(
                           fontSize: 7,
                           fontWeight: FontWeight.w700,
@@ -518,7 +520,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                       )
                     else
                       Text(
-                        'TAP TO EQUIP',
+                        context.l10n.skinTapToEquip,
                         style: TextStyle(
                           fontSize: 9,
                           color: Colors.white.withValues(alpha: 0.5),
@@ -557,7 +559,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
         ),
         const SizedBox(height: 12),
         Text(
-          skin.name,
+          skinNameLocalized(context, skin.id),
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w800,
@@ -616,7 +618,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'BUY',
+                        context.l10n.skinBuy,
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -686,7 +688,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      'UNLOCK ${skin.name}',
+                      context.l10n.skinUnlockNamed(skinNameLocalized(context, skin.id)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -734,7 +736,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Balance: $coins → ${affordable ? coins - price : coins}',
+                    context.l10n.skinBalance(coins, affordable ? coins - price : coins),
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.white.withValues(alpha: 0.45),
@@ -755,7 +757,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                             ),
                             child: Center(
                               child: Text(
-                                'CANCEL',
+                                context.l10n.skinCancel,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
@@ -794,7 +796,7 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
                             ),
                             child: Center(
                               child: Text(
-                                affordable ? 'BUY' : 'NOT ENOUGH',
+                                affordable ? context.l10n.skinBuy : context.l10n.skinNotEnough,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
@@ -822,9 +824,9 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
       if (widget.game.coinsService.totalCoins < price) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Not enough coins'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(context.l10n.skinNotEnoughCoins),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -841,9 +843,9 @@ class _SkinSelectorState extends State<SkinSelector> with SingleTickerProviderSt
         if (mounted) setState(() {});
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Purchase failed'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(context.l10n.skinPurchaseFailed),
+            duration: const Duration(seconds: 2),
           ),
         );
       }

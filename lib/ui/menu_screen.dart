@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import '../services/daily_challenge_service.dart';
 import 'player_scene_painter.dart';
 import 'tap_scale.dart';
@@ -179,7 +181,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                       const Spacer(flex: 3),
                       _buildTitle(accentColor),
                       const Spacer(flex: 3),
-                      _buildPlayButton(accentColor),
+                      _buildPlayButton(context, accentColor),
                       const SizedBox(height: 28),
                       if (!widget.game.screenshotMode) _buildBiomeRoadmap(),
                       const Spacer(flex: 4),
@@ -379,7 +381,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        skin.name,
+                        playerSkinNameLocalized(context, skin),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
@@ -389,7 +391,9 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        isPro ? 'CHANGE SKIN' : 'CREATE YOUR OWN',
+                        isPro
+                            ? context.l10n.menuChangeSkin
+                            : context.l10n.menuCreateYourOwn,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -432,7 +436,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
   }
 
   /// Prominent primary action. Tap or swipe up to start.
-  Widget _buildPlayButton(Color accent) {
+  Widget _buildPlayButton(BuildContext context, Color accent) {
     return TapScale(
       onTap: () => widget.game.startGame(),
       child: GestureDetector(
@@ -461,9 +465,9 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
               ),
             ],
           ),
-          child: const Text(
-            'PLAY',
-            style: TextStyle(
+          child: Text(
+            context.l10n.menuPlay,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w900,
               letterSpacing: 8,
@@ -507,7 +511,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 8),
         Text(
-          biomes[reached].name,
+          biomeNameLocalized(context, biomes[reached].name),
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w600,
@@ -559,7 +563,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                 Row(
                   children: [
                     Text(
-                      'DAILY CHALLENGE',
+                      context.l10n.menuDailyChallenge,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -588,7 +592,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                   children: [
                     Expanded(
                       child: Text(
-                        daily.label,
+                        dailyChallengeLabelLocalized(context, daily),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -646,7 +650,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                           size: 14, color: accent.withValues(alpha: 0.9)),
                       const SizedBox(width: 6),
                       Text(
-                        'PLAY DAILY SEED RUN',
+                        context.l10n.menuPlayDailySeedRun,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,

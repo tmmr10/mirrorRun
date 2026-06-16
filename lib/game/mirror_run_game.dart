@@ -187,7 +187,14 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   bool get isInvincible => _invincibilityTimer > 0;
   double get invincibilityTimer => _invincibilityTimer;
 
-  MirrorRunGame() : super();
+  /// Optionally inject an already-initialized [SettingsService] (so the host
+  /// MaterialApp can read the language override before the game finishes
+  /// loading). When null, the game creates and initializes its own.
+  final SettingsService? _injectedSettings;
+
+  MirrorRunGame({SettingsService? settingsService})
+      : _injectedSettings = settingsService,
+        super();
 
   @override
   void onGameResize(Vector2 size) {
@@ -205,8 +212,12 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     await highscoreService.init();
     debugPrint('>>> highscore OK');
 
-    settingsService = SettingsService();
-    await settingsService.init();
+    if (_injectedSettings != null) {
+      settingsService = _injectedSettings;
+    } else {
+      settingsService = SettingsService();
+      await settingsService.init();
+    }
     debugPrint('>>> settings OK');
 
     coinsService = CoinsService();

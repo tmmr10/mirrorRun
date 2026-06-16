@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/l10n_ext.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -45,9 +46,9 @@ class _ProScreenState extends State<ProScreen> {
       setState(() => _isPurchasing = false);
       if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Purchase failed. Please try again.'),
-            duration: Duration(seconds: 3),
+          SnackBar(
+            content: Text(context.l10n.proPurchaseFailed),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -63,8 +64,8 @@ class _ProScreenState extends State<ProScreen> {
         SnackBar(
           content: Text(
             widget.game.adService.isPro
-                ? 'Purchases restored.'
-                : 'Restore complete.',
+                ? context.l10n.proPurchasesRestored
+                : context.l10n.proRestoreComplete,
           ),
           duration: const Duration(seconds: 3),
         ),
@@ -144,7 +145,7 @@ class _ProScreenState extends State<ProScreen> {
 
             // Title
             Text(
-              'MIRROR RUNNERS PRO',
+              context.l10n.proTitle,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -159,7 +160,7 @@ class _ProScreenState extends State<ProScreen> {
             const SizedBox(height: 8),
 
             Text(
-              'ONE TIME PURCHASE — FOREVER',
+              context.l10n.proSubtitle,
               style: TextStyle(
                 fontSize: 10,
                 color: Colors.white.withValues(alpha: 0.4),
@@ -172,23 +173,23 @@ class _ProScreenState extends State<ProScreen> {
             // Benefits — Skin Creator is the hero (highlighted).
             _buildBenefit(
               icon: Icons.brush_rounded,
-              label: 'SKIN CREATOR',
-              description: 'Design your own skins + unlock every skin',
+              label: context.l10n.proBenefitSkinCreatorLabel,
+              description: context.l10n.proBenefitSkinCreatorDesc,
               delay: 600,
               highlight: true,
             ),
             const SizedBox(height: 14),
             _buildBenefit(
               icon: Icons.block_rounded,
-              label: 'NO ADS',
-              description: 'Remove all interstitial ads',
+              label: context.l10n.proBenefitNoAdsLabel,
+              description: context.l10n.proBenefitNoAdsDesc,
               delay: 700,
             ),
             const SizedBox(height: 14),
             _buildBenefit(
               icon: Icons.favorite_rounded,
-              label: 'FREE REVIVES',
-              description: 'Free daily continues — no ads, no coins',
+              label: context.l10n.proBenefitFreeRevivesLabel,
+              description: context.l10n.proBenefitFreeRevivesDesc,
               delay: 800,
             ),
 
@@ -210,7 +211,8 @@ class _ProScreenState extends State<ProScreen> {
                   color: _gold.withValues(alpha: 0.06),
                 ),
                 child: Text(
-                  '${widget.game.adService.proPrice ?? '\$2.99'} · ONE TIME',
+                  context.l10n.proPriceLine(
+                      widget.game.adService.proPrice ?? '\$2.99'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -260,9 +262,9 @@ class _ProScreenState extends State<ProScreen> {
                             color: Colors.white.withValues(alpha: 0.8),
                           ),
                         )
-                      : const Text(
-                          'GO PRO',
-                          style: TextStyle(
+                      : Text(
+                          context.l10n.proGoPro,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -289,7 +291,7 @@ class _ProScreenState extends State<ProScreen> {
                         ),
                       )
                     : Text(
-                        'RESTORE PURCHASES',
+                        context.l10n.proRestorePurchases,
                         style: TextStyle(
                           fontSize: 10,
                           color: Colors.white.withValues(alpha: 0.55),
@@ -370,9 +372,9 @@ class _ProScreenState extends State<ProScreen> {
                             color: _gold.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
-                            '★ BEST',
-                            style: TextStyle(
+                          child: Text(
+                            '★ ${context.l10n.proBest}',
+                            style: const TextStyle(
                               fontSize: 8,
                               fontWeight: FontWeight.w800,
                               color: _gold,
@@ -411,7 +413,7 @@ class _ProScreenState extends State<ProScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'PRO ACTIVE',
+          context.l10n.proActive,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,

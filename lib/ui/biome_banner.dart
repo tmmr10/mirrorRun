@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 
 class BiomeBanner extends StatelessWidget {
   final MirrorRunGame game;
@@ -36,7 +38,7 @@ class BiomeBanner extends StatelessWidget {
               children: [
                 // Thin label above
                 Text(
-                  'ENTERING',
+                  context.l10n.biomeBannerEntering,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w500,
@@ -47,7 +49,7 @@ class BiomeBanner extends StatelessWidget {
                 const SizedBox(height: 8),
                 // Biome name
                 Text(
-                  biome,
+                  biomeNameLocalized(context, biome),
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,

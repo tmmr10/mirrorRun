@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -16,8 +18,9 @@ class StatsScreen extends StatelessWidget {
     final stats = game.statsService;
     final best = game.highscoreService.getBest();
     final furthestBiomeName = stats.furthestBiomeIndex < BiomeManager.biomes.length
-        ? BiomeManager.biomes[stats.furthestBiomeIndex].name
-        : 'UNKNOWN';
+        ? biomeNameLocalized(
+            context, BiomeManager.biomes[stats.furthestBiomeIndex].name)
+        : context.l10n.statsUnknownBiome;
 
     return Container(
       decoration: const BoxDecoration(gradient: MR.bgGradient),
@@ -44,7 +47,7 @@ class StatsScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'STATISTICS',
+                    context.l10n.statsTitle,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -55,11 +58,11 @@ class StatsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 40),
-              _statRow('TOTAL DISTANCE', '${stats.totalDistance}m'),
-              _statRow('GAMES PLAYED', '${stats.totalGamesPlayed}'),
-              _statRow('PLAYTIME', _formatPlaytime(stats.totalPlaytimeSeconds)),
-              _statRow('FURTHEST BIOME', furthestBiomeName),
-              _statRow('BEST SCORE', '${best}m'),
+              _statRow(context.l10n.statsTotalDistance, context.l10n.statsMeters(stats.totalDistance)),
+              _statRow(context.l10n.statsGamesPlayed, '${stats.totalGamesPlayed}'),
+              _statRow(context.l10n.statsPlaytime, _formatPlaytime(context, stats.totalPlaytimeSeconds)),
+              _statRow(context.l10n.statsFurthestBiome, furthestBiomeName),
+              _statRow(context.l10n.statsBestScore, context.l10n.statsMeters(best)),
               const SizedBox(height: 20),
               Builder(
                 builder: (ctx) => TapScale(
@@ -69,10 +72,14 @@ class StatsScreen extends StatelessWidget {
                     final origin = box != null
                         ? box.localToGlobal(Offset.zero) & box.size
                         : null;
-                    final playtime = _formatPlaytime(stats.totalPlaytimeSeconds);
+                    final playtime = _formatPlaytime(ctx, stats.totalPlaytimeSeconds);
                     Share.share(
-                      'Mirror Runners Stats:\n'
-                      '${best}m best · ${stats.totalGamesPlayed} games · $playtime played · $furthestBiomeName reached',
+                      ctx.l10n.statsShareText(
+                        best,
+                        stats.totalGamesPlayed,
+                        playtime,
+                        furthestBiomeName,
+                      ),
                       sharePositionOrigin: origin,
                     );
                   },
@@ -91,7 +98,7 @@ class StatsScreen extends StatelessWidget {
                         Icon(Icons.share_rounded, size: 13, color: _accent.withValues(alpha: 0.5)),
                         const SizedBox(width: 6),
                         Text(
-                          'SHARE',
+                          ctx.l10n.statsShare,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
@@ -141,11 +148,11 @@ class StatsScreen extends StatelessWidget {
     );
   }
 
-  String _formatPlaytime(double seconds) {
+  String _formatPlaytime(BuildContext context, double seconds) {
     final totalMinutes = (seconds / 60).floor();
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
-    if (hours > 0) return '${hours}h ${minutes}m';
-    return '${minutes}m';
+    if (hours > 0) return context.l10n.statsPlaytimeHoursMinutes(hours, minutes);
+    return context.l10n.statsPlaytimeMinutes(minutes);
   }
 }

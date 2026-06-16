@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/l10n_ext.dart';
 import '../models/player_skin.dart';
 import '../services/skin_service.dart';
 import 'player_scene_painter.dart';
@@ -112,9 +113,9 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
   Color get _leftColor => HSLColor.fromAHSL(1.0, _leftHue, _leftSat, 0.55).toColor();
   Color get _rightColor => HSLColor.fromAHSL(1.0, _rightHue, _rightSat, 0.55).toColor();
 
-  String _defaultName() {
+  String _defaultName(BuildContext context) {
     final count = _skinService.customSkins.length;
-    return 'CUSTOM ${count + 1}';
+    return context.l10n.builderDefaultName(count + 1);
   }
 
   @override
@@ -126,15 +127,15 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
       child: SafeArea(
         child: Column(
           children: [
-            _buildTopBackButton(),
-            Expanded(child: unlocked ? _buildEditor() : _buildLockedState()),
+            _buildTopBackButton(context),
+            Expanded(child: unlocked ? _buildEditor(context) : _buildLockedState(context)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBackButton() {
+  Widget _buildTopBackButton(BuildContext context) {
     final unlocked = _skinService.customSkinUnlocked;
     return Padding(
       padding: const EdgeInsets.only(left: 24, right: 24, top: 16),
@@ -167,7 +168,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                     ),
                   ),
                 ),
-              if (unlocked) _buildTopSaveButton(),
+              if (unlocked) _buildTopSaveButton(context),
             ],
           ),
         ],
@@ -175,7 +176,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildTopSaveButton() {
+  Widget _buildTopSaveButton(BuildContext context) {
     return TapScale(
       minSize: 44,
       onTap: _onSave,
@@ -187,7 +188,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           border: Border.all(color: _accent.withValues(alpha: 0.4), width: 0.5),
         ),
         child: Text(
-          _isEditing ? 'UPDATE' : 'SAVE',
+          _isEditing ? context.l10n.builderUpdate : context.l10n.builderSave,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -199,7 +200,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildLockedState() {
+  Widget _buildLockedState(BuildContext context) {
     const gold = MR.gold;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -211,7 +212,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
         ),
         const SizedBox(height: 24),
         Text(
-          'SKIN CREATOR',
+          context.l10n.builderTitle,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -223,7 +224,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 48),
           child: Text(
-            'Create custom skins with your own colors and decorations.',
+            context.l10n.builderLockedDescription,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
@@ -259,7 +260,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'GO PRO — INCLUDED',
+                  context.l10n.builderGoProIncluded,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -276,7 +277,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildEditor() {
+  Widget _buildEditor(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -284,7 +285,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
         children: [
           const SizedBox(height: 16),
           Text(
-            _isEditing ? 'EDIT SKIN' : 'SKIN CREATOR',
+            _isEditing ? context.l10n.builderEditTitle : context.l10n.builderTitle,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -322,7 +323,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           const SizedBox(height: 24),
 
           // Left color
-          _buildLabel('LEFT COLOR'),
+          _buildLabel(context.l10n.builderLeftColor),
           const SizedBox(height: 8),
           _buildHueSlider(_leftHue, (v) => setState(() => _leftHue = v), _leftColor),
           const SizedBox(height: 6),
@@ -330,7 +331,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           const SizedBox(height: 20),
 
           // Right color
-          _buildLabel('RIGHT COLOR'),
+          _buildLabel(context.l10n.builderRightColor),
           const SizedBox(height: 8),
           _buildHueSlider(_rightHue, (v) => setState(() => _rightHue = v), _rightColor),
           const SizedBox(height: 6),
@@ -338,21 +339,21 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           const SizedBox(height: 20),
 
           // Head decoration
-          _buildLabel('HEAD'),
+          _buildLabel(context.l10n.builderHead),
           const SizedBox(height: 10),
           _buildHeadPicker(),
           const SizedBox(height: 16),
 
           // Face decoration
-          _buildLabel('FACE'),
+          _buildLabel(context.l10n.builderFace),
           const SizedBox(height: 10),
           _buildFacePicker(),
           const SizedBox(height: 20),
 
           // Name
-          _buildLabel('NAME'),
+          _buildLabel(context.l10n.builderName),
           const SizedBox(height: 8),
-          _buildNameField(),
+          _buildNameField(context),
           const SizedBox(height: 32),
         ],
       ),
@@ -542,7 +543,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildNameField() {
+  Widget _buildNameField(BuildContext context) {
     return TextField(
       controller: _nameController,
       maxLength: 12,
@@ -553,7 +554,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
       ),
       decoration: InputDecoration(
         counterText: '',
-        hintText: _defaultName(),
+        hintText: _defaultName(context),
         hintStyle: TextStyle(
           color: Colors.white.withValues(alpha: 0.15),
           letterSpacing: 2,
@@ -614,7 +615,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'DELETE SKIN',
+                    context.l10n.builderDeleteTitle,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -647,7 +648,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                             ),
                             child: Center(
                               child: Text(
-                                'CANCEL',
+                                context.l10n.builderCancel,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -676,7 +677,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                             ),
                             child: Center(
                               child: Text(
-                                'DELETE',
+                                context.l10n.builderDelete,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -701,7 +702,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
 
   void _onSave() {
     final name = _nameController.text.trim().isEmpty
-        ? _defaultName()
+        ? _defaultName(context)
         : _nameController.text.trim().toUpperCase();
 
     final skin = CustomSkinData(
@@ -721,7 +722,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
           SnackBar(
             backgroundColor: const Color(0xFF1a1a2e),
             content: Text(
-              'Maximum ${SkinService.maxCustomSkins} custom skins reached.',
+              context.l10n.builderMaxSkinsReached(SkinService.maxCustomSkins),
               style: const TextStyle(color: Colors.white70),
             ),
           ),
@@ -781,7 +782,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'DISCARD CHANGES?',
+                    context.l10n.builderDiscardTitle,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -791,7 +792,7 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Your unsaved changes will be lost.',
+                    context.l10n.builderDiscardMessage,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,
@@ -818,11 +819,11 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                                 width: 0.5,
                               ),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'CANCEL',
+                                context.l10n.builderCancel,
                                 maxLines: 1,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
@@ -851,11 +852,11 @@ class _SkinBuilderState extends State<SkinBuilder> with SingleTickerProviderStat
                                 width: 0.5,
                               ),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'DISCARD',
+                                context.l10n.builderDiscard,
                                 maxLines: 1,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: MR.alert,

@@ -4,6 +4,9 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
+import 'services/settings_service.dart';
 import 'game/mirror_run_game.dart';
 import 'utils/screenshot_tour.dart';
 import 'utils/icon_capture.dart';
@@ -45,7 +48,12 @@ Future<void> main() async {
     }
   }
 
-  final game = MirrorRunGame();
+  // Init settings early so the MaterialApp knows the language override before
+  // the game finishes loading; the same instance is injected into the game.
+  final settingsService = SettingsService();
+  await settingsService.init();
+
+  final game = MirrorRunGame(settingsService: settingsService);
   _game = game;
 
   if (kDebugMode) {
@@ -62,8 +70,18 @@ Future<void> main() async {
   }
 
   runApp(
-    MaterialApp(
+    ValueListenableBuilder<int>(
+      valueListenable: settingsService.localeRevision,
+      builder: (context, _, _) => MaterialApp(
       debugShowCheckedModeBanner: false,
+      locale: settingsService.locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
         // Clamp system text scaling so large accessibility font sizes can't
         // overflow the caps/letter-spaced game UI.
@@ -125,6 +143,7 @@ Future<void> main() async {
           ),
         ),
       ),
+    ),
     ),
   );
 }

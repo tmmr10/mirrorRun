@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -73,7 +75,7 @@ class AchievementsScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'ACHIEVEMENTS',
+                      context.l10n.achTitle,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -192,7 +194,8 @@ class _AchievementTile extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          achievement.label,
+          achievementLabelLocalized(
+              context, achievement.category, achievement.label),
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w600,

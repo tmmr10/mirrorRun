@@ -1,0 +1,337 @@
+{
+  "@@locale": "en",
+  "languageTitle": "LANGUAGE",
+  "languageSystem": "System",
+  "languageEnglish": "English",
+  "languageGerman": "Deutsch",
+  "menuPlay": "PLAY",
+  "menuChangeSkin": "CHANGE SKIN",
+  "menuCreateYourOwn": "CREATE YOUR OWN",
+  "menuDailyChallenge": "DAILY CHALLENGE",
+  "menuPlayDailySeedRun": "PLAY DAILY SEED RUN",
+  "settingsTitle": "SETTINGS",
+  "settingsSound": "SOUND",
+  "settingsVibration": "VIBRATION",
+  "settingsBiomes": "BIOMES",
+  "settingsLeaderboard": "LEADERBOARD",
+  "settingsStatistics": "STATISTICS",
+  "settingsRestorePurchases": "RESTORE PURCHASES",
+  "settingsLicenses": "LICENSES",
+  "settingsPurchasesRestored": "Purchases restored.",
+  "settingsRestoreComplete": "Restore complete.",
+  "howtoTitle": "HOW TO PLAY",
+  "howtoPowerUps": "POWER-UPS",
+  "howtoMirrorTitle": "MIRROR MOVEMENT",
+  "howtoMirrorDesc": "Drag left or right. Both runners move at the same time — mirrored. Dodge obstacles on both sides.",
+  "howtoPhantomTitle": "PHANTOM",
+  "howtoPhantomDesc": "Obstacles turn invisible. Memorize their positions before they fade!",
+  "howtoSwapTitle": "SWAP",
+  "howtoSwapDesc": "Controls are reversed. Left becomes right, right becomes left.",
+  "howtoDesyncTitle": "DESYNC",
+  "howtoDesyncDesc": "The two sides scroll at different speeds.",
+  "howtoBlackoutTitle": "BLACKOUT",
+  "howtoBlackoutDesc": "One side goes dark — run it from memory.",
+  "howtoShieldTitle": "SHIELD",
+  "howtoShieldDesc": "Absorbs one hit. The Shield perk starts you with one and recharges it over distance.",
+  "howtoSyncLockTitle": "SYNC-LOCK",
+  "howtoSyncLockDesc": "Controls briefly un-mirror — both runners move the same direction.",
+  "howtoSlowMoTitle": "SLOW-MO",
+  "howtoSlowMoDesc": "Slows the world down for a moment.",
+  "howtoForesightTitle": "FORESIGHT",
+  "howtoForesightDesc": "Reveals obstacles hidden during PHANTOM.",
+  "biomeBannerEntering": "ENTERING",
+  "cdDragToMove": "DRAG TO MOVE",
+  "hudNewBest": "NEW BEST!",
+  "hudBest": "BEST {score}",
+  "@hudBest": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "hudResume": "RESUME",
+  "hudQuit": "QUIT",
+  "deathMotivKeepGoing": "KEEP GOING",
+  "deathMotivNotBad": "NOT BAD",
+  "deathMotivNiceRun": "NICE RUN",
+  "deathMotivImpressive": "IMPRESSIVE",
+  "deathMotivIncredible": "INCREDIBLE",
+  "deathMotivUnstoppable": "UNSTOPPABLE",
+  "deathMotivLegendary": "LEGENDARY",
+  "deathMeter": "METER",
+  "deathNewRecord": "NEW RECORD",
+  "deathThisRun": "THIS RUN",
+  "deathBest": "BEST",
+  "deathCoins": "COINS",
+  "deathNewSkin": "NEW SKIN: {name}",
+  "@deathNewSkin": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deathAchievementGames": "{count} GAMES",
+  "@deathAchievementGames": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "deathAchievementFirstRun": "1ST RUN",
+  "deathRetry": "RETRY",
+  "deathMenu": "MENU",
+  "deathRanks": "RANKS",
+  "deathShare": "SHARE",
+  "deathShareText": "I ran {distance}m through {biome} in Mirror Runners!",
+  "@deathShareText": {
+    "placeholders": {
+      "distance": {
+        "type": "int"
+      },
+      "biome": {
+        "type": "String"
+      }
+    }
+  },
+  "deathGoPro": "GO PRO",
+  "deathContinueQ": "CONTINUE?",
+  "deathFreeRevive": "FREE REVIVE",
+  "deathProRevivesToday": "{remaining} / 3 TODAY",
+  "@deathProRevivesToday": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "deathResetsAtMidnight": "RESETS AT MIDNIGHT",
+  "deathWatchAd": "WATCH AD",
+  "deathContinue": "CONTINUE",
+  "deathCoinCost": "{cost} COINS",
+  "@deathCoinCost": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
+  },
+  "skinTitle": "SKINS",
+  "skinSectionCreator": "SKIN CREATOR",
+  "skinSectionCollection": "COLLECTION",
+  "skinCreate": "CREATE",
+  "skinCreateNewSkin": "NEW SKIN",
+  "skinGoPro": "GO PRO",
+  "skinEquipped": "EQUIPPED",
+  "skinTapToEquip": "TAP TO EQUIP",
+  "skinEdit": "EDIT",
+  "skinBuy": "BUY",
+  "skinNotEnough": "NOT ENOUGH",
+  "skinCancel": "CANCEL",
+  "skinUnlockNamed": "UNLOCK {name}",
+  "@skinUnlockNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "skinBalance": "Balance: {current} → {next}",
+  "@skinBalance": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "skinNotEnoughCoins": "Not enough coins",
+  "skinPurchaseFailed": "Purchase failed",
+  "builderTitle": "SKIN CREATOR",
+  "builderEditTitle": "EDIT SKIN",
+  "builderUpdate": "UPDATE",
+  "builderSave": "SAVE",
+  "builderLockedDescription": "Create custom skins with your own colors and decorations.",
+  "builderGoProIncluded": "GO PRO — INCLUDED",
+  "builderLeftColor": "LEFT COLOR",
+  "builderRightColor": "RIGHT COLOR",
+  "builderHead": "HEAD",
+  "builderFace": "FACE",
+  "builderName": "NAME",
+  "builderDefaultName": "CUSTOM {number}",
+  "@builderDefaultName": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "builderDeleteTitle": "DELETE SKIN",
+  "builderDelete": "DELETE",
+  "builderCancel": "CANCEL",
+  "builderDiscardTitle": "DISCARD CHANGES?",
+  "builderDiscardMessage": "Your unsaved changes will be lost.",
+  "builderDiscard": "DISCARD",
+  "builderMaxSkinsReached": "Maximum {count} custom skins reached.",
+  "@builderMaxSkinsReached": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "proPurchaseFailed": "Purchase failed. Please try again.",
+  "proPurchasesRestored": "Purchases restored.",
+  "proRestoreComplete": "Restore complete.",
+  "proTitle": "MIRROR RUNNERS PRO",
+  "proSubtitle": "ONE TIME PURCHASE — FOREVER",
+  "proBenefitSkinCreatorLabel": "SKIN CREATOR",
+  "proBenefitSkinCreatorDesc": "Design your own skins + unlock every skin",
+  "proBenefitNoAdsLabel": "NO ADS",
+  "proBenefitNoAdsDesc": "Remove all interstitial ads",
+  "proBenefitFreeRevivesLabel": "FREE REVIVES",
+  "proBenefitFreeRevivesDesc": "Free daily continues — no ads, no coins",
+  "proPriceLine": "{price} · ONE TIME",
+  "@proPriceLine": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "proGoPro": "GO PRO",
+  "proRestorePurchases": "RESTORE PURCHASES",
+  "proBest": "BEST",
+  "proActive": "PRO ACTIVE",
+  "perkTitle": "PERKS",
+  "perkMaxed": "MAXED",
+  "perkBuy": "BUY",
+  "statsTitle": "STATISTICS",
+  "statsTotalDistance": "TOTAL DISTANCE",
+  "statsGamesPlayed": "GAMES PLAYED",
+  "statsPlaytime": "PLAYTIME",
+  "statsFurthestBiome": "FURTHEST BIOME",
+  "statsBestScore": "BEST SCORE",
+  "statsShare": "SHARE",
+  "statsUnknownBiome": "UNKNOWN",
+  "statsMeters": "{value}m",
+  "@statsMeters": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "statsPlaytimeHoursMinutes": "{hours}h {minutes}m",
+  "@statsPlaytimeHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "statsPlaytimeMinutes": "{minutes}m",
+  "@statsPlaytimeMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "statsShareText": "Mirror Runners Stats:\n{best}m best · {games} games · {playtime} played · {biome} reached",
+  "@statsShareText": {
+    "placeholders": {
+      "best": {
+        "type": "int"
+      },
+      "games": {
+        "type": "int"
+      },
+      "playtime": {
+        "type": "String"
+      },
+      "biome": {
+        "type": "String"
+      }
+    }
+  },
+  "achTitle": "ACHIEVEMENTS",
+  "biomeForest": "FOREST",
+  "biomeCity": "CITY",
+  "biomeCrystal": "CRYSTAL",
+  "biomeVolcano": "VOLCANO",
+  "biomeDesert": "DESERT",
+  "biomeOcean": "OCEAN",
+  "biomeRuins": "RUINS",
+  "biomeSpace": "SPACE",
+  "biomeStorm": "STORM",
+  "biomeNeon": "NEON",
+  "biomeVoid": "VOID",
+  "skinNameDefault": "DEFAULT",
+  "skinNameIce": "ICE",
+  "skinNameFire": "FIRE",
+  "skinNameGold": "GOLD",
+  "skinNameOcean": "OCEAN",
+  "skinNameNeon": "NEON",
+  "skinNameVoid": "VOID",
+  "perkCoinMagnetTitle": "COIN MAGNET",
+  "perkCoinMagnetEffect": "Wider coin pickup range",
+  "perkCoinBonusTitle": "COIN BONUS",
+  "perkCoinBonusEffect": "+1 coin per pickup",
+  "perkPowerUpTimeTitle": "POWER-UP TIME",
+  "perkPowerUpTimeEffect": "Power-ups last longer",
+  "perkHeadStartTitle": "HEAD START",
+  "perkHeadStartEffect": "Begin mid-combo (x1.2 / x1.5 / x2.0)",
+  "perkShieldTitle": "SHIELD",
+  "perkShieldEffect": "Start shielded; recharges every 400m",
+  "dailyChallengeDistance": "Reach {target}m in one run",
+  "@dailyChallengeDistance": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyChallengeCoins": "Collect {target} coins in one run",
+  "@dailyChallengeCoins": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyChallengeGames": "Play {target} runs today",
+  "@dailyChallengeGames": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "achCategoryDistance": "DISTANCE",
+  "achCategoryBiome": "BIOME",
+  "achCategoryGames": "GAMES",
+  "achCategoryFirstRun": "FIRST RUN",
+  "achBiomeCrystal": "Crystal",
+  "achBiomeVolcano": "Volcano",
+  "achBiomeDesert": "Desert",
+  "achBiomeOcean": "Ocean",
+  "achBiomeNeon": "Neon",
+  "achBiomeVoid": "Void",
+  "achGamesCount": "{count} Games",
+  "@achGamesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "achFirstRun": "1st Run"
+}

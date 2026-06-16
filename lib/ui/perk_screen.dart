@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import '../services/upgrade_service.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
@@ -122,7 +124,7 @@ class _PerkScreenState extends State<PerkScreen> {
             ),
           ),
           Text(
-            'PERKS',
+            context.l10n.perkTitle,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -211,7 +213,7 @@ class _PerkScreenState extends State<PerkScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  def.title,
+                  perkTitleLocalized(context, perk),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -221,7 +223,7 @@ class _PerkScreenState extends State<PerkScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  def.effect,
+                  perkEffectLocalized(context, perk),
                   style: TextStyle(
                     fontSize: 10,
                     color: Colors.white.withValues(alpha: 0.55),
@@ -275,9 +277,9 @@ class _PerkScreenState extends State<PerkScreen> {
         border: Border.all(color: MR.gold.withValues(alpha: 0.4), width: 0.5),
         color: MR.gold.withValues(alpha: 0.08),
       ),
-      child: const Text(
-        'MAXED',
-        style: TextStyle(
+      child: Text(
+        context.l10n.perkMaxed,
+        style: const TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.w800,
           color: MR.gold,
@@ -330,7 +332,7 @@ class _PerkScreenState extends State<PerkScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'BUY',
+                  context.l10n.perkBuy,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,

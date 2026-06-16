@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
+import '../l10n/game_l10n.dart';
+import '../l10n/l10n_ext.dart';
 import 'tap_scale.dart';
 import 'theme.dart';
 
@@ -51,7 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   Text(
-                    'SETTINGS',
+                    context.l10n.settingsTitle,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -65,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Sound toggle
               _buildToggleRow(
-                'SOUND',
+                context.l10n.settingsSound,
                 settings.soundEnabled,
                 (v) {
                   settings.setSoundEnabled(v);
@@ -76,13 +78,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Haptic toggle
               _buildToggleRow(
-                'VIBRATION',
+                context.l10n.settingsVibration,
                 settings.hapticEnabled,
                 (v) {
                   settings.setHapticEnabled(v);
                   setState(() {});
                 },
               ),
+              const SizedBox(height: 20),
+
+              // Language selector
+              _buildLanguageRow(context, settings),
               const SizedBox(height: 32),
 
               // Help section
@@ -94,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Row(
                   children: [
                     Text(
-                      'HOW TO PLAY',
+                      context.l10n.howtoTitle,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -116,41 +122,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Mirror movement illustration
                 _HelpSection(
                   illustration: const _MirrorIllustration(),
-                  title: 'MIRROR MOVEMENT',
-                  description: 'Drag left or right. Both runners move at the same time — mirrored. Dodge obstacles on both sides.',
+                  title: context.l10n.howtoMirrorTitle,
+                  description: context.l10n.howtoMirrorDesc,
                 ),
                 const SizedBox(height: 20),
                 // Phantom illustration
                 _HelpSection(
                   illustration: const _PhantomIllustration(),
-                  title: 'PHANTOM',
-                  description: 'Obstacles turn invisible. Memorize their positions before they fade!',
+                  title: context.l10n.howtoPhantomTitle,
+                  description: context.l10n.howtoPhantomDesc,
                 ),
                 const SizedBox(height: 20),
                 // Swap illustration
                 _HelpSection(
                   illustration: const _SwapIllustration(),
-                  title: 'SWAP',
-                  description: 'Controls are reversed. Left becomes right, right becomes left.',
+                  title: context.l10n.howtoSwapTitle,
+                  description: context.l10n.howtoSwapDesc,
                 ),
                 const SizedBox(height: 20),
                 // Desync event
                 _HelpSection(
                   illustration: const _DesyncIllustration(),
-                  title: 'DESYNC',
-                  description: 'The two sides scroll at different speeds.',
+                  title: context.l10n.howtoDesyncTitle,
+                  description: context.l10n.howtoDesyncDesc,
                 ),
                 const SizedBox(height: 20),
                 // Blackout event
                 _HelpSection(
                   illustration: const _BlackoutIllustration(),
-                  title: 'BLACKOUT',
-                  description: 'One side goes dark — run it from memory.',
+                  title: context.l10n.howtoBlackoutTitle,
+                  description: context.l10n.howtoBlackoutDesc,
                 ),
                 const SizedBox(height: 24),
                 // Power-ups sub-header
                 Text(
-                  'POWER-UPS',
+                  context.l10n.howtoPowerUps,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -162,29 +168,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Shield
                 _HelpSection(
                   illustration: const _PowerUpOrb(kind: _OrbKind.shield),
-                  title: 'SHIELD',
-                  description: 'Absorbs one hit. The Shield perk starts you with one and recharges it over distance.',
+                  title: context.l10n.howtoShieldTitle,
+                  description: context.l10n.howtoShieldDesc,
                 ),
                 const SizedBox(height: 20),
                 // Sync-lock
                 _HelpSection(
                   illustration: const _PowerUpOrb(kind: _OrbKind.syncLock),
-                  title: 'SYNC-LOCK',
-                  description: 'Controls briefly un-mirror — both runners move the same direction.',
+                  title: context.l10n.howtoSyncLockTitle,
+                  description: context.l10n.howtoSyncLockDesc,
                 ),
                 const SizedBox(height: 20),
                 // Slow-mo
                 _HelpSection(
                   illustration: const _PowerUpOrb(kind: _OrbKind.slowMo),
-                  title: 'SLOW-MO',
-                  description: 'Slows the world down for a moment.',
+                  title: context.l10n.howtoSlowMoTitle,
+                  description: context.l10n.howtoSlowMoDesc,
                 ),
                 const SizedBox(height: 20),
                 // Foresight
                 _HelpSection(
                   illustration: const _PowerUpOrb(kind: _OrbKind.foresight),
-                  title: 'FORESIGHT',
-                  description: 'Reveals obstacles hidden during PHANTOM.',
+                  title: context.l10n.howtoForesightTitle,
+                  description: context.l10n.howtoForesightDesc,
                 ),
               ],
               const SizedBox(height: 24),
@@ -198,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Row(
                   children: [
                     Text(
-                      'BIOMES',
+                      context.l10n.settingsBiomes,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -239,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          b.name,
+                          biomeNameLocalized(context, b.name),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -271,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   minSize: MR.minTouchTarget,
                   onTap: () => widget.game.leaderboardService.showLeaderboard(),
                   child: Text(
-                    'LEADERBOARD',
+                    context.l10n.settingsLeaderboard,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -295,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   widget.game.overlays.add('StatsScreen');
                 },
                 child: Text(
-                  'STATISTICS',
+                  context.l10n.settingsStatistics,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -325,7 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           )
                         : Text(
-                            'RESTORE PURCHASES',
+                            context.l10n.settingsRestorePurchases,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -361,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   minSize: MR.minTouchTarget,
                   onTap: () => _showLicenses(context),
                   child: Text(
-                    'LICENSES',
+                    context.l10n.settingsLicenses,
                     style: TextStyle(
                       fontSize: 10,
                       color: Colors.white.withValues(alpha: 0.55),
@@ -389,8 +395,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SnackBar(
           content: Text(
             widget.game.adService.isPro
-                ? 'Purchases restored.'
-                : 'Restore complete.',
+                ? context.l10n.settingsPurchasesRestored
+                : context.l10n.settingsRestoreComplete,
           ),
           duration: const Duration(seconds: 3),
         ),
@@ -465,6 +471,127 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Tappable row showing the current language choice; opens a small sheet
+  /// to pick System / English / Deutsch. Styled like the navigation rows.
+  Widget _buildLanguageRow(BuildContext context, dynamic settings) {
+    final override = settings.localeOverride as String?;
+    final valueLabel = override == 'en'
+        ? context.l10n.languageEnglish
+        : override == 'de'
+            ? context.l10n.languageGerman
+            : context.l10n.languageSystem;
+    return TapScale(
+      minSize: MR.minTouchTarget,
+      onTap: () => _showLanguageSheet(context, settings),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            context.l10n.languageTitle,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 3,
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                valueLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: _accent.withValues(alpha: 0.8),
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.white.withValues(alpha: 0.4),
+                size: 18,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageSheet(BuildContext context, dynamic settings) {
+    final current = settings.localeOverride as String?;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: MR.bgMid,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        Widget option(String label, String? code) {
+          final selected = current == code;
+          return TapScale(
+            minSize: MR.minTouchTarget,
+            onTap: () {
+              settings.setLocaleOverride(code);
+              Navigator.of(ctx).pop();
+              setState(() {});
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: selected ? 0.95 : 0.7),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  if (selected)
+                    Icon(Icons.check_rounded, color: _accent, size: 18),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    ctx.l10n.languageTitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _accent,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              option(ctx.l10n.languageSystem, null),
+              option(ctx.l10n.languageEnglish, 'en'),
+              option(ctx.l10n.languageGerman, 'de'),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
     );
   }
 
