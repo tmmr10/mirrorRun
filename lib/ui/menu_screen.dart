@@ -563,14 +563,49 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
             ],
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
+        // Current world in a bordered "chip" with chevrons — signals that this
+        // row is tappable and lets you pick / change the world (not just a
+        // passive progress readout).
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: biomes[reached].lineL.withValues(alpha: 0.3),
+              width: 0.5,
+            ),
+            color: Colors.white.withValues(alpha: 0.03),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.chevron_left,
+                  size: 14, color: biomes[reached].lineL.withValues(alpha: 0.5)),
+              const SizedBox(width: 8),
+              Text(
+                biomeNameLocalized(context, biomes[reached].name),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 3,
+                  color: biomes[reached].lineL.withValues(alpha: 0.85),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right,
+                  size: 14, color: biomes[reached].lineL.withValues(alpha: 0.5)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
         Text(
-          biomeNameLocalized(context, biomes[reached].name),
+          context.l10n.menuChooseWorld,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 8,
             fontWeight: FontWeight.w600,
-            letterSpacing: 3,
-            color: biomes[reached].lineL.withValues(alpha: 0.8),
+            letterSpacing: 2,
+            color: Colors.white.withValues(alpha: 0.35),
           ),
         ),
       ],
