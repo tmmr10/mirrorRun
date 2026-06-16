@@ -181,6 +181,12 @@ class SkinService {
     if (_unlockedIds.contains(id)) return true;
     final deducted = await coinsService.spendCoins(cost);
     if (!deducted) return false;
+    // Defensive: a concurrent purchase may have unlocked it during the await.
+    // Don't charge twice — refund this deduction.
+    if (_unlockedIds.contains(id)) {
+      await coinsService.addCoins(cost);
+      return true;
+    }
     _unlockedIds.add(id);
     try {
       await _prefs.setStringList(

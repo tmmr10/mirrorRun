@@ -157,7 +157,7 @@ class DailyChallengeService {
   }
 
   /// Updates the streak based on play activity for the current day.
-  bool _advanceStreak() {
+  Future<bool> _advanceStreak() async {
     final todayKey = _todayKey();
     final lastDate = _prefs.getString(_kStreakDate);
     if (lastDate == todayKey) return false; // already counted today
@@ -168,15 +168,18 @@ class DailyChallengeService {
         '${yesterday.day.toString().padLeft(2, '0')}';
 
     _streak = (lastDate == yKey) ? _streak + 1 : 1;
-    unawaited(_prefs.setInt(_kStreak, _streak));
-    unawaited(_prefs.setString(_kStreakDate, todayKey));
+    // Persist count + date together (awaited) so a kill can't desync them
+    // (which would double-count or roll back the streak).
+    await _prefs.setInt(_kStreak, _streak);
+    await _prefs.setString(_kStreakDate, todayKey);
     return true;
   }
 
   /// Records a finished run; updates progress, completion and streak.
-  DailyRunResult recordRun({required int distance, required int coinsThisRun}) {
+  Future<DailyRunResult> recordRun(
+      {required int distance, required int coinsThisRun}) async {
     _ensureToday();
-    final streakAdvanced = _advanceStreak();
+    final streakAdvanced = await _advanceStreak();
 
     _gamesToday++;
     final wasCompleted = _completed;
@@ -197,7 +200,9 @@ class DailyChallengeService {
     }
     final justCompleted = _completed && !wasCompleted;
 
-    unawaited(_persistChallenge(_todayKey()));
+    // Persist (incl. _completed) BEFORE the caller grants the reward, so a kill
+    // can't replay the reward on next launch.
+    await _persistChallenge(_todayKey());
     _publish();
 
     return DailyRunResult(

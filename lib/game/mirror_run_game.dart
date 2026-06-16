@@ -175,6 +175,12 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (!canRevive || !canAffordCoinRevive) return false;
     final ok = await coinsService.spendCoins(reviveCoinCost);
     if (!ok) return false;
+    // The state can change during the await (e.g. a keyboard restart). If we
+    // can no longer revive, refund the coins instead of burning them.
+    if (!canRevive) {
+      await coinsService.addCoins(reviveCoinCost);
+      return false;
+    }
     revivePlayer(viaAd: false);
     return true;
   }
@@ -457,7 +463,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       );
       // Daily challenge + streak (record before awarding so run coins aren't
       // inflated by the reward itself).
-      final daily = dailyChallengeService.recordRun(
+      final daily = await dailyChallengeService.recordRun(
         distance: score,
         coinsThisRun: coinsService.sessionEarned,
       );
@@ -817,16 +823,15 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   }
 
   void _checkCollisions() {
-    // During invincibility (post-revive), skip collision + near-miss checks
-    if (isInvincible) return;
-
+    // During invincibility (post-revive/shield grace) only the lethal hit is
+    // skipped — near-misses still count so the combo doesn't silently freeze.
     final obstacles = world.children.whereType<Obstacle>().toList();
     Player? nearMissPlayer;
     Obstacle? nearMissObstacle;
 
     for (final obs in obstacles) {
       if (obs.side == 'left' && playerLeft != null && !playerLeft!.dead) {
-        if (_checkOverlap(playerLeft!, obs)) {
+        if (!isInvincible && _checkOverlap(playerLeft!, obs)) {
           _resolveHit(playerLeft!, skinService.currentSkin.leftColor);
           return;
         }
@@ -836,7 +841,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
         }
       }
       if (obs.side == 'right' && playerRight != null && !playerRight!.dead) {
-        if (_checkOverlap(playerRight!, obs)) {
+        if (!isInvincible && _checkOverlap(playerRight!, obs)) {
           _resolveHit(playerRight!, skinService.currentSkin.rightColor);
           return;
         }
@@ -960,6 +965,13 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     eventSystem.reset();
     eventNotifier.value = null;
     eventWarningNotifier.value = null;
+
+    // Clear active power-up effects too — a lingering sync-lock would leave the
+    // controls desynced against the just re-mirrored players.
+    _syncLockTimer = 0;
+    _slowMoTimer = 0;
+    _foresightTimer = 0;
+    _updatePowerUpNotifier();
 
     // Re-mirror the right player in case sync-lock/swap left it desynced.
     final pl = playerLeft;

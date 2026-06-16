@@ -27,7 +27,8 @@ class CoinsService {
     _totalCoins += amount;
     _sessionEarned += amount;
     coinsNotifier.value = _totalCoins;
-    unawaited(_prefs.setInt(_keyTotal, _totalCoins));
+    // Awaited (like spendCoins) so earned coins aren't lost on a fast app kill.
+    await _prefs.setInt(_keyTotal, _totalCoins);
   }
 
   Future<bool> spendCoins(int amount) async {

@@ -68,6 +68,12 @@ class UpgradeService {
     if (coins.totalCoins < cost) return false;
     final ok = await coins.spendCoins(cost);
     if (!ok) return false;
+    // Defensive: a concurrent purchase may have maxed the perk during the
+    // await. Don't exceed maxLevel — refund the spent coins instead.
+    if (level(p) >= def(p).maxLevel) {
+      await coins.addCoins(cost);
+      return false;
+    }
     _levels[p] = level(p) + 1;
     await _prefs.setInt(_key(p), _levels[p]!);
     revision.value++;

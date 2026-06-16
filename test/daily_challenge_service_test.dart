@@ -104,17 +104,17 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      service.recordRun(distance: 300, coinsThisRun: 99);
+      await service.recordRun(distance: 300, coinsThisRun: 99);
       await flush();
       expect(service.today.progress, 300);
 
       // A worse run must not reduce progress.
-      service.recordRun(distance: 120, coinsThisRun: 99);
+      await service.recordRun(distance: 120, coinsThisRun: 99);
       await flush();
       expect(service.today.progress, 300);
 
       // A better run raises it.
-      service.recordRun(distance: 450, coinsThisRun: 99);
+      await service.recordRun(distance: 450, coinsThisRun: 99);
       await flush();
       expect(service.today.progress, 450);
     });
@@ -125,15 +125,15 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      service.recordRun(distance: 9999, coinsThisRun: 10);
+      await service.recordRun(distance: 9999, coinsThisRun: 10);
       await flush();
       expect(service.today.progress, 10);
 
-      service.recordRun(distance: 9999, coinsThisRun: 5);
+      await service.recordRun(distance: 9999, coinsThisRun: 5);
       await flush();
       expect(service.today.progress, 10);
 
-      service.recordRun(distance: 9999, coinsThisRun: 30);
+      await service.recordRun(distance: 9999, coinsThisRun: 30);
       await flush();
       expect(service.today.progress, 30);
     });
@@ -144,13 +144,13 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      service.recordRun(distance: 0, coinsThisRun: 0);
+      await service.recordRun(distance: 0, coinsThisRun: 0);
       await flush();
       expect(service.today.progress, 1);
-      service.recordRun(distance: 0, coinsThisRun: 0);
+      await service.recordRun(distance: 0, coinsThisRun: 0);
       await flush();
       expect(service.today.progress, 2);
-      service.recordRun(distance: 1000, coinsThisRun: 50);
+      await service.recordRun(distance: 1000, coinsThisRun: 50);
       await flush();
       expect(service.today.progress, 3);
     });
@@ -164,21 +164,21 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      final r1 = service.recordRun(distance: 200, coinsThisRun: 0);
+      final r1 = await service.recordRun(distance: 200, coinsThisRun: 0);
       await flush();
       expect(r1.challengeJustCompleted, isFalse);
       expect(r1.rewardEarned, 0);
       expect(service.today.completed, isFalse);
 
       // Crosses the target → completes exactly here.
-      final r2 = service.recordRun(distance: 450, coinsThisRun: 0);
+      final r2 = await service.recordRun(distance: 450, coinsThisRun: 0);
       await flush();
       expect(service.today.completed, isTrue);
       expect(r2.challengeJustCompleted, isTrue);
       expect(r2.rewardEarned, DailyChallengeService.reward);
 
       // Further runs do not re-award the completion.
-      final r3 = service.recordRun(distance: 800, coinsThisRun: 0);
+      final r3 = await service.recordRun(distance: 800, coinsThisRun: 0);
       await flush();
       expect(r3.challengeJustCompleted, isFalse);
       expect(r3.rewardEarned, 0);
@@ -191,7 +191,7 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      final r = service.recordRun(distance: 0, coinsThisRun: 25);
+      final r = await service.recordRun(distance: 0, coinsThisRun: 25);
       await flush();
       expect(service.today.completed, isTrue);
       expect(r.challengeJustCompleted, isTrue);
@@ -204,7 +204,7 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      service.recordRun(distance: 1200, coinsThisRun: 0);
+      await service.recordRun(distance: 1200, coinsThisRun: 0);
       await flush();
       expect(service.today.progress, 400);
       expect(service.today.fraction, 1.0);
@@ -218,7 +218,7 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      final r = service.recordRun(distance: 100, coinsThisRun: 0);
+      final r = await service.recordRun(distance: 100, coinsThisRun: 0);
       expect(r.streakAdvanced, isTrue);
       expect(r.streak, greaterThanOrEqualTo(1));
       expect(service.streak, r.streak);
@@ -231,9 +231,9 @@ void main() {
       final service = DailyChallengeService();
       await service.init();
 
-      final first = service.recordRun(distance: 100, coinsThisRun: 0);
+      final first = await service.recordRun(distance: 100, coinsThisRun: 0);
       await flush();
-      final second = service.recordRun(distance: 200, coinsThisRun: 0);
+      final second = await service.recordRun(distance: 200, coinsThisRun: 0);
       await flush();
 
       expect(second.streakAdvanced, isFalse);
@@ -254,7 +254,7 @@ void main() {
       await service.init();
       expect(service.streak, 3);
 
-      final r = service.recordRun(distance: 100, coinsThisRun: 0);
+      final r = await service.recordRun(distance: 100, coinsThisRun: 0);
       expect(r.streakAdvanced, isTrue);
       expect(r.streak, 4);
     });
@@ -273,7 +273,7 @@ void main() {
       await service.init();
       expect(service.streak, 9);
 
-      final r = service.recordRun(distance: 100, coinsThisRun: 0);
+      final r = await service.recordRun(distance: 100, coinsThisRun: 0);
       expect(r.streakAdvanced, isTrue);
       expect(r.streak, 1);
     });
@@ -286,7 +286,7 @@ void main() {
           pinnedChallenge(DailyChallengeType.coins, 25));
       final service = DailyChallengeService();
       await service.init();
-      service.recordRun(distance: 0, coinsThisRun: 25);
+      await service.recordRun(distance: 0, coinsThisRun: 25);
       await flush();
 
       // recordRun persists via _persistChallenge (flushed above).

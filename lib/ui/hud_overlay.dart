@@ -36,8 +36,10 @@ class _HudOverlayState extends State<HudOverlay> with WidgetsBindingObserver {
     // Only auto-pause on a real backgrounding. `inactive` also fires for
     // transient interruptions (Control Center, notification banners, the app
     // switcher peek), which shouldn't slam the pause screen up mid-run.
+    // Include countdown so the run doesn't silently start while backgrounded.
     if (state == AppLifecycleState.paused &&
-        widget.game.playState == PlayState.playing &&
+        (widget.game.playState == PlayState.playing ||
+            widget.game.playState == PlayState.countdown) &&
         !_showQuitConfirm) {
       widget.game.pauseEngine();
       setState(() => _showQuitConfirm = true);

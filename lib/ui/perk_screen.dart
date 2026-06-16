@@ -18,6 +18,7 @@ class PerkScreen extends StatefulWidget {
 
 class _PerkScreenState extends State<PerkScreen> {
   static const _accent = MR.accent;
+  bool _purchasing = false;
 
   UpgradeService get _upgrades => widget.game.upgradeService;
 
@@ -53,12 +54,18 @@ class _PerkScreenState extends State<PerkScreen> {
   }
 
   Future<void> _buy(Perk perk) async {
-    final ok = await _upgrades.tryPurchase(perk, widget.game.coinsService);
-    if (!mounted) return;
-    if (ok) {
-      HapticFeedback.selectionClick();
+    if (_purchasing) return; // guard against double-tap double-spend
+    _purchasing = true;
+    try {
+      final ok = await _upgrades.tryPurchase(perk, widget.game.coinsService);
+      if (!mounted) return;
+      if (ok) {
+        HapticFeedback.selectionClick();
+      }
+      setState(() {});
+    } finally {
+      _purchasing = false;
     }
-    setState(() {});
   }
 
   void _back() {

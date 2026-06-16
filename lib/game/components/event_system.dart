@@ -87,6 +87,11 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
     // Clear any pending warning so it can't fire a surprise second event later.
     _pendingEvent = null;
     _warningTimer = 0;
+    // Neutralize a previously-active event's lingering factors before switching.
+    desyncLeftFactor = 1.0;
+    desyncRightFactor = 1.0;
+    blackoutSide = null;
+    blackoutFade = 0;
     activeEvent = event;
     _eventCooldown = 999;
     switch (event) {
