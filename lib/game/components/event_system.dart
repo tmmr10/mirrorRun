@@ -259,6 +259,8 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
   void _endEvent() {
     if (activeEvent == GameEvent.phantom) {
       phantomFade = 0;
+      // A banked Foresight charge is spent on this one phantom event.
+      game.consumeForesight();
     }
     if (activeEvent == GameEvent.mirrorSwap) {
       // Don't reset mirrorSwapped — it stays until next swap toggles it

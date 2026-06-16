@@ -180,16 +180,25 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   static const int _shieldRechargeMeters = 400;
   double _syncLockTimer = 0;
   double _slowMoTimer = 0;
-  double _foresightTimer = 0;
+  // Foresight is a banked charge (not timed): once picked up it stays armed
+  // until the NEXT phantom event, reveals obstacles for that whole phantom,
+  // then is consumed (see EventSystem._endEvent → consumeForesight).
+  bool _foresightArmed = false;
   static const double _syncLockDuration = 4.0;
-  static const double _slowMoDuration = 3.5;
-  // Longer than the others so it reliably overlaps a (relatively rare) PHANTOM.
-  static const double _foresightDuration = 10.0;
+  static const double _slowMoDuration = 5.0;
   static const double _slowMoFactor = 0.55;
   bool get syncLockActive => _syncLockTimer > 0;
   bool get slowMoActive => _slowMoTimer > 0;
-  /// True while Foresight reveals obstacles hidden by PHANTOM (read by Obstacle).
-  bool get foresightActive => _foresightTimer > 0;
+  /// True while Foresight is armed — reveals obstacles hidden by PHANTOM
+  /// (read by Obstacle). Stays on until consumed by the next phantom event.
+  bool get foresightActive => _foresightArmed;
+
+  /// Consume the banked Foresight charge (called when a phantom event ends).
+  void consumeForesight() {
+    if (!_foresightArmed) return;
+    _foresightArmed = false;
+    _updatePowerUpNotifier();
+  }
   bool get shieldUp => shieldActive;
 
   /// Currently-active power-ups, for the HUD indicator.
@@ -402,7 +411,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _invincibilityTimer = 0;
     _syncLockTimer = 0;
     _slowMoTimer = 0;
-    _foresightTimer = 0;
+    _foresightArmed = false;
     // Perk: start each run with a shield if owned (disabled in seed runs).
     shieldActive = !seedRunActive && upgradeService.startShield;
     _nextShieldRechargeScore = 0;
@@ -640,7 +649,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _nextShieldRechargeScore = 0;
     _syncLockTimer = 0;
     _slowMoTimer = 0;
-    _foresightTimer = 0;
+    _foresightArmed = false;
     _lastPowerUps = const [];
     powerUpsNotifier.value = const [];
     floatingText.clearAll();
@@ -833,9 +842,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     if (_slowMoTimer > 0) {
       _slowMoTimer = (_slowMoTimer - step).clamp(0.0, double.infinity);
     }
-    if (_foresightTimer > 0) {
-      _foresightTimer = (_foresightTimer - step).clamp(0.0, double.infinity);
-    }
+    // Foresight is not timed — it stays armed until a phantom consumes it.
     _updatePowerUpNotifier();
 
     // Drive the event system in the fixed step BEFORE scrolling so this tick's
@@ -926,7 +933,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       case PowerUpType.slowMo:
         _slowMoTimer = _slowMoDuration * mult;
       case PowerUpType.foresight:
-        _foresightTimer = _foresightDuration * mult;
+        // Banked until the next phantom event — duration perk doesn't apply.
+        _foresightArmed = true;
     }
     _updatePowerUpNotifier();
     unawaited(AnalyticsService.logEventTriggered(eventType: 'powerup_${type.name}'));
@@ -1147,7 +1155,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     // controls desynced against the just re-mirrored players.
     _syncLockTimer = 0;
     _slowMoTimer = 0;
-    _foresightTimer = 0;
+    _foresightArmed = false;
     _updatePowerUpNotifier();
 
     // Re-mirror the right player in case sync-lock/swap left it desynced.
