@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../game/mirror_run_game.dart';
@@ -151,22 +150,6 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                           ),
                         ).animate().fadeIn(duration: 400.ms, delay: _d(900)),
                       const Spacer(),
-                      if (kDebugMode && !widget.game.screenshotMode)
-                        TapScale(
-                          minSize: MR.minTouchTarget,
-                          onTap: () {
-                            widget.game.overlays.remove('MenuScreen');
-                            widget.game.overlays.add('DebugOverlay');
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.bug_report,
-                              color: MR.alert.withValues(alpha: 0.5),
-                              size: 24,
-                            ),
-                          ),
-                        ),
                       if (!widget.game.screenshotMode)
                         TapScale(
                           minSize: MR.minTouchTarget,
