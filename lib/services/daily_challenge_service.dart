@@ -42,12 +42,15 @@ class DailyRunResult {
   final int rewardEarned;
   final int streak;
   final bool streakAdvanced;
+  /// Coins granted for advancing the daily play streak (0 if not advanced today).
+  final int streakReward;
 
   const DailyRunResult({
     required this.challengeJustCompleted,
     required this.rewardEarned,
     required this.streak,
     required this.streakAdvanced,
+    this.streakReward = 0,
   });
 }
 
@@ -66,6 +69,8 @@ class DailyChallengeService {
   static const _kStreakDate = 'dc_streak_date';
 
   static const int reward = 100;
+  /// Coins per streak day (×min(streak,7)) granted on the first run of a day.
+  static const int streakRewardPerDay = 20;
 
   // Candidate targets per type — one is picked deterministically per day.
   static const List<int> _distanceTargets = [250, 400, 600, 800];
@@ -210,6 +215,8 @@ class DailyChallengeService {
       rewardEarned: justCompleted ? reward : 0,
       streak: _streak,
       streakAdvanced: streakAdvanced,
+      // Daily login-streak bonus (first run of a new day): scales up to day 7.
+      streakReward: streakAdvanced ? (_streak.clamp(1, 7)) * streakRewardPerDay : 0,
     );
   }
 }

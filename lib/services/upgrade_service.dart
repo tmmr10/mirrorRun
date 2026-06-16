@@ -88,8 +88,8 @@ class UpgradeService {
   /// Extra coin-pickup range in logical px.
   double get coinMagnetPadding => level(Perk.coinMagnet) * 12.0;
 
-  /// Multiplier on power-up durations (1.0 = base).
-  double get powerUpDurationMult => 1.0 + 0.15 * level(Perk.powerUpDuration);
+  /// Multiplier on power-up durations (1.0 = base): +25% per level.
+  double get powerUpDurationMult => 1.0 + 0.25 * level(Perk.powerUpDuration);
 
   /// Head-start near-misses by level (0=none): 1→3 (x1.2), 2→6 (x1.5), 3→10 (x2.0).
   int get startComboNearMisses {

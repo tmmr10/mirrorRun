@@ -10,10 +10,10 @@ class PowerUpSpawner extends Component with HasGameReference<MirrorRunGame> {
   final Random _rng;
   PowerUpSpawner({Random? rng}) : _rng = rng ?? Random();
 
-  double _spawnTimer = 12.0;
+  double _spawnTimer = 9.0;
 
   /// Power-ups don't appear until the player has some distance under their belt.
-  static const int _minScore = 50;
+  static const int _minScore = 30;
 
   @override
   void update(double dt) {
@@ -24,8 +24,8 @@ class PowerUpSpawner extends Component with HasGameReference<MirrorRunGame> {
     _spawnTimer -= dt;
     if (_spawnTimer <= 0) {
       _trySpawn();
-      // 14–22 s between power-ups — deliberately scarce.
-      _spawnTimer = 14.0 + _rng.nextDouble() * 8.0;
+      // 11–17 s between power-ups — scarce but frequent enough to matter.
+      _spawnTimer = 11.0 + _rng.nextDouble() * 6.0;
     }
   }
 

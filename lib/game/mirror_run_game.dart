@@ -467,8 +467,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
         distance: score,
         coinsThisRun: coinsService.sessionEarned,
       );
-      if (daily.rewardEarned > 0) {
-        await coinsService.addCoins(daily.rewardEarned);
+      final dailyCoins = daily.rewardEarned + daily.streakReward;
+      if (dailyCoins > 0) {
+        await coinsService.addCoins(dailyCoins);
       }
       dailyResultNotifier.value = daily;
       // Re-sync signed-in state in case GameCenter signed in late (background init)
@@ -869,6 +870,17 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     }
   }
 
+  /// Coins per pickup from the combo tier — one step per tier (1..5) so every
+  /// combo level is rewarded (unlike the old round() which made x1.2 and x2.0
+  /// give the same as their neighbours).
+  int _comboCoinMultiplier() {
+    if (comboMultiplier >= 3.0) return 5;
+    if (comboMultiplier >= 2.0) return 4;
+    if (comboMultiplier >= 1.5) return 3;
+    if (comboMultiplier >= 1.2) return 2;
+    return 1;
+  }
+
   void _updateComboTier() {
     double newMultiplier;
     if (_comboNearMisses >= 15) {
@@ -921,8 +933,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
           : player.getPickupRect();
       if (pRect.overlaps(coll.getPickupRect())) {
         coll.collected = true;
-        // Coin value scales with the combo tier (1×/1×/2×/2×/3×) + coin-bonus perk.
-        final value = comboMultiplier.round().clamp(1, 3) +
+        // Coin value steps cleanly with each combo tier (1/2/3/4/5) so every
+        // tier-up is felt, plus the coin-bonus perk.
+        final value = _comboCoinMultiplier() +
             (seedRunActive ? 0 : upgradeService.coinBonusPerPickup);
         unawaited(coinsService.addCoins(value));
         particleSystem.burstCoin(Vector2(coll.laneCenterX, coll.scrollPos));
