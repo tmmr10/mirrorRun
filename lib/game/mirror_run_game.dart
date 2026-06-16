@@ -150,6 +150,10 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
 
   // Revive + invincibility state
   bool _reviveUsedThisRun = false;
+  /// True once the additive progression of the current run has been recorded.
+  /// Prevents the double-counting that happened when a revived run died again
+  /// (each `die()` used to re-record stats/daily/achievements/unlocks).
+  bool _runFinalized = false;
   double _invincibilityTimer = 0;
   static const double _invincibilityDuration = 2.0;
 
@@ -331,6 +335,12 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   }
 
   void startGame({bool seeded = false, int startAtScore = 0, bool freePlay = false}) {
+    // If a previous run ended (dead) but the player chose to retry instead of
+    // reviving, finalize that run's progression now (exactly once) before we
+    // reset the run state — otherwise its best score would never be counted.
+    if (playState == PlayState.dead && !_runFinalized) {
+      _finalizeRunStats();
+    }
     seedRunActive = seeded;
     _freePlayRun = freePlay;
     final seed = seeded ? _dailySeed() : null;
@@ -361,6 +371,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       _updateComboTier();
     }
     _reviveUsedThisRun = false;
+    _runFinalized = false;
     _invincibilityTimer = 0;
     _syncLockTimer = 0;
     _slowMoTimer = 0;
@@ -483,22 +494,49 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       wasNewRecord: isNewRecord,
     ));
 
-    _recordRunAsync(isNewRecord: isNewRecord);
+    // Highscore feedback is idempotent (a max), so it can run on every death —
+    // including a death that may still be revived. The *additive* progression
+    // (stats / daily / coins / achievements / unlocks), however, must run only
+    // once per run, at the final death (FIX: revive used to double-count it).
+    _saveHighscoreIfNeeded(isNewRecord: isNewRecord);
+    if (!canRevive) {
+      // No revive possible anymore → this is the final death: finalize now so
+      // the death screen shows the correct daily / new-skin / achievement state.
+      _finalizeRunStats();
+    }
 
     overlays.remove('HudOverlay');
     overlays.remove('Countdown');
     overlays.add('DeathScreen');
   }
 
-  Future<void> _recordRunAsync({bool isNewRecord = false}) async {
+  /// Persists the best score + submits to the leaderboard. Idempotent (a max),
+  /// so it's safe to call on every death, even one that's later revived.
+  void _saveHighscoreIfNeeded({required bool isNewRecord}) {
+    if (_freePlayRun || !isNewRecord) return;
+    unawaited(() async {
+      try {
+        await highscoreService.saveBest(score);
+        unawaited(leaderboardService.submitScore(score));
+      } catch (e, st) {
+        debugPrint('_saveHighscoreIfNeeded error: $e\n$st');
+      }
+    }());
+  }
+
+  /// Records the run's additive progression exactly once. Called at the final
+  /// death (when no revive is possible) or when leaving/retrying a dead run.
+  void _finalizeRunStats() {
+    if (_runFinalized) return;
+    _runFinalized = true;
+    unawaited(_recordRunAsync());
+  }
+
+  Future<void> _recordRunAsync() async {
     // Free Play (picked-world start): no progression is persisted at all, so
     // it can't game the leaderboard, highscore, daily, achievements or unlocks.
     if (_freePlayRun) return;
     try {
-      if (isNewRecord) {
-        await highscoreService.saveBest(score);
-        unawaited(leaderboardService.submitScore(score));
-      }
       await statsService.recordRun(
         distance: score,
         biomeIndex: _lastBiomeIdx,
@@ -553,6 +591,11 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       DateTime.now().millisecondsSinceEpoch / 1000.0 - _runStartTime;
 
   void goToMenu() {
+    // Leaving a dead run without reviving → finalize its progression once
+    // (so the run still counts toward stats/daily/achievements/unlocks).
+    if (playState == PlayState.dead && !_runFinalized) {
+      _finalizeRunStats();
+    }
     resumeEngine();
     playState = PlayState.menu;
     world.children.whereType<Player>().toList().forEach((p) => p.removeFromParent());
@@ -596,18 +639,31 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     biomeNotifier.value = BiomeManager.biomes[0].name;
     background.clearAmbientParticles();
 
-    overlays.remove('HudOverlay');
-    overlays.remove('DeathScreen');
-    overlays.remove('BiomeBanner');
-    overlays.remove('Countdown');
-    overlays.remove('SettingsScreen');
-    overlays.remove('StatsScreen');
-    overlays.remove('SkinSelector');
-    overlays.remove('ProScreen');
-    overlays.remove('PerkScreen');
-    overlays.remove('MenuScreen');
+    // Remove every known overlay (except MenuScreen, added fresh below) so no
+    // screen leaks back onto the menu regardless of where we came from.
+    for (final key in _knownOverlayKeys) {
+      overlays.remove(key);
+    }
     overlays.add('MenuScreen');
   }
+
+  /// All overlay keys the game manages — used to clear state on return to menu.
+  static const List<String> _knownOverlayKeys = [
+    'HudOverlay',
+    'DeathScreen',
+    'BiomeBanner',
+    'Countdown',
+    'SettingsScreen',
+    'StatsScreen',
+    'SkinSelector',
+    'ProScreen',
+    'PerkScreen',
+    'AchievementsScreen',
+    'SkinBuilder',
+    'WorldPicker',
+    'DebugOverlay',
+    'MenuScreen',
+  ];
 
   /// Called by SwipeController with the screen-space drag delta.
   void onDrag(double screenDx, double screenWidth) {
@@ -748,6 +804,10 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     }
     _updatePowerUpNotifier();
 
+    // Drive the event system in the fixed step BEFORE scrolling so this tick's
+    // desync factors are applied to this tick's movement (deterministic timing).
+    eventSystem.fixedUpdate(step);
+
     // Advance the scrolling world by this tick's distance, then check collisions
     // at the new position — same step, so nothing can pass through unchecked.
     // Slow-mo scales the whole world; desync scales each side independently.
@@ -766,6 +826,13 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     _checkCollisions();
     _checkCollectibles();
     _checkPowerUps();
+
+    // Spawners run in the fixed step too, so spawn density / RNG draws are
+    // framerate-independent and deterministic for a given daily seed. Run after
+    // collisions so this tick's checks see the existing field, not new spawns.
+    spawner.fixedUpdate(step);
+    collectibleSpawner.fixedUpdate(step);
+    powerUpSpawner.fixedUpdate(step);
 
     // Combo decay: lose one tier after sustained time without a near-miss.
     _timeSinceNearMiss += step;
@@ -873,18 +940,24 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
     // During invincibility (post-revive/shield grace) only the lethal hit is
     // skipped — near-misses still count so the combo doesn't silently freeze.
     final obstacles = world.children.whereType<Obstacle>().toList();
-    Player? nearMissPlayer;
-    Obstacle? nearMissObstacle;
+    // In the mirrored game a near-miss can happen on BOTH sides in the same
+    // step. Count each side independently (each obstacle still only once, via
+    // its `nearMissed` flag) so the combo rate isn't systematically halved.
+    Player? nearMissLeft;
+    Obstacle? nearMissLeftObs;
+    Player? nearMissRight;
+    Obstacle? nearMissRightObs;
 
     for (final obs in obstacles) {
       if (obs.side == 'left' && playerLeft != null && !playerLeft!.dead) {
+        // Hit handling unchanged: the first lethal overlap ends the step.
         if (!isInvincible && _checkOverlap(playerLeft!, obs)) {
           _resolveHit(playerLeft!, skinService.currentSkin.leftColor);
           return;
         }
-        if (nearMissPlayer == null && !obs.nearMissed && _checkNearMiss(playerLeft!, obs)) {
-          nearMissPlayer = playerLeft;
-          nearMissObstacle = obs;
+        if (nearMissLeft == null && !obs.nearMissed && _checkNearMiss(playerLeft!, obs)) {
+          nearMissLeft = playerLeft;
+          nearMissLeftObs = obs;
         }
       }
       if (obs.side == 'right' && playerRight != null && !playerRight!.dead) {
@@ -892,28 +965,37 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
           _resolveHit(playerRight!, skinService.currentSkin.rightColor);
           return;
         }
-        if (nearMissPlayer == null && !obs.nearMissed && _checkNearMiss(playerRight!, obs)) {
-          nearMissPlayer = playerRight;
-          nearMissObstacle = obs;
+        if (nearMissRight == null && !obs.nearMissed && _checkNearMiss(playerRight!, obs)) {
+          nearMissRight = playerRight;
+          nearMissRightObs = obs;
         }
       }
     }
 
-    if (nearMissPlayer != null && nearMissObstacle != null) {
-      nearMissObstacle.nearMissed = true; // prevent retrigger for same obstacle
-      nearMissPlayer.nearMissFlash = 1.0;
-      if (settingsService.hapticEnabled) {
-        HapticFeedback.lightImpact();
-      }
-      floatingText.spawn(
-        'NEAR',
-        Vector2(nearMissPlayer.position.x, nearMissPlayer.position.y - Player.ph),
-        const Color(0xFF44DDFF),
-      );
-      _comboNearMisses++;
-      _timeSinceNearMiss = 0; // refresh the decay window
-      _updateComboTier();
+    if (nearMissLeft != null && nearMissLeftObs != null) {
+      _registerNearMiss(nearMissLeft, nearMissLeftObs);
     }
+    if (nearMissRight != null && nearMissRightObs != null) {
+      _registerNearMiss(nearMissRight, nearMissRightObs);
+    }
+  }
+
+  /// Applies one near-miss: marks the obstacle, flashes the player, bumps the
+  /// combo. Called per side so both sides can score in the same step.
+  void _registerNearMiss(Player player, Obstacle obstacle) {
+    obstacle.nearMissed = true; // prevent retrigger for same obstacle
+    player.nearMissFlash = 1.0;
+    if (settingsService.hapticEnabled) {
+      HapticFeedback.lightImpact();
+    }
+    floatingText.spawn(
+      'NEAR',
+      Vector2(player.position.x, player.position.y - Player.ph),
+      const Color(0xFF44DDFF),
+    );
+    _comboNearMisses++;
+    _timeSinceNearMiss = 0; // refresh the decay window
+    _updateComboTier();
   }
 
   /// Coins per pickup from the combo tier — one step per tier (1..5) so every

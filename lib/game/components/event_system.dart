@@ -134,9 +134,13 @@ class EventSystem extends Component with HasGameReference<MirrorRunGame> {
       ? 1 - (_warningTimer / _warningDuration)
       : 0;
 
-  @override
-  void update(double dt) {
-    super.update(dt);
+  // NOTE: no update(dt) override — driven from the fixed step (MirrorRunGame._tick)
+  // for framerate-independent, seed-deterministic event timing.
+
+  /// One fixed simulation step, invoked from [MirrorRunGame._tick].
+  /// The parameter is the fixed step; named [dt] only because the body below
+  /// uses it as the timebase throughout.
+  void fixedUpdate(double dt) {
     if (game.playState != PlayState.playing) return;
 
     // Decay recovery flash

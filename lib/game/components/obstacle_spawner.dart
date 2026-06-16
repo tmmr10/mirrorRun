@@ -16,38 +16,61 @@ class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
   double _spawnTimerLeft = 0;
   double _spawnTimerRight = 0.4;
 
-  @override
-  void update(double dt) {
-    super.update(dt);
+  // NOTE: no update(dt) override — spawning is driven from the fixed step
+  // (MirrorRunGame._tick) for framerate-independent, seed-deterministic RNG.
+
+  /// One fixed simulation step, invoked from [MirrorRunGame._tick].
+  void fixedUpdate(double step) {
     if (game.playState != PlayState.playing) return;
 
-    _spawnTimerLeft -= dt;
+    _spawnTimerLeft -= step;
     if (_spawnTimerLeft <= 0) {
       _trySpawnSide('left');
-      _spawnTimerLeft = _nextInterval();
+      _spawnTimerLeft = _nextInterval('left');
     }
-    _spawnTimerRight -= dt;
+    _spawnTimerRight -= step;
     if (_spawnTimerRight <= 0) {
       _trySpawnSide('right');
-      _spawnTimerRight = _nextInterval();
+      _spawnTimerRight = _nextInterval('right');
     }
   }
 
-  double _nextInterval() {
+  /// During DESYNC one side scrolls faster (factor > 1). On that side obstacles
+  /// approach quicker, so the same spawn interval yields a denser, less fair
+  /// field. To keep the fast side beatable we stretch its spawn interval by its
+  /// desync factor (≥1 only), giving the player proportionally more reaction
+  /// time / gap. The slow side (factor < 1) is left unchanged.
+  double _sideDesyncFactor(String side) {
+    final f = side == 'left'
+        ? game.eventSystem.desyncLeftFactor
+        : game.eventSystem.desyncRightFactor;
+    return f > 1.0 ? f : 1.0;
+  }
+
+  double _nextInterval(String side) {
     final biome = BiomeManager.getBiome(game.score);
     final phase = biome.getPhase(game.score);
     final base = phase.minInterval + max(0, 15 - game.score * 0.05);
-    return max(0.15, (base + _rng.nextDouble() * 30 - 15) / 60);
+    final interval = max(0.15, (base + _rng.nextDouble() * 30 - 15) / 60);
+    // Fairness: widen the interval on the faster (desynced) side.
+    return interval * _sideDesyncFactor(side);
   }
 
   void _trySpawnSide(String side) {
     final biome = BiomeManager.getBiome(game.score);
     final phase = biome.getPhase(game.score);
-    final type = phase.types[_rng.nextInt(phase.types.length)];
+    var type = phase.types[_rng.nextInt(phase.types.length)];
 
     final lanes = side == 'left'
         ? MirrorRunGame.mirrorLanesL
         : MirrorRunGame.mirrorLanesR;
+
+    // Fairness during DESYNC: on the fast side a double-wall (blocks 2 of 3
+    // lanes) plus the higher approach speed becomes near-unavoidable, so demote
+    // it to a single wall. The slow side keeps the full obstacle set.
+    if (type == ObstacleType.doubleWall && _sideDesyncFactor(side) > 1.0) {
+      type = ObstacleType.wall;
+    }
 
     if (type == ObstacleType.doubleWall) {
       _spawnDoubleWall(side, lanes);
@@ -123,7 +146,10 @@ class ObstacleSpawner extends Component with HasGameReference<MirrorRunGame> {
 
   bool _isSolvableAfterSpawn(String side, List<int> newLanes) {
     const spawnPos = -60.0;
-    const dangerZoneHeight = Obstacle.playerH + 50;
+    // On the fast (desynced) side obstacles converge quicker, so widen the
+    // window we require to be clear — this enforces a bigger reachable gap and
+    // prevents back-to-back walls the player can't physically dodge in time.
+    final dangerZoneHeight = (Obstacle.playerH + 50) * _sideDesyncFactor(side);
 
     final nearbyObs = game.world.children
         .whereType<Obstacle>()

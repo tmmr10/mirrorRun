@@ -11,12 +11,13 @@ class CollectibleSpawner extends Component with HasGameReference<MirrorRunGame> 
 
   double _spawnTimer = 1.5;
 
-  @override
-  void update(double dt) {
-    super.update(dt);
+  // NOTE: no update(dt) override — driven from the fixed step (MirrorRunGame._tick).
+
+  /// One fixed simulation step, invoked from [MirrorRunGame._tick].
+  void fixedUpdate(double step) {
     if (game.playState != PlayState.playing) return;
 
-    _spawnTimer -= dt;
+    _spawnTimer -= step;
     if (_spawnTimer <= 0) {
       _trySpawn();
       // 2.5-4.5s between coin spawns (less frequent than obstacles)

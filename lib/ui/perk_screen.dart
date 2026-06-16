@@ -57,16 +57,19 @@ class _PerkScreenState extends State<PerkScreen> {
 
   Future<void> _buy(Perk perk) async {
     if (_purchasing) return; // guard against double-tap double-spend
-    _purchasing = true;
+    setState(() => _purchasing = true);
     try {
       final ok = await _upgrades.tryPurchase(perk, widget.game.coinsService);
       if (!mounted) return;
       if (ok) {
         HapticFeedback.selectionClick();
       }
-      setState(() {});
     } finally {
-      _purchasing = false;
+      if (mounted) {
+        setState(() => _purchasing = false);
+      } else {
+        _purchasing = false;
+      }
     }
   }
 
@@ -297,11 +300,15 @@ class _PerkScreenState extends State<PerkScreen> {
       valueListenable: widget.game.coinsService.coinsNotifier,
       builder: (context, coins, _) {
         final affordable = coins >= cost;
+        // Dim + disable while a purchase is in flight (visual feedback).
+        final enabled = affordable && !_purchasing;
         final color =
             affordable ? MR.gold : Colors.white.withValues(alpha: 0.25);
-        return TapScale(
+        return Opacity(
+          opacity: _purchasing ? 0.5 : 1.0,
+          child: TapScale(
           minSize: MR.minTouchTarget,
-          onTap: affordable ? () => _buy(perk) : null,
+          onTap: enabled ? () => _buy(perk) : null,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -342,6 +349,7 @@ class _PerkScreenState extends State<PerkScreen> {
                 ),
               ],
             ),
+          ),
           ),
         );
       },

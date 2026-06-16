@@ -15,13 +15,14 @@ class PowerUpSpawner extends Component with HasGameReference<MirrorRunGame> {
   /// Power-ups don't appear until the player has some distance under their belt.
   static const int _minScore = 30;
 
-  @override
-  void update(double dt) {
-    super.update(dt);
+  // NOTE: no update(dt) override — driven from the fixed step (MirrorRunGame._tick).
+
+  /// One fixed simulation step, invoked from [MirrorRunGame._tick].
+  void fixedUpdate(double step) {
     if (game.playState != PlayState.playing) return;
     if (game.score < _minScore) return;
 
-    _spawnTimer -= dt;
+    _spawnTimer -= step;
     if (_spawnTimer <= 0) {
       _trySpawn();
       // 11–17 s between power-ups — scarce but frequent enough to matter.

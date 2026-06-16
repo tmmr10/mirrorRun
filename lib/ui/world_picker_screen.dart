@@ -55,13 +55,12 @@ class _WorldPickerScreenState extends State<WorldPickerScreen> {
 
   Future<void> _unlock(int index) async {
     if (_unlocking) return; // guard against double-tap double-spend
-    _unlocking = true;
+    setState(() => _unlocking = true);
     try {
       final ok = await _worlds.tryUnlock(index, widget.game.coinsService);
       if (!mounted) return;
       if (ok) {
         HapticFeedback.selectionClick();
-        setState(() {});
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -71,7 +70,11 @@ class _WorldPickerScreenState extends State<WorldPickerScreen> {
         );
       }
     } finally {
-      _unlocking = false;
+      if (mounted) {
+        setState(() => _unlocking = false);
+      } else {
+        _unlocking = false;
+      }
     }
   }
 
@@ -325,11 +328,15 @@ class _WorldPickerScreenState extends State<WorldPickerScreen> {
       valueListenable: widget.game.coinsService.coinsNotifier,
       builder: (context, coins, _) {
         final affordable = coins >= cost;
+        // Dim + disable while an unlock is in flight (visual feedback).
+        final enabled = affordable && !_unlocking;
         final color =
             affordable ? MR.gold : Colors.white.withValues(alpha: 0.25);
-        return TapScale(
+        return Opacity(
+          opacity: _unlocking ? 0.5 : 1.0,
+          child: TapScale(
           minSize: MR.minTouchTarget,
-          onTap: affordable ? () => _unlock(index) : null,
+          onTap: enabled ? () => _unlock(index) : null,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -370,6 +377,7 @@ class _WorldPickerScreenState extends State<WorldPickerScreen> {
                 ),
               ],
             ),
+          ),
           ),
         );
       },
