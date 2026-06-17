@@ -13,6 +13,24 @@ class PlayerScenePainter extends CustomPainter {
   /// When false, only the figures are drawn (no ground/mirror-line scene).
   final bool showScene;
 
+  /// Optional per-side decoration overrides (icon studio uses these to mix two
+  /// different skins, e.g. Fire left / Ocean right). When null they fall back
+  /// to [headDecoration]/[faceDecoration] so existing callers are unaffected.
+  final HeadDecoration? leftHead;
+  final HeadDecoration? rightHead;
+  final FaceDecoration? leftFace;
+  final FaceDecoration? rightFace;
+
+  /// Draw the per-figure glow halos independently of [showScene]. Defaults to
+  /// [showScene] (original behaviour). Set true to get glowing figures without
+  /// the ground/mirror-line scene (icon cutouts).
+  final bool? drawGlow;
+
+  /// Draw the small motion-trail dots below each figure. Defaults to true
+  /// (gameplay look). The icon studio disables them — a static stray dot below
+  /// the body reads as a weird disconnected silhouette.
+  final bool drawTrail;
+
   PlayerScenePainter({
     required this.leftColor,
     required this.rightColor,
@@ -20,6 +38,12 @@ class PlayerScenePainter extends CustomPainter {
     this.headDecoration = HeadDecoration.none,
     this.faceDecoration = FaceDecoration.none,
     this.showScene = true,
+    this.leftHead,
+    this.rightHead,
+    this.leftFace,
+    this.rightFace,
+    this.drawGlow,
+    this.drawTrail = true,
   });
 
   @override
@@ -54,13 +78,16 @@ class PlayerScenePainter extends CustomPainter {
     }
 
     // Left player
-    _drawPlayer(canvas, mid * 0.55, groundY, leftColor);
+    _drawPlayer(canvas, mid * 0.55, groundY, leftColor,
+        leftHead ?? headDecoration, leftFace ?? faceDecoration);
 
     // Right player (mirrored)
-    _drawPlayer(canvas, mid + mid * 0.45, groundY, rightColor);
+    _drawPlayer(canvas, mid + mid * 0.45, groundY, rightColor,
+        rightHead ?? headDecoration, rightFace ?? faceDecoration);
   }
 
-  void _drawPlayer(Canvas canvas, double x, double groundY, Color color) {
+  void _drawPlayer(Canvas canvas, double x, double groundY, Color color,
+      HeadDecoration head, FaceDecoration face) {
     final bodyW = 20.0;
     final bodyH = 30.0;
     final bodyTop = groundY - bodyH;
@@ -69,9 +96,9 @@ class PlayerScenePainter extends CustomPainter {
       const Radius.circular(6),
     );
 
-    // Glow halos — only in full-scene mode; the compact figures-only variant
-    // (menu showcase) skips them so no soft color bleeds outside the figures.
-    if (showScene) {
+    // Glow halos — gated by [drawGlow] (defaults to [showScene]). The icon
+    // studio enables glow without the scene to get clean glowing cutouts.
+    if (drawGlow ?? showScene) {
       // Outer glow
       canvas.drawRRect(
         bodyRect.inflate(4 + glowT * 3),
@@ -93,7 +120,7 @@ class PlayerScenePainter extends CustomPainter {
     canvas.drawRRect(bodyRect, Paint()..color = color);
 
     // Head decoration (above body)
-    _drawHeadDecoration(canvas, x, bodyTop, bodyW, color);
+    _drawHeadDecoration(canvas, x, bodyTop, bodyW, color, head);
 
     // Eyes
     final eyeY = bodyTop + 9;
@@ -102,23 +129,25 @@ class PlayerScenePainter extends CustomPainter {
     canvas.drawCircle(Offset(x + 3.5, eyeY), 2.2, eyePaint);
 
     // Face decoration (over eyes)
-    _drawFaceDecoration(canvas, x, eyeY, bodyW, color);
+    _drawFaceDecoration(canvas, x, eyeY, bodyW, color, face);
 
     // Trail particles below
     final rng = Random(color.toARGB32());
-    for (int i = 0; i < 3; i++) {
-      final trailAlpha = (0.15 - i * 0.04).clamp(0.0, 1.0);
-      final trailY = groundY + 4 + i * 6.0;
-      final trailX = x + (rng.nextDouble() - 0.5) * 8;
-      canvas.drawCircle(
-        Offset(trailX, trailY),
-        2 - i * 0.4,
-        Paint()..color = color.withValues(alpha: trailAlpha),
-      );
+    if (drawTrail) {
+      for (int i = 0; i < 3; i++) {
+        final trailAlpha = (0.15 - i * 0.04).clamp(0.0, 1.0);
+        final trailY = groundY + 4 + i * 6.0;
+        final trailX = x + (rng.nextDouble() - 0.5) * 8;
+        canvas.drawCircle(
+          Offset(trailX, trailY),
+          2 - i * 0.4,
+          Paint()..color = color.withValues(alpha: trailAlpha),
+        );
+      }
     }
   }
 
-  void _drawHeadDecoration(Canvas canvas, double x, double bodyTop, double bodyW, Color color) {
+  void _drawHeadDecoration(Canvas canvas, double x, double bodyTop, double bodyW, Color color, HeadDecoration headDecoration) {
     switch (headDecoration) {
       case HeadDecoration.none:
         break;
@@ -277,7 +306,7 @@ class PlayerScenePainter extends CustomPainter {
     }
   }
 
-  void _drawFaceDecoration(Canvas canvas, double x, double eyeY, double bodyW, Color color) {
+  void _drawFaceDecoration(Canvas canvas, double x, double eyeY, double bodyW, Color color, FaceDecoration faceDecoration) {
     switch (faceDecoration) {
       case FaceDecoration.none:
         break;
