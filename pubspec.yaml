@@ -1,7 +1,7 @@
 name: mirror_run
 description: Mirror Runners - Cognitive Endless Runner
 publish_to: 'none'
-version: 1.4.1+27
+version: 1.4.1+28
 
 environment:
   sdk: ^3.10.1
@@ -43,5 +43,5 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: false
   background_color_ios: "#08080e"
-  adaptive_icon_background: "assets/icon/adaptive_bg.png"
-  adaptive_icon_foreground: "assets/icon/adaptive_fg.png"
+  adaptive_icon_background: "assets/icon/app_icon_full_1024.png"
+  adaptive_icon_foreground: "assets/icon/transparent.png"
