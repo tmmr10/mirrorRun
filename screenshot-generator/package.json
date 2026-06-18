@@ -8,11 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
+    "@remotion/cli": "^4.0.478",
     "html-to-image": "^1.11.13",
     "next": "16.1.6",
     "playwright": "^1.58.2",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "remotion": "^4.0.478"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// **'PLAY'**
   String get menuPlay;
 
+  /// No description provided for @menuChooseWorld.
+  ///
+  /// In en, this message translates to:
+  /// **'CHOOSE WORLD'**
+  String get menuChooseWorld;
+
   /// No description provided for @menuChangeSkin.
   ///
   /// In en, this message translates to:
@@ -329,7 +335,7 @@ abstract class AppLocalizations {
   /// No description provided for @howtoForesightDesc.
   ///
   /// In en, this message translates to:
-  /// **'Reveals obstacles hidden during PHANTOM.'**
+  /// **'Banks a charge that reveals the obstacles hidden during your next PHANTOM.'**
   String get howtoForesightDesc;
 
   /// No description provided for @biomeBannerEntering.

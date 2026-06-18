@@ -24,6 +24,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get menuPlay => 'SPIELEN';
 
   @override
+  String get menuChooseWorld => 'WELT WÄHLEN';
+
+  @override
   String get menuChangeSkin => 'SKIN WECHSELN';
 
   @override
@@ -131,7 +134,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get howtoForesightDesc =>
-      'Zeigt Hindernisse, die während PHANTOM verborgen sind.';
+      'Spart eine Ladung, die beim nächsten PHANTOM die verborgenen Hindernisse aufdeckt.';
 
   @override
   String get biomeBannerEntering => 'DU BETRITTST';

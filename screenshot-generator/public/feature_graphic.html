@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Mirror Runners — Feature Graphic</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  html,body{background:#07070f}
+  :root{--purple:#B48CFF;--cyan:#50C8FF;--magenta:#D880FF;--fg:#F4F4FC;--muted:#9A9ABE}
+  .fg{position:relative;width:1024px;height:500px;overflow:hidden;
+    background:radial-gradient(120% 130% at 50% 42%, color-mix(in srgb,var(--purple) 18%,#0a0a16), #07070f 64%)}
+  /* purple + cyan side glows */
+  .glow{position:absolute;border-radius:50%;filter:blur(90px);z-index:0}
+  .glowL{left:-160px;top:-120px;width:520px;height:520px;background:color-mix(in srgb,var(--purple) 55%,transparent);opacity:.55}
+  .glowR{right:-160px;bottom:-140px;width:520px;height:520px;background:color-mix(in srgb,var(--cyan) 50%,transparent);opacity:.45}
+  /* vertical mirror center line */
+  .mirror{position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);z-index:2;opacity:.7;
+    background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--purple) 65%,transparent) 22%,color-mix(in srgb,var(--cyan) 65%,transparent) 78%,transparent);
+    box-shadow:0 0 22px color-mix(in srgb,var(--purple) 55%,transparent)}
+  /* faint mirrored runner silhouettes either side of the line */
+  .runner{position:absolute;top:50%;width:30px;height:42px;border-radius:11px 11px 9px 9px;z-index:1;transform:translateY(-50%);opacity:.9}
+  .runner::before,.runner::after{content:"";position:absolute;top:10px;width:6px;height:7px;border-radius:50%;background:#0b0b12}
+  .runner::before{left:6px}.runner::after{right:6px}
+  .rL{left:calc(50% - 86px);background:linear-gradient(180deg,var(--purple),color-mix(in srgb,var(--purple) 60%,#000));box-shadow:0 0 26px color-mix(in srgb,var(--purple) 65%,transparent)}
+  .rR{left:calc(50% + 56px);background:linear-gradient(180deg,var(--cyan),color-mix(in srgb,var(--cyan) 60%,#000));box-shadow:0 0 26px color-mix(in srgb,var(--cyan) 65%,transparent)}
+  .content{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .icon{width:96px;height:96px;border-radius:22px;margin-bottom:22px;
+    box-shadow:0 0 46px color-mix(in srgb,var(--purple) 60%,transparent),0 14px 30px rgba(0,0,0,.55)}
+  .wordmark{font-size:74px;font-weight:900;letter-spacing:.04em;line-height:.96;text-shadow:0 4px 30px rgba(0,0,0,.7)}
+  .wordmark .m{color:var(--fg)}
+  .wordmark .r{color:var(--purple)}
+  .tagline{margin-top:20px;font-size:21px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .tagline b{color:var(--cyan);font-weight:800}
+</style>
+</head>
+<body>
+<div class="fg" id="capture">
+  <div class="glow glowL"></div>
+  <div class="glow glowR"></div>
+  <div class="mirror"></div>
+  <div class="runner rL"></div>
+  <div class="runner rR"></div>
+  <div class="content">
+    <img class="icon" src="/app-icon.png" alt="">
+    <div class="wordmark"><span class="m">MIRROR</span> <span class="r">RUNNERS</span></div>
+    <div class="tagline">One move. <b>Two runners.</b></div>
+  </div>
+</div>
+</body>
+</html>

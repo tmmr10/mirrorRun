@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuPlay => 'PLAY';
 
   @override
+  String get menuChooseWorld => 'CHOOSE WORLD';
+
+  @override
   String get menuChangeSkin => 'CHANGE SKIN';
 
   @override
@@ -128,7 +131,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get howtoForesightTitle => 'FORESIGHT';
 
   @override
-  String get howtoForesightDesc => 'Reveals obstacles hidden during PHANTOM.';
+  String get howtoForesightDesc =>
+      'Banks a charge that reveals the obstacles hidden during your next PHANTOM.';
 
   @override
   String get biomeBannerEntering => 'ENTERING';

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Worlds-Teaser — 5 Varianten</title>
+<style>
+  :root{--fg:#F4F4FC;--purple:#B48CFF;--magenta:#D880FF;--muted:#9A9ABE;--gold:#FFC23E}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{background:#070710;color:var(--fg);padding:34px}
+  h1{font-size:22px;font-weight:800}.lead{color:var(--muted);margin:6px 0 26px;max-width:760px;line-height:1.5}
+  .strip{display:flex;gap:26px;flex-wrap:wrap}
+  .cell h2{font-size:12px;font-weight:700;color:var(--magenta);letter-spacing:.05em;margin-bottom:9px}
+  .cell p{font-size:11px;color:var(--muted);margin-bottom:11px;min-height:30px;line-height:1.35}
+  .slide{position:relative;width:320px;height:695px;border-radius:22px;overflow:hidden;background:#06060c;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .slide{background:radial-gradient(120% 70% at 50% 28%, color-mix(in srgb,var(--magenta) 16%,#0a0a16), #07070f 62%)}
+  .ambient{position:absolute;inset:-12%;z-index:0;object-fit:cover;filter:blur(50px) saturate(1.35);opacity:.7;transform:scale(1.25)}
+  .mirror{position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);z-index:3;opacity:.6;
+    background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--magenta) 50%,transparent) 30%,color-mix(in srgb,var(--magenta) 50%,transparent) 70%,transparent);box-shadow:0 0 16px color-mix(in srgb,var(--magenta) 45%,transparent)}
+  .cap{position:absolute;top:5.6%;left:8%;right:8%;z-index:5;text-align:center}
+  .eyebrow{color:var(--magenta);font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:11px;margin-bottom:9px}
+  .head{color:var(--fg);font-weight:800;letter-spacing:-.035em;line-height:1.02;font-size:33px;white-space:pre-line;text-shadow:0 3px 24px rgba(0,0,0,.7)}
+  .device{position:absolute;left:50%;transform:translateX(-50%);aspect-ratio:1022/2082;z-index:4;top:21.5%;width:66%;
+    filter:drop-shadow(0 26px 40px rgba(0,0,0,.75)) drop-shadow(0 0 40px color-mix(in srgb,var(--magenta) 36%,transparent))}
+  .device .frame{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+  .device .screen{position:absolute;left:5.09%;top:2.21%;width:89.82%;height:95.58%;border-radius:13.7%/6.3%;overflow:hidden;background:#000;z-index:2}
+  .device .screen img{width:100%;height:100%;object-fit:cover;object-position:top}
+  .glass{position:absolute;left:6%;right:6%;bottom:9%;z-index:6;background:rgba(14,14,24,.7);backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.14);border-radius:20px;box-shadow:0 14px 38px rgba(0,0,0,.6);padding:14px 14px}
+  .ttl{font-size:10px;font-weight:800;letter-spacing:.14em;color:#fff;text-align:center;margin-bottom:11px}
+
+  /* V1 journey gradient bar */
+  .v1bar{height:14px;border-radius:7px;border:1px solid rgba(255,255,255,.18)}
+  .v1lab{display:flex;justify-content:space-between;margin-top:8px;font-size:8.5px;font-weight:700;letter-spacing:.06em;color:#cfd2e6}
+  .v1lab b{color:var(--purple)}
+  /* V2 mini scenes */
+  .v2{display:flex;flex-wrap:wrap;justify-content:center;gap:9px 8px}
+  .v2 .t{width:38px}
+  .v2 .sc{width:38px;height:48px;border-radius:9px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.12)}
+  .v2 .sc .g{position:absolute;inset:0}
+  .v2 .sc .gr{position:absolute;left:0;right:0;bottom:0;height:34%}
+  .v2 .sc .ml{position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(255,255,255,.35);transform:translateX(-.5px)}
+  .v2 em{font-style:normal;display:block;text-align:center;margin-top:4px;font-size:7px;font-weight:700;color:#d3d6e8;line-height:1.05}
+  /* V3 stat hero */
+  .v3num{font-size:64px;font-weight:900;letter-spacing:-.04em;line-height:.85;text-align:center;
+    background:linear-gradient(180deg,#fff,var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .v3lbl{text-align:center;font-size:11px;font-weight:800;letter-spacing:.18em;color:#fff;margin:5px 0 10px}
+  .v3dots{display:flex;justify-content:center;gap:6px}.v3dots i{width:11px;height:11px;border-radius:50%;box-shadow:0 0 7px var(--c)}
+  /* V4 named pills */
+  .v4{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+  .v4 .p{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:4px 9px;font-size:9px;font-weight:700;color:#e6e8f6}
+  .v4 .p i{width:8px;height:8px;border-radius:50%;box-shadow:0 0 6px var(--c)}
+  /* V5 distance list */
+  .v5{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+  .v5 .r{display:flex;align-items:center;gap:7px;font-size:9px}
+  .v5 .r i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 6px var(--c)}
+  .v5 .r b{color:#fff;font-weight:700}.v5 .r span{color:var(--muted);margin-left:auto;font-weight:600}
+</style></head>
+<body>
+<h1>Worlds-Teaser — 5 Varianten</h1>
+<p class="lead">Verschiedene Wege, die 11 Welten klar & schön zu teasern. Sag mir die Nummer, dann baue ich sie sauber (DE+EN) in die Slide ein.</p>
+<div class="strip" id="strip"></div>
+<script>
+const SHOT='/screenshots/en/02_worlds.png';
+// [name, color, darkGround, startM]
+const B=[['FOREST','#3FA64F','#0c2a14',0],['CITY','#8B97AD','#15171f',75],['CRYSTAL','#40CCEE','#07222b',175],['VOLCANO','#FF5A2C','#240a06',300],['DESERT','#E0A93A','#241803',500],['OCEAN','#19A6C4','#06202a',750],['RUINS','#8FBF6F','#16210f',1000],['SPACE','#4A4CFF','#0a0a28',1400],['STORM','#9A66E0','#160a26',1900],['NEON','#C24DFF','#1c0726',2500],['VOID','#9097A6','#15161c',3200]];
+function base(inner){return `<div class="slide"><img class="ambient" src="${SHOT}"><div class="mirror"></div>
+  <div class="cap"><div class="eyebrow">11 WORLDS</div><div class="head">Run further.\nSee more.</div></div>
+  <div class="device"><img class="frame" src="/mockup.png"><div class="screen"><img src="${SHOT}"></div></div>${inner}</div>`;}
+
+// V1 journey gradient
+const grad='linear-gradient(90deg,'+B.map((b,i)=>`${b[1]} ${Math.round(i/(B.length-1)*100)}%`).join(',')+')';
+const v1=`<div class="glass"><div class="ttl">A JOURNEY THROUGH 11 WORLDS</div>
+  <div class="v1bar" style="background:${grad}"></div>
+  <div class="v1lab"><b>FOREST</b><span>· · ·</span><b>VOID</b></div></div>`;
+
+// V2 mini scenes (6 repräsentativ)
+const v2sel=[B[0],B[2],B[3],B[5],B[9],B[10]];
+const v2=`<div class="glass"><div class="v2">`+v2sel.map(b=>`<div class="t"><div class="sc">
+  <div class="g" style="background:linear-gradient(180deg, color-mix(in srgb,${b[1]} 55%,#000) 0%, ${b[1]} 60%)"></div>
+  <div class="gr" style="background:${b[2]}"></div><div class="ml"></div></div><em>${b[0]}</em></div>`).join('')+`</div></div>`;
+
+// V3 stat hero
+const v3=`<div class="glass"><div class="v3num">11</div><div class="v3lbl">WORLDS TO RUN</div>
+  <div class="v3dots">`+B.map(b=>`<i style="background:${b[1]};--c:${b[1]}"></i>`).join('')+`</div></div>`;
+
+// V4 named pills
+const v4=`<div class="glass"><div class="v4">`+B.map(b=>`<span class="p"><i style="background:${b[1]};--c:${b[1]}"></i>${b[0][0]+b[0].slice(1).toLowerCase()}</span>`).join('')+`</div></div>`;
+
+// V5 distance progression (2 cols)
+const v5=`<div class="glass"><div class="ttl">UNLOCK AS YOU RUN</div><div class="v5">`+B.map(b=>`<div class="r"><i style="background:${b[1]};--c:${b[1]}"></i><b>${b[0][0]+b[0].slice(1).toLowerCase()}</b><span>${b[3]}m</span></div>`).join('')+`</div></div>`;
+
+const variants=[
+  ['V1 · Journey-Gradient','Ein Farbverlauf durch alle 11 Welten – „eine Reise". Elegant, abstrakt.',v1],
+  ['V2 · Mini-Welt-Szenen','Kleine Biom-Vorschauen (Himmel+Boden+Spiegellinie) mit Namen. Am klarsten „Welten".',v2],
+  ['V3 · Stat-Hero „11"','Große Zahl als Eyecatcher + Farbpunkte. Plakativ.',v3],
+  ['V4 · Benannte Pills','Alle Welten als Pills mit Farbe+Name. Name-forward, scanbar.',v4],
+  ['V5 · Distanz-Progression','Welt + Freischalt-Distanz (0m→3200m). Zeigt Tiefe/Fortschritt.',v5],
+];
+document.getElementById('strip').innerHTML=variants.map(v=>`<div class="cell"><h2>${v[0]}</h2><p>${v[1]}</p>${base(v[2])}</div>`).join('');
+</script>
+</body></html>
