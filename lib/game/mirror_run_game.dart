@@ -36,6 +36,7 @@ import '../services/stats_service.dart';
 import '../services/daily_challenge_service.dart';
 import '../services/upgrade_service.dart';
 import '../services/world_unlock_service.dart';
+import '../services/review_service.dart';
 
 class MirrorRunGame extends FlameGame with KeyboardEvents {
   static const double vw = 440;
@@ -74,6 +75,7 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
   late DailyChallengeService dailyChallengeService;
   late UpgradeService upgradeService;
   late WorldUnlockService worldUnlockService;
+  late ReviewService reviewService;
 
   /// True while the current run was started from a picked world (Free Play):
   /// such runs don't count toward leaderboard, highscore, daily or unlocks.
@@ -325,6 +327,9 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
 
     worldUnlockService = WorldUnlockService();
     await worldUnlockService.init();
+
+    reviewService = ReviewService();
+    await reviewService.init();
 
     // Run GameCenter sign-in in background with timeout — don't block app startup.
     // Runs AFTER achievementService is initialized to avoid LateInitializationError.
@@ -617,6 +622,10 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
           .clamp(0, BiomeManager.biomes.length - 1);
       unawaited(AnalyticsService.setFurthestBiome(
         BiomeManager.biomes[furthestIdx].name,
+      ));
+      // One-time contextual rating prompt once the player has a few runs in.
+      unawaited(reviewService.maybeRequestReview(
+        totalGames: statsService.totalGamesPlayed,
       ));
     } catch (e, st) {
       debugPrint('_recordRunAsync error: $e\n$st');

@@ -57,7 +57,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsStatistics => 'STATISTIK';
 
   @override
+  String get settingsRate => 'APP BEWERTEN';
+
+  @override
   String get settingsRestorePurchases => 'KÄUFE WIEDERHERSTELLEN';
+
+  @override
+  String get settingsLegal => 'RECHTLICHES';
+
+  @override
+  String get settingsPrivacy => 'DATENSCHUTZ';
+
+  @override
+  String get settingsTerms => 'NUTZUNGSBEDINGUNGEN';
 
   @override
   String get settingsLicenses => 'LIZENZEN';

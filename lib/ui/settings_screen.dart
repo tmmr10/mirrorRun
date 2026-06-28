@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../game/mirror_run_game.dart';
 import '../game/world/biome.dart';
 import '../l10n/game_l10n.dart';
@@ -320,6 +321,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Rate this app
+              _buildDivider(),
+              const SizedBox(height: 16),
+              _buildNavRow(
+                context.l10n.settingsRate,
+                () => widget.game.reviewService.openStoreListing(),
+              ),
+              const SizedBox(height: 24),
+
               // Restore purchases
               if (!widget.game.adService.isPro) ...[
                 _buildDivider(),
@@ -351,6 +361,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
               ],
+
+              // Legal — Privacy Policy & Terms of Service
+              _buildDivider(),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.settingsLegal,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildNavRow(
+                context.l10n.settingsPrivacy,
+                () => _openUrl('https://tmmr10.github.io/mirrorRun/privacy.html'),
+                fontSize: 11,
+                alpha: 0.55,
+              ),
+              const SizedBox(height: 16),
+              _buildNavRow(
+                context.l10n.settingsTerms,
+                () => _openUrl('https://tmmr10.github.io/mirrorRun/terms.html'),
+                fontSize: 11,
+                alpha: 0.55,
+              ),
 
               const SizedBox(height: 40),
 
@@ -610,6 +647,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
       height: 0.5,
       color: Colors.white.withValues(alpha: 0.08),
     );
+  }
+
+  /// Left-aligned tappable navigation row, styled like the other settings
+  /// entries (Statistics, Leaderboard …).
+  Widget _buildNavRow(
+    String label,
+    VoidCallback onTap, {
+    double fontSize = 12,
+    double alpha = 0.7,
+  }) {
+    return TapScale(
+      minSize: MR.minTouchTarget,
+      onTap: onTap,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: alpha),
+            letterSpacing: 3,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Opens an external link (privacy policy / terms) in the system browser.
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(url)),
+        );
+      }
+    }
   }
 }
 

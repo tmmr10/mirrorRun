@@ -194,11 +194,35 @@ abstract class AppLocalizations {
   /// **'STATISTICS'**
   String get settingsStatistics;
 
+  /// No description provided for @settingsRate.
+  ///
+  /// In en, this message translates to:
+  /// **'RATE THIS APP'**
+  String get settingsRate;
+
   /// No description provided for @settingsRestorePurchases.
   ///
   /// In en, this message translates to:
   /// **'RESTORE PURCHASES'**
   String get settingsRestorePurchases;
+
+  /// No description provided for @settingsLegal.
+  ///
+  /// In en, this message translates to:
+  /// **'LEGAL'**
+  String get settingsLegal;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'PRIVACY POLICY'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'TERMS OF SERVICE'**
+  String get settingsTerms;
 
   /// No description provided for @settingsLicenses.
   ///
