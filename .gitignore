@@ -51,3 +51,6 @@ ios/fastlane/keys/
 android/key.properties
 android/upload-keystore.jks
 *.jks
+
+# Large marketing video — keep out of git (use external storage)
+screenshot-generator/public/gameplay.mov
