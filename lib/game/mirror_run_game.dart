@@ -590,6 +590,8 @@ class MirrorRunGame extends FlameGame with KeyboardEvents {
       final daily = await dailyChallengeService.recordRun(
         distance: score,
         coinsThisRun: coinsService.sessionEarned,
+        biomeIndexReached: _lastBiomeIdx,
+        reviveUsed: _reviveUsedThisRun,
       );
       final dailyCoins = daily.rewardEarned + daily.streakReward;
       if (dailyCoins > 0) {

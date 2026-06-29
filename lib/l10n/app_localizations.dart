@@ -1154,6 +1154,30 @@ abstract class AppLocalizations {
   /// **'Play {target} runs today'**
   String dailyChallengeGames(int target);
 
+  /// No description provided for @dailyChallengeDistanceTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Run {target}m total today'**
+  String dailyChallengeDistanceTotal(int target);
+
+  /// No description provided for @dailyChallengeCoinsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect {target} coins today'**
+  String dailyChallengeCoinsTotal(int target);
+
+  /// No description provided for @dailyChallengeBiome.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach the {world}'**
+  String dailyChallengeBiome(String world);
+
+  /// No description provided for @dailyChallengeCleanRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach {target}m without reviving'**
+  String dailyChallengeCleanRun(int target);
+
   /// No description provided for @achCategoryDistance.
   ///
   /// In en, this message translates to:

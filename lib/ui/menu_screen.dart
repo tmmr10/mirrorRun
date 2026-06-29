@@ -695,7 +695,7 @@ class _MenuScreenState extends State<MenuScreen> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${daily.progress} / ${daily.target}',
+                  dailyChallengeProgressLocalized(context, daily),
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w600,

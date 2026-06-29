@@ -116,31 +116,36 @@ class _CountdownOverlayState extends State<CountdownOverlay>
       },
     );
 
-    if (!_showControlsHint) return SafeArea(child: countdown);
+    // No SafeArea: the countdown visuals (mirror line) must span the full
+    // screen height to match the full-bleed game canvas — wrapping in SafeArea
+    // clipped the line above the bottom home-indicator inset.
+    if (!_showControlsHint) return countdown;
 
-    return SafeArea(
-      child: Stack(
+    return Stack(
       children: [
         countdown,
         // One-time, dezent controls hint — fades out as the countdown ends.
+        // Kept clear of the home indicator via the bottom offset + SafeArea.
         Positioned(
           left: 0,
           right: 0,
           bottom: screenHeight * 0.18,
-          child: IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: _finalExpand ? 0.0 : 1.0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              child: Center(
-                child: Text(
-                  context.l10n.cdDragToMove,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.55),
-                    letterSpacing: 5,
+          child: SafeArea(
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _finalExpand ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+                child: Center(
+                  child: Text(
+                    context.l10n.cdDragToMove,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.55),
+                      letterSpacing: 5,
+                    ),
                   ),
                 ),
               ),
@@ -148,7 +153,6 @@ class _CountdownOverlayState extends State<CountdownOverlay>
           ),
         ),
       ],
-      ),
     );
   }
 

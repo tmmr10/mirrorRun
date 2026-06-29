@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../game/world/biome.dart';
 import '../models/player_skin.dart';
 import '../services/daily_challenge_service.dart';
 import '../services/upgrade_service.dart';
@@ -133,7 +134,32 @@ String dailyChallengeLabelLocalized(BuildContext c, DailyChallenge ch) {
       return l.dailyChallengeCoins(ch.target);
     case DailyChallengeType.games:
       return l.dailyChallengeGames(ch.target);
+    case DailyChallengeType.distanceTotal:
+      return l.dailyChallengeDistanceTotal(ch.target);
+    case DailyChallengeType.coinsTotal:
+      return l.dailyChallengeCoinsTotal(ch.target);
+    case DailyChallengeType.biome:
+      final idx = ch.target.clamp(0, BiomeManager.biomes.length - 1);
+      return l.dailyChallengeBiome(
+          biomeNameLocalized(c, BiomeManager.biomes[idx].name));
+    case DailyChallengeType.cleanRun:
+      return l.dailyChallengeCleanRun(ch.target);
   }
+}
+
+/// Progress counter string for the daily-challenge card. For the `biome` goal
+/// the raw progress/target are world indices (meaningless to players), so it
+/// reads as localized world names; every other type stays a numeric ratio.
+String dailyChallengeProgressLocalized(BuildContext c, DailyChallenge ch) {
+  if (ch.type == DailyChallengeType.biome) {
+    final maxIdx = BiomeManager.biomes.length - 1;
+    final cur =
+        biomeNameLocalized(c, BiomeManager.biomes[ch.progress.clamp(0, maxIdx)].name);
+    final tgt =
+        biomeNameLocalized(c, BiomeManager.biomes[ch.target.clamp(0, maxIdx)].name);
+    return '$cur / $tgt';
+  }
+  return '${ch.progress} / ${ch.target}';
 }
 
 /// Localizes an achievement category (e.g. `'DISTANCE'` → `'DISTANZ'`).

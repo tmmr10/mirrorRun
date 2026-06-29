@@ -582,6 +582,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dailyChallengeDistanceTotal(int target) {
+    return 'Run ${target}m total today';
+  }
+
+  @override
+  String dailyChallengeCoinsTotal(int target) {
+    return 'Collect $target coins today';
+  }
+
+  @override
+  String dailyChallengeBiome(String world) {
+    return 'Reach the $world';
+  }
+
+  @override
+  String dailyChallengeCleanRun(int target) {
+    return 'Reach ${target}m without reviving';
+  }
+
+  @override
   String get achCategoryDistance => 'DISTANCE';
 
   @override

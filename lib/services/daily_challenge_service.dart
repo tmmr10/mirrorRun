@@ -4,7 +4,18 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The kind of goal a daily challenge asks for.
-enum DailyChallengeType { distance, coins, games }
+///
+/// NOTE: new variants are appended at the end so the persisted `dc_type`
+/// index of an in-progress challenge stays valid across updates.
+enum DailyChallengeType {
+  distance,
+  coins,
+  games,
+  distanceTotal,
+  coinsTotal,
+  biome,
+  cleanRun,
+}
 
 /// Immutable snapshot of today's challenge, for the UI to render.
 class DailyChallenge {
@@ -32,6 +43,14 @@ class DailyChallenge {
         return 'Collect $target coins in one run';
       case DailyChallengeType.games:
         return 'Play $target runs today';
+      case DailyChallengeType.distanceTotal:
+        return 'Run ${target}m total today';
+      case DailyChallengeType.coinsTotal:
+        return 'Collect $target coins today';
+      case DailyChallengeType.biome:
+        return 'Reach world #${target + 1}';
+      case DailyChallengeType.cleanRun:
+        return 'Reach ${target}m without reviving';
     }
   }
 }
@@ -65,6 +84,8 @@ class DailyChallengeService {
   static const _kProgress = 'dc_progress';
   static const _kCompleted = 'dc_completed';
   static const _kGamesToday = 'dc_games_today';
+  static const _kDistToday = 'dc_dist_today';
+  static const _kCoinsToday = 'dc_coins_today';
   static const _kStreak = 'dc_streak';
   static const _kStreakDate = 'dc_streak_date';
 
@@ -76,12 +97,19 @@ class DailyChallengeService {
   static const List<int> _distanceTargets = [250, 400, 600, 800];
   static const List<int> _coinsTargets = [15, 25, 40];
   static const List<int> _gamesTargets = [3, 5];
+  static const List<int> _distanceTotalTargets = [800, 1500, 2500];
+  static const List<int> _coinsTotalTargets = [40, 70, 120];
+  static const List<int> _biomeTargets = [2, 3, 4]; // CRYSTAL / VOLCANO / DESERT
+  static const List<int> _cleanRunTargets = [250, 400];
 
   DailyChallengeType _type = DailyChallengeType.distance;
   int _target = 250;
   int _progress = 0;
   bool _completed = false;
   int _gamesToday = 0;
+  // Cumulative per-day accumulators (for the *Total* challenge types).
+  int _distToday = 0;
+  int _coinsToday = 0;
   int _streak = 0;
 
   final ValueNotifier<DailyChallenge> challengeNotifier =
@@ -108,6 +136,17 @@ class DailyChallengeService {
         '${now.day.toString().padLeft(2, '0')}';
   }
 
+  /// Candidate target list for a given challenge type.
+  static List<int> _targetsFor(DailyChallengeType t) => switch (t) {
+        DailyChallengeType.distance => _distanceTargets,
+        DailyChallengeType.coins => _coinsTargets,
+        DailyChallengeType.games => _gamesTargets,
+        DailyChallengeType.distanceTotal => _distanceTotalTargets,
+        DailyChallengeType.coinsTotal => _coinsTotalTargets,
+        DailyChallengeType.biome => _biomeTargets,
+        DailyChallengeType.cleanRun => _cleanRunTargets,
+      };
+
   /// Rolls a fresh challenge if the stored one is from a previous day.
   void _ensureToday() {
     final todayKey = _todayKey();
@@ -120,23 +159,37 @@ class DailyChallengeService {
       _progress = _prefs.getInt(_kProgress) ?? 0;
       _completed = _prefs.getBool(_kCompleted) ?? false;
       _gamesToday = _prefs.getInt(_kGamesToday) ?? 0;
+      _distToday = _prefs.getInt(_kDistToday) ?? 0;
+      _coinsToday = _prefs.getInt(_kCoinsToday) ?? 0;
     } else {
-      // New day → deterministic roll from the date.
+      // New day → deterministic roll from the date, but never repeat the type
+      // the player last saw (variety guard; survives skipped days).
       final now = DateTime.now();
       final seed = now.year * 10000 + now.month * 100 + now.day;
       final rng = Random(seed);
-      _type = DailyChallengeType.values[rng.nextInt(DailyChallengeType.values.length)];
-      _target = switch (_type) {
-        DailyChallengeType.distance =>
-          _distanceTargets[rng.nextInt(_distanceTargets.length)],
-        DailyChallengeType.coins =>
-          _coinsTargets[rng.nextInt(_coinsTargets.length)],
-        DailyChallengeType.games =>
-          _gamesTargets[rng.nextInt(_gamesTargets.length)],
-      };
+      final prevIdx = _prefs.getInt(_kType);
+      final DailyChallengeType? prevType = (prevIdx != null &&
+              prevIdx >= 0 &&
+              prevIdx < DailyChallengeType.values.length)
+          ? DailyChallengeType.values[prevIdx]
+          : null;
+
+      var type = DailyChallengeType
+          .values[rng.nextInt(DailyChallengeType.values.length)];
+      if (prevType != null && type == prevType) {
+        final pool = DailyChallengeType.values
+            .where((e) => e != prevType)
+            .toList();
+        type = pool[rng.nextInt(pool.length)];
+      }
+      _type = type;
+      final targets = _targetsFor(_type);
+      _target = targets[rng.nextInt(targets.length)];
       _progress = 0;
       _completed = false;
       _gamesToday = 0;
+      _distToday = 0;
+      _coinsToday = 0;
       unawaited(_persistChallenge(todayKey));
     }
     _publish();
@@ -149,6 +202,8 @@ class DailyChallengeService {
     await _prefs.setInt(_kProgress, _progress);
     await _prefs.setBool(_kCompleted, _completed);
     await _prefs.setInt(_kGamesToday, _gamesToday);
+    await _prefs.setInt(_kDistToday, _distToday);
+    await _prefs.setInt(_kCoinsToday, _coinsToday);
   }
 
   void _publish() {
@@ -181,24 +236,38 @@ class DailyChallengeService {
   }
 
   /// Records a finished run; updates progress, completion and streak.
-  Future<DailyRunResult> recordRun(
-      {required int distance, required int coinsThisRun}) async {
+  Future<DailyRunResult> recordRun({
+    required int distance,
+    required int coinsThisRun,
+    required int biomeIndexReached,
+    required bool reviveUsed,
+  }) async {
     _ensureToday();
     final streakAdvanced = await _advanceStreak();
 
     _gamesToday++;
+    _distToday += distance;
+    _coinsToday += coinsThisRun;
     final wasCompleted = _completed;
 
-    final runValue = switch (_type) {
-      DailyChallengeType.distance => distance,
-      DailyChallengeType.coins => coinsThisRun,
-      DailyChallengeType.games => _gamesToday,
-    };
-    // distance/coins track the best single run; games is cumulative.
-    if (_type == DailyChallengeType.games) {
-      _progress = _gamesToday;
-    } else if (runValue > _progress) {
-      _progress = runValue;
+    // Cumulative types track running daily totals / counts; single-run types
+    // track the best run of the day (a max).
+    switch (_type) {
+      case DailyChallengeType.games:
+        _progress = _gamesToday;
+      case DailyChallengeType.distanceTotal:
+        _progress = _distToday;
+      case DailyChallengeType.coinsTotal:
+        _progress = _coinsToday;
+      case DailyChallengeType.distance:
+        if (distance > _progress) _progress = distance;
+      case DailyChallengeType.coins:
+        if (coinsThisRun > _progress) _progress = coinsThisRun;
+      case DailyChallengeType.biome:
+        if (biomeIndexReached > _progress) _progress = biomeIndexReached;
+      case DailyChallengeType.cleanRun:
+        // Only runs finished without a revive count toward this goal.
+        if (!reviveUsed && distance > _progress) _progress = distance;
     }
     if (!_completed && _progress >= _target) {
       _completed = true;

@@ -320,6 +320,38 @@
       }
     }
   },
+  "dailyChallengeDistanceTotal": "Run {target}m total today",
+  "@dailyChallengeDistanceTotal": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyChallengeCoinsTotal": "Collect {target} coins today",
+  "@dailyChallengeCoinsTotal": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "dailyChallengeBiome": "Reach the {world}",
+  "@dailyChallengeBiome": {
+    "placeholders": {
+      "world": {
+        "type": "String"
+      }
+    }
+  },
+  "dailyChallengeCleanRun": "Reach {target}m without reviving",
+  "@dailyChallengeCleanRun": {
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
   "achCategoryDistance": "DISTANCE",
   "achCategoryBiome": "BIOME",
   "achCategoryGames": "GAMES",
